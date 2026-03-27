@@ -1,0 +1,27 @@
+# --- bin and compile ---
+bin/
+build/
+obj/
+*.o
+*.cu.o
+*.exe
+*.out
+*.app
+
+# --- mtx ---
+data/*.mtx
+data/*.tar.gz
+data/*.zip
+
+# --- IDE and tools ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# --- Report ---
+*.csv
+*.nvvp
+*.nsys-rep
+*.log
