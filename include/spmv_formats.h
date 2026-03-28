@@ -2,42 +2,43 @@
 #define SPMV_FORMATS_H
 
 /**
- * Structure for Compressed Sparse Row (CSR) matrix representation.
- * The CSR format represents a sparse matrix by storing only non-zero elements.
- * It is highly efficient for row-wise operations and the standard for SpMV.
+ * Compressed Sparse Row (CSR) Matrix Format.
+ * Highly efficient for row-based access and matrix-vector multiplication.
  */
 typedef struct {
-    int M;           /* Number of rows in the matrix */
-    int N;           /* Number of columns in the matrix */
-    int nnz;         /* Number of non-zero (NNZ) elements */
-    
-    int *row_ptr;    /* Row pointers: array of size (M + 1). 
-                        row_ptr[i] stores the index in col_idx and values where row i starts. */
-    
-    int *col_idx;    /* Column indices: array of size (nnz). 
-                        Stores the column index for each non-zero element. */
-    
-    float *values;   /* Non-zero values: array of size (nnz). 
-                        Stores the numerical value of each non-zero element. */
+    int M, N;       // Dimensions of the matrix (M rows, N columns)
+    int nnz;        // Number of Non-Zero elements
+    int *row_ptr;   // Row pointers: array of size M+1 (offsets into col_idx/values)
+    int *col_idx;   // Column indices of non-zero elements: array of size nnz
+    float *values;  // Actual values of non-zero elements: array of size nnz
 } CSRMatrix;
 
-/*
- * Structure for a dense vector.
- * Used for the input vector x and the output vector y in the SpMV operation (y = Ax).
+/**
+ * Coordinate (COO) Matrix Format.
+ * Simple format often used as an intermediate step for loading data.
  */
 typedef struct {
-    int size;        /* Number of elements in the vector */
-    float *data;     /* Pointer to the array of floating-point values */
-} Vector;
+    int M, N;       // Dimensions of the matrix (M rows, N columns)
+    int nnz;        // Number of Non-Zero elements
+    int *rows;      // Row index for every non-zero element: array of size nnz
+    int *cols;      // Column index for every non-zero element: array of size nnz
+    float *values;  // Actual values of non-zero elements: array of size nnz
+} COOMatrix;
 
-// In fondo a include/spmv_formats.h
+/* --- C Linkage Wrapper for C++ Compatibility --- */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * Loads a matrix from a Matrix Market (.mtx) file and converts it to CSR format.
+ * @param filename Path to the .mtx file.
+ * @param matrix   Pointer to a CSRMatrix struct to be populated.
+ */
 void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix);
 
 #ifdef __cplusplus
 }
 #endif
+
 #endif
