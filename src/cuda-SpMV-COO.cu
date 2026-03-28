@@ -74,8 +74,7 @@ int main(int argc, char **argv) {
     cudaEventRecord(start);
 
     for (int i = 0; i < iterations; i++) {
-        // opzionale: reset
-        // cudaMemset(d_y, 0, M * sizeof(float));
+        cudaMemset(d_y, 0, M * sizeof(float));
         spmv_coo_kernel<<<gridSize, blockSize>>>(nnz, d_rows, d_cols, d_vals, d_x, d_y);
     }
 
