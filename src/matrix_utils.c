@@ -73,3 +73,48 @@ void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix) {
     free(coo_vals); 
     free(temp_ptr);
 }
+
+/**
+ * Loads a sparse matrix from a Matrix Market (.mtx) file directly into COO format.
+ * Converts 1-based indexing to 0-based indexing.
+ */
+void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix) {
+    FILE *f = fopen(filename, "r");
+    if (!f) {
+        fprintf(stderr, "Error: could not open file %s\n", filename);
+        exit(1);
+    }
+
+    char line[1024];
+
+    // Skip header/comments
+    while (fgets(line, sizeof(line), f)) {
+        if (line[0] != '%') break;
+    }
+
+    // Read dimensions
+    int rows, cols, nnz;
+    sscanf(line, "%d %d %d", &rows, &cols, &nnz);
+
+    matrix->M = rows;
+    matrix->N = cols;
+    matrix->nnz = nnz;
+
+    // Allocate COO arrays
+    matrix->rows = (int *)malloc(nnz * sizeof(int));
+    matrix->cols = (int *)malloc(nnz * sizeof(int));
+    matrix->values = (float *)malloc(nnz * sizeof(float));
+
+    // Read entries
+    for (int i = 0; i < nnz; i++) {
+        double val;
+        fscanf(f, "%d %d %lf", &matrix->rows[i], &matrix->cols[i], &val);
+
+        // Convert to 0-based indexing
+        matrix->rows[i] -= 1;
+        matrix->cols[i] -= 1;
+        matrix->values[i] = (float)val;
+    }
+
+    fclose(f);
+}
