@@ -42,7 +42,6 @@ int main(int argc, char **argv) {
     // Load matrix directly in COO format
     COOMatrix mat;
     load_matrix_market_to_coo(argv[1], &mat);
-
     int nnz = mat.nnz;
     int M = mat.M;
 

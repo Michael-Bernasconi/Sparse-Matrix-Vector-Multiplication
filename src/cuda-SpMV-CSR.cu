@@ -40,12 +40,13 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    // Load matrix directly in CSR format
     CSRMatrix A;
     load_matrix_market_to_csr(argv[1], &A);
     int M = A.M; 
     int nnz = A.nnz;
 
-    // Initialize host vector x
+    // Initialize host vector x using the common utility (Seed 42)
     float *h_x = (float*)malloc(A.N * sizeof(float));
     fill_random_vector(h_x, A.N);
 
@@ -53,7 +54,7 @@ int main(int argc, char **argv) {
     int *d_row_ptr, *d_col_idx;
     float *d_vals, *d_x, *d_y;
 
-    // Memory Allocation
+    // 1. Allocate GPU memory
     CUDA_CHECK(cudaMalloc(&d_row_ptr, (M + 1) * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_col_idx, nnz * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_vals, nnz * sizeof(float)));
@@ -70,11 +71,13 @@ int main(int argc, char **argv) {
     int blockSize = 256;
     int gridSize = (M + blockSize - 1) / blockSize;
 
+    // Timing events
     cudaEvent_t start, stop;
     CUDA_CHECK(cudaEventCreate(&start));
     CUDA_CHECK(cudaEventCreate(&stop));
 
     // --- WARMUP PHASE ---
+    // Stabilizes GPU clocks and primes caches
     for (int i = 0; i < WARMUP_ITERATIONS; i++) {
         CUDA_CHECK(cudaMemset(d_y, 0, M * sizeof(float)));
         spmv_csr_kernel<<<gridSize, blockSize>>>(M, d_row_ptr, d_col_idx, d_vals, d_x, d_y);
@@ -90,6 +93,7 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaEventRecord(stop));
     CUDA_CHECK(cudaEventSynchronize(stop));
 
+    // Performance Metrics Calculation
     float ms = 0;
     CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
     double avg_time_s = (ms / 1000.0) / BENCHMARK_ITERATIONS;
@@ -100,7 +104,10 @@ int main(int argc, char **argv) {
 
     printf("\n--- GPU CSR Benchmark ---\n");
     printf("Matrix: %s (%d x %d, nnz: %d)\n", argv[1], M, A.N, nnz);
-    printf("Avg Time: %e s | GFLOPS: %.4f | BW: %.4f GB/s\n", avg_time_s, gflops, bw);
+    printf("Avg Time: %e s\n", avg_time_s);
+    printf("GFLOPS  : %.4f\n", gflops);
+    printf("BW      : %.4f GB/s\n", bw);
+    printf("Check   : %f (First element of y)\n", check);
 
     // Cleanup
     CUDA_CHECK(cudaEventDestroy(start));
