@@ -18,7 +18,7 @@ void spmv_coo_cpu(const COOMatrix *mat, const float *x, float *y) {
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <matrix_file.mtx>\n", argv[0]);
+        printf(stderr, "Usage: %s <matrix_file.mtx>\n", argv[0]);
         return 1;
     }
 
@@ -63,8 +63,10 @@ int main(int argc, char **argv) {
     double bw = calculate_bandwidth(mat.M, mat.N, mat.nnz, avg_time_s, "COO");
 
     printf("\n--- CPU COO Benchmark ---\n");
-    printf("Matrix: %s (%d x %d, nnz: %d)\n", argv[1], mat.M, mat.N, mat.nnz);
-    printf("Avg Time: %e s | GFLOPS: %.4f | BW: %.4f GB/s\n", avg_time_s, gflops, bw);
+    printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], mat.M, mat.N, mat.nnz);
+    printf("Avg Time: %e s\n", avg_time_s);
+    printf("GFLOPS  : %.4f\n", gflops);
+    printf("BW      : %.4f GB/s\n", bw);
 
     // Cleanup
     free(x);

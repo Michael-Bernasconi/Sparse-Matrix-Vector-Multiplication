@@ -67,9 +67,12 @@ int main(int argc, char **argv) {
     double bw = calculate_bandwidth(mat.M, mat.N, mat.nnz, avg_time_s, "CSR");
 
     printf("\n--- CPU CSR Benchmark ---\n");
-    printf("Matrix: %s (%d x %d, nnz: %d)\n", argv[1], mat.M, mat.N, mat.nnz);
-    printf("Avg Time: %e s | GFLOPS: %.4f | BW: %.4f GB/s\n", avg_time_s, gflops, bw);
+    printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], mat.M, mat.N, mat.nnz);
+    printf("Avg Time: %e s\n", avg_time_s);
+    printf("GFLOPS  : %.4f\n", gflops);
+    printf("BW      : %.4f GB/s\n", bw);
 
+    
     // Cleanup
     free(x); 
     free(y); 
