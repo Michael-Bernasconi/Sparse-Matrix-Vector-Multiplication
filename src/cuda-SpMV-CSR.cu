@@ -76,8 +76,6 @@ int main(int argc, char **argv) {
 
     // --- WARMUP PHASE ---
     for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-        // CSR kernel doesn't strictly need memset if y is fully overwritten, 
-        // but we keep it for consistency with COO and CPU benchmarks.
         CUDA_CHECK(cudaMemset(d_y, 0, M * sizeof(float)));
         spmv_csr_kernel<<<gridSize, blockSize>>>(M, d_row_ptr, d_col_idx, d_vals, d_x, d_y);
     }
@@ -95,7 +93,9 @@ int main(int argc, char **argv) {
     float ms = 0;
     CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
     double avg_time_s = (ms / 1000.0) / BENCHMARK_ITERATIONS;
-    double gflops = (2.0 * nnz) / (avg_time_s * 1e9);
+
+    // Using utility functions for consistency
+    double gflops = calculate_gflops(nnz, avg_time_s);
     double bw = calculate_bandwidth(M, A.N, nnz, avg_time_s, "CSR");
 
     printf("\n--- GPU CSR Benchmark ---\n");
@@ -111,7 +111,6 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaFree(d_x));
     CUDA_CHECK(cudaFree(d_y));
     free(h_x);
-    // Note: matrix A arrays are freed in matrix_utils loader or main depending on your style
     
     return 0;
 }

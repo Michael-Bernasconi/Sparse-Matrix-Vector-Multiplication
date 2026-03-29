@@ -24,6 +24,9 @@ extern "C" {
 // Loader functions
 void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix);
 void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix);
+double calculate_gflops(int nnz, double avg_time_s);
+double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char* format);
+void fill_random_vector(float *vec, int n);
 
 // Utility functions for benchmarking
 void fill_random_vector(float *vec, int n);

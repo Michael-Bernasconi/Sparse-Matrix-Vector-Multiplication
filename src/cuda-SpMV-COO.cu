@@ -97,7 +97,9 @@ int main(int argc, char **argv) {
     float ms = 0;
     CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
     double avg_time_s = (ms / 1000.0) / BENCHMARK_ITERATIONS;
-    double gflops = (2.0 * nnz) / (avg_time_s * 1e9);
+    
+    // Using utility functions for consistency
+    double gflops = calculate_gflops(nnz, avg_time_s);
     double bw = calculate_bandwidth(M, mat.N, nnz, avg_time_s, "COO");
 
     // Verification check (first element of result)

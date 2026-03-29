@@ -56,9 +56,9 @@ int main(int argc, char **argv) {
 
     TIMER_STOP(0);
 
-    // Performance calculations
+    // Performance calculations using utility functions
     double avg_time_s = (TIMER_ELAPSED(0) / 1e6) / BENCHMARK_ITERATIONS;
-    double gflops = (2.0 * mat.nnz) / (avg_time_s * 1e9);
+    double gflops = calculate_gflops(mat.nnz, avg_time_s);
     double bw = calculate_bandwidth(mat.M, mat.N, mat.nnz, avg_time_s, "CSR");
 
     printf("\n--- CPU CSR Benchmark ---\n");
