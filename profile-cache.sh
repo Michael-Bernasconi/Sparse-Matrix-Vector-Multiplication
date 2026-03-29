@@ -3,7 +3,7 @@
 # Configuration
 MATRIX_DIR="/mnt/c/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/data"
 MATRIX="$MATRIX_DIR/FEM_3D_thermal1.mtx" # Use this as a sample
-PROF_DIR="./results/profiling"
+PROF_DIR="./results/benchmark/profile-cache"
 BIN_DIR="./bin"
 
 mkdir -p "$PROF_DIR"

@@ -5,8 +5,8 @@ BIN_DIR="./bin"
 MATRIX_DIR="/mnt/c/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/data"
 
 # NEW LOG DESTINATION
-LOG_DIR="/mnt/c/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/benchmark"
-LOG_FILE="$LOG_DIR/benchmark_results.log"
+LOG_DIR="/mnt/c/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/benchmark/flops-bw"
+LOG_FILE="$LOG_DIR/report_flops-bw-cpu-gpu.log"
 
 # Create the results directory if it doesn't exist
 mkdir -p "$LOG_DIR"
