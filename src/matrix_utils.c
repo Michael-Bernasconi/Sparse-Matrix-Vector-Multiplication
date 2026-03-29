@@ -1,120 +1,81 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "spmv_formats.h"
 
-/**
- * Loads a sparse matrix from a Matrix Market (.mtx) file and converts it to CSR format.
- * Handles the 1-based indexing of .mtx files by converting to 0-based C indexing.
- */
+void fill_random_vector(float *vec, int n) {
+    srand(42); // Fixed seed for reproducibility across CPU and GPU
+    for (int i = 0; i < n; i++) vec[i] = (float)rand() / RAND_MAX;
+}
+
+double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char* format) {
+    size_t bytes = 0;
+    if (strcmp(format, "CSR") == 0) {
+        bytes = (sizeof(int) * (M + 1 + nnz)) + (sizeof(float) * (nnz + N + M));
+    } else { // COO
+        bytes = (sizeof(int) * (2 * nnz)) + (sizeof(float) * (nnz + N + M));
+    }
+    return (double)bytes / (avg_time_s * 1e9);
+}
+
 void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix) {
     FILE *f = fopen(filename, "r");
-    if (!f) {
-        fprintf(stderr, "Error: could not open file %s\n", filename);
-        exit(1);
-    }
+    if (!f) { fprintf(stderr, "Error opening %s\n", filename); exit(1); }
 
     char line[1024];
-    // Skip the header comments (lines starting with '%')
-    while (fgets(line, sizeof(line), f)) {
-        if (line[0] != '%') break;
-    }
+    while (fgets(line, sizeof(line), f) && line[0] == '%');
 
-    // Read dimensions: number of rows, columns, and non-zero elements (nnz)
     int rows, cols, nnz;
     sscanf(line, "%d %d %d", &rows, &cols, &nnz);
-    
-    matrix->M = rows;
-    matrix->N = cols;
-    matrix->nnz = nnz;
+    matrix->M = rows; matrix->N = cols; matrix->nnz = nnz;
 
-    // Temporary storage for Coordinate (COO) data
-    int *coo_rows = (int *)malloc(nnz * sizeof(int));
-    int *coo_cols = (int *)malloc(nnz * sizeof(int));
-    float *coo_vals = (float *)malloc(nnz * sizeof(float));
+    int *coo_rows = malloc(nnz * sizeof(int));
+    int *coo_cols = malloc(nnz * sizeof(int));
+    float *coo_vals = malloc(nnz * sizeof(float));
 
-    // Pass 1: Read all non-zero entries from the file
     for (int i = 0; i < nnz; i++) {
-        double val; 
+        double val;
         fscanf(f, "%d %d %lf", &coo_rows[i], &coo_cols[i], &val);
-        // Adjust for 1-based indexing used in Matrix Market files
-        coo_rows[i] -= 1; 
-        coo_cols[i] -= 1;
+        coo_rows[i] -= 1; coo_cols[i] -= 1;
         coo_vals[i] = (float)val;
     }
     fclose(f);
 
-    // Allocate final CSR arrays
-    matrix->row_ptr = (int *)calloc((rows + 1), sizeof(int));
-    matrix->col_idx = (int *)malloc(nnz * sizeof(int));
-    matrix->values = (float *)malloc(nnz * sizeof(float));
+    matrix->row_ptr = calloc((rows + 1), sizeof(int));
+    matrix->col_idx = malloc(nnz * sizeof(int));
+    matrix->values = malloc(nnz * sizeof(float));
 
-    // Pass 2a: Count elements per row to build the histogram (row_ptr)
     for (int i = 0; i < nnz; i++) matrix->row_ptr[coo_rows[i] + 1]++;
-    
-    // Pass 2b: Cumulative sum to transform counts into actual row offsets
     for (int i = 0; i < rows; i++) matrix->row_ptr[i + 1] += matrix->row_ptr[i];
 
-    // Pass 2c: Map the COO entries to their specific locations in CSR arrays
-    // Use temp_ptr to keep track of the current insertion point for each row
-    int *temp_ptr = (int *)malloc(rows * sizeof(int));
+    int *temp_ptr = malloc(rows * sizeof(int));
     memcpy(temp_ptr, matrix->row_ptr, rows * sizeof(int));
-    
     for (int i = 0; i < nnz; i++) {
         int r = coo_rows[i];
-        int dest = temp_ptr[r]++; // Move insertion point forward as we fill
+        int dest = temp_ptr[r]++;
         matrix->col_idx[dest] = coo_cols[i];
         matrix->values[dest] = coo_vals[i];
     }
-
-    // Cleanup temporary memory
-    free(coo_rows); 
-    free(coo_cols); 
-    free(coo_vals); 
-    free(temp_ptr);
+    free(coo_rows); free(coo_cols); free(coo_vals); free(temp_ptr);
 }
 
-/**
- * Loads a sparse matrix from a Matrix Market (.mtx) file directly into COO format.
- * Converts 1-based indexing to 0-based indexing.
- */
 void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix) {
     FILE *f = fopen(filename, "r");
-    if (!f) {
-        fprintf(stderr, "Error: could not open file %s\n", filename);
-        exit(1);
-    }
-
+    if (!f) { fprintf(stderr, "Error opening %s\n", filename); exit(1); }
     char line[1024];
+    while (fgets(line, sizeof(line), f) && line[0] == '%');
+    sscanf(line, "%d %d %d", &matrix->M, &matrix->N, &matrix->nnz);
 
-    // Skip header/comments
-    while (fgets(line, sizeof(line), f)) {
-        if (line[0] != '%') break;
-    }
+    matrix->rows = malloc(matrix->nnz * sizeof(int));
+    matrix->cols = malloc(matrix->nnz * sizeof(int));
+    matrix->values = malloc(matrix->nnz * sizeof(float));
 
-    // Read dimensions
-    int rows, cols, nnz;
-    sscanf(line, "%d %d %d", &rows, &cols, &nnz);
-
-    matrix->M = rows;
-    matrix->N = cols;
-    matrix->nnz = nnz;
-
-    // Allocate COO arrays
-    matrix->rows = (int *)malloc(nnz * sizeof(int));
-    matrix->cols = (int *)malloc(nnz * sizeof(int));
-    matrix->values = (float *)malloc(nnz * sizeof(float));
-
-    // Read entries
-    for (int i = 0; i < nnz; i++) {
+    for (int i = 0; i < matrix->nnz; i++) {
         double val;
         fscanf(f, "%d %d %lf", &matrix->rows[i], &matrix->cols[i], &val);
-
-        // Convert to 0-based indexing
-        matrix->rows[i] -= 1;
-        matrix->cols[i] -= 1;
+        matrix->rows[i] -= 1; matrix->cols[i] -= 1;
         matrix->values[i] = (float)val;
     }
-
     fclose(f);
 }

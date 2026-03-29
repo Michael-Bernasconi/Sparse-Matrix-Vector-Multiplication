@@ -1,41 +1,33 @@
 #ifndef SPMV_FORMATS_H
 #define SPMV_FORMATS_H
 
-/**
- * Compressed Sparse Row (CSR) Matrix Format.
- * Highly efficient for row-based access and matrix-vector multiplication.
- */
+// Common Benchmark Configuration
+#define WARMUP_ITERATIONS 20
+#define BENCHMARK_ITERATIONS 500
+
 typedef struct {
-    int M, N;       // Dimensions of the matrix (M rows, N columns)
-    int nnz;        // Number of Non-Zero elements
-    int *row_ptr;   // Row pointers: array of size M+1 (offsets into col_idx/values)
-    int *col_idx;   // Column indices of non-zero elements: array of size nnz
-    float *values;  // Actual values of non-zero elements: array of size nnz
+    int M, N, nnz;
+    int *row_ptr, *col_idx;
+    float *values;
 } CSRMatrix;
 
-/**
- * Coordinate (COO) Matrix Format.
- * Simple format often used as an intermediate step for loading data.
- */
 typedef struct {
-    int M, N;       // Dimensions of the matrix (M rows, N columns)
-    int nnz;        // Number of Non-Zero elements
-    int *rows;      // Row index for every non-zero element: array of size nnz
-    int *cols;      // Column index for every non-zero element: array of size nnz
-    float *values;  // Actual values of non-zero elements: array of size nnz
+    int M, N, nnz;
+    int *rows, *cols;
+    float *values;
 } COOMatrix;
 
-/* --- C Linkage Wrapper for C++ Compatibility --- */
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * Loads a matrix from a Matrix Market (.mtx) file and converts it to CSR format.
- * @param filename Path to the .mtx file.
- * @param matrix   Pointer to a CSRMatrix struct to be populated.
- */
+// Loader functions
 void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix);
+void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix);
+
+// Utility functions for benchmarking
+void fill_random_vector(float *vec, int n);
+double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char* format);
 
 #ifdef __cplusplus
 }

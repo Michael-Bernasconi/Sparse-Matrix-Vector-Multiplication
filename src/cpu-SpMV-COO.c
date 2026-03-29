@@ -1,26 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "spmv_formats.h"
 #include "my_time_lib.h"
 
 /**
  * CPU Implementation of Sparse Matrix-Vector Multiplication (SpMV) using COO format.
  * Computes y = A * x, where A is in Coordinate (COO) format.
+ * This implementation includes a manual reset of the output vector y.
  */
 void spmv_coo_cpu(const COOMatrix *mat, const float *x, float *y) {
-    // Initialize output vector
-    for (int i = 0; i < mat->M; i++) {
-        y[i] = 0.0f;
-    }
-
-    // Perform SpMV
+    // Perform SpMV: y[row] += value * x[col]
     for (int i = 0; i < mat->nnz; i++) {
         y[mat->rows[i]] += mat->values[i] * x[mat->cols[i]];
     }
 }
 
 int main(int argc, char **argv) {
-    // Check input
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <matrix_file.mtx>\n", argv[0]);
         return 1;
@@ -30,7 +26,7 @@ int main(int argc, char **argv) {
     COOMatrix mat;
     load_matrix_market_to_coo(argv[1], &mat);
 
-    // Allocate vectors
+    // Allocate memory for vectors
     float *x = (float*)malloc(mat.N * sizeof(float));
     float *y = (float*)malloc(mat.M * sizeof(float));
 
@@ -39,31 +35,36 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // Initialize x
-    for (int i = 0; i < mat.N; i++) {
-        x[i] = 1.0f;
+    // Initialize vector x using the common utility function
+    fill_random_vector(x, mat.N);
+
+    // --- WARM-UP PHASE ---
+    // Execute multiple times to stabilize CPU frequency and prime caches
+    for (int i = 0; i < WARMUP_ITERATIONS; i++) {
+        memset(y, 0, mat.M * sizeof(float));
+        spmv_coo_cpu(&mat, x, y);
     }
 
-    // Warm-up
-    spmv_coo_cpu(&mat, x, y);
-
-    // Benchmark
+    // --- BENCHMARK PHASE ---
     TIMER_DEF(0);
     TIMER_START(0);
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
+        // Reset output vector every iteration to ensure consistent work
+        memset(y, 0, mat.M * sizeof(float));
         spmv_coo_cpu(&mat, x, y);
     }
 
     TIMER_STOP(0);
 
-    // Compute average time
-    double avg_s = (TIMER_ELAPSED(0) / 1e6) / 100.0;
+    // Performance calculations
+    double avg_time_s = (TIMER_ELAPSED(0) / 1e6) / BENCHMARK_ITERATIONS;
+    double gflops = (2.0 * mat.nnz) / (avg_time_s * 1e9);
+    double bw = calculate_bandwidth(mat.M, mat.N, mat.nnz, avg_time_s, "COO");
 
-    // GFLOPS calculation
-    double gflops = (2.0 * mat.nnz) / (avg_s * 1e9);
-
-    printf("CPU COO -> Time: %fs, GFLOPS: %f\n", avg_s, gflops);
+    printf("\n--- CPU COO Benchmark ---\n");
+    printf("Matrix: %s (%d x %d, nnz: %d)\n", argv[1], mat.M, mat.N, mat.nnz);
+    printf("Avg Time: %e s | GFLOPS: %.4f | BW: %.4f GB/s\n", avg_time_s, gflops, bw);
 
     // Cleanup
     free(x);
