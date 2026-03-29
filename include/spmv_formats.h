@@ -1,9 +1,19 @@
 #ifndef SPMV_FORMATS_H
 #define SPMV_FORMATS_H
 
-// Common Benchmark Configuration
-#define WARMUP_ITERATIONS 20
-#define BENCHMARK_ITERATIONS 500
+// --- CONFIG BENCHMARK ---
+// Usiamo #ifndef: se il valore non viene passato dal Makefile, 
+// allora usa i valori di default (20 e 500).
+
+#ifndef WARMUP_ITERATIONS
+    #define WARMUP_ITERATIONS 20
+#endif
+
+#ifndef BENCHMARK_ITERATIONS
+    #define BENCHMARK_ITERATIONS 500
+#endif
+
+// --- STRUTTURE DATI ---
 
 typedef struct {
     int M, N, nnz;
@@ -21,16 +31,18 @@ typedef struct {
 extern "C" {
 #endif
 
-// Loader functions
+// --- FUNZIONI UTILI ---
+
+// Caricamento matrici
 void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix);
 void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix);
+
+// Calcoli di performance
 double calculate_gflops(int nnz, double avg_time_s);
 double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char* format);
-void fill_random_vector(float *vec, int n);
 
-// Utility functions for benchmarking
+// Inizializzazione vettori
 void fill_random_vector(float *vec, int n);
-double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char* format);
 
 #ifdef __cplusplus
 }

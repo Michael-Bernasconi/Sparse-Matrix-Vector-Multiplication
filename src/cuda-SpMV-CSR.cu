@@ -98,6 +98,9 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
     double avg_time_s = (ms / 1000.0) / BENCHMARK_ITERATIONS;
 
+    float check;
+    CUDA_CHECK(cudaMemcpy(&check, d_y, sizeof(float), cudaMemcpyDeviceToHost));
+
     // Using utility functions for consistency
     double gflops = calculate_gflops(nnz, avg_time_s);
     double bw = calculate_bandwidth(M, A.N, nnz, avg_time_s, "CSR");

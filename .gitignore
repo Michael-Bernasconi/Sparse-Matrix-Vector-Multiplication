@@ -25,4 +25,5 @@ data/*.zip
 *.nvvp
 *.nsys-rep
 *.log
+*.txt
 Notes.md

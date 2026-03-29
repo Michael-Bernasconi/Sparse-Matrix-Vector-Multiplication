@@ -34,6 +34,11 @@ int main(int argc, char **argv) {
     float *x = (float*)malloc(mat.N * sizeof(float));
     float *y = (float*)malloc(mat.M * sizeof(float));
     
+    if (!x || !y) {
+        fprintf(stderr, "Memory allocation failed\n");
+        return 1;
+    }
+
     // Initialize vector x using the common utility function
     fill_random_vector(x, mat.N);
 
@@ -56,7 +61,7 @@ int main(int argc, char **argv) {
 
     TIMER_STOP(0);
 
-    // Performance calculations using utility functions
+    // Performance calculations
     double avg_time_s = (TIMER_ELAPSED(0) / 1e6) / BENCHMARK_ITERATIONS;
     double gflops = calculate_gflops(mat.nnz, avg_time_s);
     double bw = calculate_bandwidth(mat.M, mat.N, mat.nnz, avg_time_s, "CSR");
