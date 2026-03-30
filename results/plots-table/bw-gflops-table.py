@@ -86,7 +86,5 @@ def extract_and_save():
     df_bw = df.pivot(index='Matrix', columns='Config', values='BW')[cols]
     df_bw.to_csv('benchmark_bandwidth.csv')
 
-    print("FATTO! I file 'benchmark_gflops.csv' e 'benchmark_bandwidth.csv' sono stati creati correttamente.")
-
 if __name__ == "__main__":
     extract_and_save()
