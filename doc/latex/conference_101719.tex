@@ -15,18 +15,17 @@
 \title{Performance Analysis of Sparse Matrix-Vector Multiplication (SpMV) on CPU and GPU: A Comparative Study of COO and CSR Formats\\
 }
 \author{\IEEEauthorblockN{Michael Bernasconi}
+\textit{ID Student: 267681}\\
+michael.bernasconi@studenti.unitn.it \\
+\url{https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication}
 \IEEEauthorblockA{\textit{Department of Information Engineering and Computer Science} \\
 \textit{University of Trento}\\
-Trento, Italy \\
-michael.bernasconi@studenti.unitn.it \\
-\url{https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication}}
+}
 }
 \maketitle
 
 \begin{abstract}
-This document is a model and instructions for \LaTeX.
-This and the IEEEtran.cls file define the components of your paper [title, text, heads, etc.]. *CRITICAL: Do Not Use Symbols, Special Characters, Footnotes, 
-or Math in Paper Title or Abstract.
+This paper presents the implementation and performance analysis of the Sparse Matrix-Vector Multiplication (SpMV) operation on heterogeneous architectures. The study compares the efficiency of two storage formats, Compressed Sparse Row (CSR) and Coordinate (COO), evaluating their impact on multi-core systems using OpenMP and on graphical accelerators via CUDA. Experimental results, obtained across various real-world matrices from the Matrix Market suite, highlight that memory bandwidth is the primary bottleneck for this type of computation. The analysis demonstrates that the GPU approach offers significant speedups compared to the CPU, with performance variations correlated to the matrix density and sparsity structure. Finally, result validation and the impact of cache misses on the overall efficiency of the implemented solutions are discussed
 \end{abstract}
 
 \begin{IEEEkeywords}
