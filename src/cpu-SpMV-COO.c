@@ -21,6 +21,7 @@ void spmv_coo_cpu(const COOMatrix *mat, const float *x, float *y) {
         // mat->rows[i]: destination row index
         // mat->cols[i]: index for the input vector x
         // mat->values[i]: the non-zero value
+        #pragma omp atomic //to avoid RACE CONDITIONS
         y[mat->rows[i]] += mat->values[i] * x[mat->cols[i]];
     }
 }
