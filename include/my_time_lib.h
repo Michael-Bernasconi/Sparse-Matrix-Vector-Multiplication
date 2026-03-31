@@ -38,13 +38,10 @@
     } while (0);
 
 /* --- Statistical Function Prototypes --- */
-
 /** Returns the geometric mean of an array 'v' of length 'len' */
 double geometric_mean(double *v, int len);
-
 /** Returns the arithmetic mean of an array 'v' of length 'len' */
 double arithmetic_mean(double *v, int len);
-
 /** Returns the standard deviation (sigma) given an array 'v' and its mean 'mu' */
 double sigma_fn_sol(double *v, double mu, int len);
 

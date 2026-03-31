@@ -5,7 +5,7 @@
 #include "spmv_formats.h"
 
 /**
- * REPRODUCIBILITY: Fills a vector with random float values using a fixed seed.
+ * Reproducibility: Fills a vector with random float values using a fixed seed.
  * This ensures that the input vector x is identical across CPU and GPU tests.
  */
 void fill_random_vector(float *vec, int n) {

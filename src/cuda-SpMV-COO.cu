@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaMemcpy(d_x, h_x, mat.N * sizeof(float), cudaMemcpyHostToDevice));
 
     // --- 3. EXECUTION CONFIGURATION ---
-    // We use a fixed block size of 256 threads, a common "sweet spot" for modern GPUs.
+    // I use a fixed block size of 256 threads, a common "sweet spot" for modern GPUs.
     // The number of blocks is calculated to cover all non-zero elements (nnz).
     int blockSize = 256;
     int gridSize = (nnz + blockSize - 1) / blockSize;
