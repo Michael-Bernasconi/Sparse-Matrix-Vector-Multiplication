@@ -16,7 +16,7 @@
  */
 void spmv_coo_cpu(const COOMatrix *mat, const float *x, float *y) {
     // Iterate through all non-zero elements
-    #pragma omp parallel for
+    #pragma omp parallel for    //multi-core
     for (int i = 0; i < mat->nnz; i++) {
         // mat->rows[i]: destination row index
         // mat->cols[i]: index for the input vector x
@@ -84,6 +84,7 @@ int main(int argc, char **argv) {
     printf("Avg Time: %e s\n", avg_time_s);
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
+    printf("Check   : %f (First element of y)\n", y[0]);
 
     // --- CLEANUP ---
     // Free allocated memory to prevent leaks

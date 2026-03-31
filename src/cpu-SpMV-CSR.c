@@ -14,7 +14,7 @@
  * the values and col_idx arrays.
  */
 void spmv_csr_cpu(const CSRMatrix *mat, const float *x, float *y) {
-    #pragma omp parallel for
+    #pragma omp parallel for //multi-core
     // Iterate over each row of the matrix
     for (int i = 0; i < mat->M; i++) {
         float sum = 0.0f;
@@ -95,6 +95,7 @@ int main(int argc, char **argv) {
     printf("Avg Time: %e s\n", avg_time_s);
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
+    printf("Check   : %f (First element of y)\n", y[0]);
 
     // --- CLEANUP ---
     // Free allocated memory to avoid leaks
