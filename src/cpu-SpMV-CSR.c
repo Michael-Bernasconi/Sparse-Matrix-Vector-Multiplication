@@ -22,7 +22,7 @@ void spmv_csr_cpu(const CSRMatrix *mat, const float *x, float *y) {
         // Boundaries of the current row in the packed arrays
         int row_start = mat->row_ptr[i];
         int row_end   = mat->row_ptr[i+1];
-
+        //is not necessary in this case --> omp atomic to avoid RACE CONDITIONS
         // Dot product between the sparse row and the dense vector x
         for (int j = row_start; j < row_end; j++) {
             // values[j] is the non-zero element, col_idx[j] is its column position
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     
     // Structure to hold the sparse matrix in Compressed Sparse Row format
     CSRMatrix mat;
-    // Utility function to parse Matrix Market file and convert it to CSR
+    // Utility function to parse Matrix Market file and convert it to CSR structure
     load_matrix_market_to_csr(argv[1], &mat);
 
     // Memory allocation for the input vector (x) and output vector (y)
@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // Populate vector x with random values to simulate real computation
+    // Initialize the dense vector x with random values
     fill_random_vector(x, mat.N);
 
     // --- WARM-UP PHASE ---
@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 
     TIMER_STOP(0);
 
-    // --- PERFORMANCE ANALYSIS ---
+    // --- PERFORMANCE CALCULATIONS ---
     // Convert elapsed microseconds to average seconds per iteration
     double avg_time_s = (TIMER_ELAPSED(0) / 1e6) / BENCHMARK_ITERATIONS;
     

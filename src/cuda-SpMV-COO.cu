@@ -37,6 +37,7 @@ __global__ void spmv_coo_kernel(int nnz, const int *rows, const int *cols,
     // Boundary check to prevent illegal memory access if nnz is not a multiple of blockSize
     if (i < nnz) {
         // Atomic addition to global memory ensures correct accumulation of partial products
+        // __ldg() hint for the compiler to use the Read-Only Data Cache
         atomicAdd(&y[rows[i]], __ldg(&vals[i]) * __ldg(&x[cols[i]]));
     }
 }
@@ -48,7 +49,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // Load sparse matrix into host memory (Coordinate format)
+    // Load sparse matrix into host memory COO format
     COOMatrix mat;
     load_matrix_market_to_coo(argv[1], &mat);
     int nnz = mat.nnz;
@@ -108,7 +109,7 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaEventRecord(stop));
     CUDA_CHECK(cudaEventSynchronize(stop));
 
-    // --- PERFORMANCE EVALUATION ---
+    // --- PERFORMANCE CALCULATIONS ---
     float ms = 0;
     CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
     // Calculate average execution time in seconds
