@@ -3,6 +3,7 @@
 #include <string.h>
 #include "spmv_formats.h"
 #include "my_time_lib.h"
+#include <omp.h>
 
 /**
  * CPU Implementation of Sparse Matrix-Vector Multiplication (SpMV) using CSR format.
@@ -13,6 +14,7 @@
  * the values and col_idx arrays.
  */
 void spmv_csr_cpu(const CSRMatrix *mat, const float *x, float *y) {
+    #pragma omp parallel for
     // Iterate over each row of the matrix
     for (int i = 0; i < mat->M; i++) {
         float sum = 0.0f;

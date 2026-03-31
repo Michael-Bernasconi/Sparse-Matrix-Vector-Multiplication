@@ -3,6 +3,8 @@
 #include <string.h>
 #include "spmv_formats.h"
 #include "my_time_lib.h"
+#include <omp.h>
+
 
 /**
  * CPU Implementation of Sparse Matrix-Vector Multiplication (SpMV) using COO format.
@@ -14,6 +16,7 @@
  */
 void spmv_coo_cpu(const COOMatrix *mat, const float *x, float *y) {
     // Iterate through all non-zero elements
+    #pragma omp parallel for
     for (int i = 0; i < mat->nnz; i++) {
         // mat->rows[i]: destination row index
         // mat->cols[i]: index for the input vector x

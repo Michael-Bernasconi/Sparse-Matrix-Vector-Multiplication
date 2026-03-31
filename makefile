@@ -3,14 +3,14 @@ CC=gcc
 NVCC=nvcc
 
 # C Compiler Flags: Added -g for debug symbols (required for Valgrind)
-CFLAGS=-O3 -Wall -g
+CFLAGS=-O3 -Wall -g -fopenmp
 
 # CUDA Compiler Flags: Added -g and -lineinfo for profiling (required for Nsight Compute)
 # -arch=sm_89: Targets NVIDIA Ada Lovelace architecture (RTX 40 series)
 NVCCFLAGS=-O3 -arch=sm_89 --use_fast_math -Xptxas -v -g -lineinfo
 
 # Libraries and Include paths
-LIBS=-lm
+LIBS=-lm -lgomp
 INCLUDES=-I./include
 
 # Directory Structure
