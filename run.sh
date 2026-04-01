@@ -1,11 +1,9 @@
 #!/bin/bash
 
-# Configuration
+# Configuration (Percorsi Locali Relativi)
 BIN_DIR="./bin"
-MATRIX_DIR="/mnt/c/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/data"
-
-# NEW LOG DESTINATION
-LOG_DIR="/mnt/c/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/benchmark/flops-bw"
+MATRIX_DIR="./data"
+LOG_DIR="./results/benchmark/flops-bw"
 LOG_FILE="$LOG_DIR/report_flops-bw-cpu-gpu.log"
 
 # Create the results directory if it doesn't exist
@@ -23,7 +21,7 @@ echo ""
 
 # Check if matrix directory exists
 if [ ! -d "$MATRIX_DIR" ]; then
-    echo "Error: Directory $MATRIX_DIR not found."
+    echo "Error: Directory $MATRIX_DIR not found. (Assicurati di mettere i file .mtx in una cartella chiamata 'data')"
     exit 1
 fi
 
@@ -33,6 +31,7 @@ echo "------------------------------------------------" >> "$LOG_FILE"
 
 # 2. Iterate through every .mtx file in the folder
 for matrix in "$MATRIX_DIR"/*.mtx; do
+    # Controllo di sicurezza se la cartella è vuota
     [ -e "$matrix" ] || { echo "No .mtx files found in $MATRIX_DIR"; exit 1; }
 
     matrix_name=$(basename "$matrix")
@@ -42,8 +41,15 @@ for matrix in "$MATRIX_DIR"/*.mtx; do
     echo "=========================================================="
     echo "Matrix: $matrix_name" >> "$LOG_FILE"
 
-    # List of executables to run
-    executables=("cpu-SpMV-CSR" "cpu-SpMV-COO" "cuda-SpMV-CSR" "cuda-SpMV-COO")
+    # List of executables to run (AGGIORNATA CON I DUE NUOVI FILE)
+    executables=(
+        "cpu-SpMV-CSR" 
+        "cpu-SpMV-COO" 
+        "cuda-SpMV-CSR" 
+        "cuda-SpMV-COO"
+        "cuda-SpMV-CSR-Vector"
+        "cuda-SpMV-cuSPARSE"
+    )
 
     for exe in "${executables[@]}"; do
         if [ -f "$BIN_DIR/$exe" ]; then
@@ -69,5 +75,5 @@ for matrix in "$MATRIX_DIR"/*.mtx; do
     echo ""
 done
 
-echo "Benchmarks finished. Detailed logs saved in Windows at:"
-echo "C:\Users\micha\Documents\GitHub\Sparse-Matrix-Vector-Multiplication\results\benchmark_results.log"
+echo "Benchmarks finished. Detailed logs saved locally at:"
+echo "$LOG_FILE"

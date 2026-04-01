@@ -11,6 +11,7 @@ NVCCFLAGS=-O3 -arch=sm_89 --use_fast_math -Xptxas -v -g -lineinfo
 
 # Libraries and Include paths
 LIBS=-lm -lgomp
+CUSPARSE_LIBS=-lcusparse
 INCLUDES=-I./include
 
 # Directory Structure
@@ -18,11 +19,13 @@ BIN_FOLDER := bin
 OBJ_FOLDER := obj
 SRC_FOLDER := src
 
-# Executable Targets
+# Executable Targets (Aggiunti i due nuovi)
 TARGETS = $(BIN_FOLDER)/cpu-SpMV-COO \
           $(BIN_FOLDER)/cpu-SpMV-CSR \
           $(BIN_FOLDER)/cuda-SpMV-COO \
-          $(BIN_FOLDER)/cuda-SpMV-CSR
+          $(BIN_FOLDER)/cuda-SpMV-CSR \
+          $(BIN_FOLDER)/cuda-SpMV-CSR-Vector \
+          $(BIN_FOLDER)/cuda-SpMV-cuSPARSE
 
 # Default target
 all: $(TARGETS)
@@ -62,6 +65,17 @@ $(BIN_FOLDER)/cuda-SpMV-COO: $(SRC_FOLDER)/cuda-SpMV-COO.cu $(OBJ_FOLDER)/my_tim
 $(BIN_FOLDER)/cuda-SpMV-CSR: $(SRC_FOLDER)/cuda-SpMV-CSR.cu $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
 	@mkdir -p $(BIN_FOLDER)
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(INCLUDES) $(LIBS)
+
+# --- NUOVI GPU Executables ---
+
+$(BIN_FOLDER)/cuda-SpMV-CSR-Vector: $(SRC_FOLDER)/cuda-SpMV-CSR-Vector.cu $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
+	@mkdir -p $(BIN_FOLDER)
+	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(INCLUDES) $(LIBS)
+
+# NOTA: Qui viene passata la variabile $(CUSPARSE_LIBS) al linker
+$(BIN_FOLDER)/cuda-SpMV-cuSPARSE: $(SRC_FOLDER)/cuda-SpMV-cuSPARSE.cu $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
+	@mkdir -p $(BIN_FOLDER)
+	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(INCLUDES) $(LIBS) $(CUSPARSE_LIBS)
 
 # --- Utilities ---
 

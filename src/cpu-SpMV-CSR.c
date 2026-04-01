@@ -22,7 +22,8 @@ void spmv_csr_cpu(const CSRMatrix *mat, const float *x, float *y) {
         // Boundaries of the current row in the packed arrays
         int row_start = mat->row_ptr[i];
         int row_end   = mat->row_ptr[i+1];
-        //is not necessary in this case --> omp atomic to avoid RACE CONDITIONS
+        //There is no need for omp atomic since each thread is assigned a unique row index i. 
+        //This prevents write conflicts and ensures there are no race conditions on the output vector y.
         // Dot product between the sparse row and the dense vector x
         for (int j = row_start; j < row_end; j++) {
             // values[j] is the non-zero element, col_idx[j] is its column position
