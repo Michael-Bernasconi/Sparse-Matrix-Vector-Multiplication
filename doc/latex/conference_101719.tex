@@ -14,9 +14,8 @@
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
 
-\title{Performance Analysis of Sparse Matrix-Vector Multiplication (SpMV) on CPU and GPU: A Comparative Study of COO and CSR Formats\\
-}
-\author{\IEEEauthorblockN{Michael Bernasconi}
+\title{Performance Analysis of Sparse Matrix-Vector Multiplication (SpMV)}
+\author{\IEEEauthorblockN{Michael Bernasconi}\\
 \textit{ID Student: 267681}\\
 \textit{michael.bernasconi@studenti.unitn.it} \\
 \url{https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication}
@@ -27,7 +26,7 @@
 \maketitle
 
 \begin{abstract}
-This paper presents the implementation and performance analysis of the Sparse Matrix-Vector Multiplication (SpMV) operation on heterogeneous architectures. The study compares the efficiency of two storage formats, Compressed Sparse Row (CSR) and Coordinate (COO), evaluating their impact on multi-core systems using OpenMP and on graphical accelerators via CUDA. Experimental results, obtained across various real-world matrices from the Matrix Market suite, highlight that memory bandwidth is the primary bottleneck for this type of computation. The analysis demonstrates that the GPU approach offers significant speedups compared to the CPU, with performance variations correlated to the matrix density and sparsity structure. Finally, result validation and the impact of cache misses on the overall efficiency of the implemented solutions are discussed
+----
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -35,20 +34,34 @@ component, formatting, style, styling, insert
 \end{IEEEkeywords}
 
 \section{Introduction}
-- Introduction – problem description, limits, proposals
-
+Problem statement, why SpMV matters, and the question your investigation
+addresses
 
 \section{Methodology}
-- Methodology - description of the algorithm, pseudo-code,
-
+Formats tested, CPU/GPU implementations, validation method,
+measurement methodology, and hardware/software environment
+\section{Dataset}
+Short characterization of the 10 SuiteSparse matrices and the random
+dense vector input.
 
 \section{Experimental Setup}
 - Experiments:
 - Hardware and software / library used / dataset 
 
 
-\section{Results and Discussion}
-- Plots describing the performance and the variationof theperformance.(e.g., x-axis matrix dimensions, y-axis effective-bandwidth)
+\section{Results}
+Plots/tables for runtime and FLOPS/GFLOP/s; optional memory/cache
+indicators
+\section{Discussion}
+Interpret the results in terms of format properties, matrix structure, and
+memory behavior
+\section{Conclusion}
+Main lessons learned, limitations, and practical takeaways.
+
+Practical interpretation: the strongest submissions will not simply say “kernel X is faster than kernel
+Y.” They will explain under which matrix characteristics and memory-access conditions that
+statement is true, and when it stops being true. For example, what is the load balancing? Do you
+have too many access in global memory? Your SMs are not fully utilized. Etc… etc.
 
 
 \section*{References}
