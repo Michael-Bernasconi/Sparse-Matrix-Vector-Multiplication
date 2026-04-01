@@ -21,7 +21,6 @@ data/*.zip
 .DS_Store
 
 # --- Report ---
-*.csv
 *.nvvp
 *.nsys-rep
 *.log
