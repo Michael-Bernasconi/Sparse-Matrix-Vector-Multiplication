@@ -2,13 +2,13 @@ import os
 import csv
 import numpy as np
 from scipy.io import mmread
-from scipy.sparse import issparse, csr_matrix
+from scipy.sparse import csr_matrix
 
-# Input and output file paths
+# Percorso della cartella contenente i file .mtx
 log_file_path = r'C:\Users\micha\Documents\GitHub\Sparse-Matrix-Vector-Multiplication\data'
 csv_file_path = 'info_dataset_results.csv'
 
-# List all .mtx files in the directory
+# Lista tutti i file .mtx nella directory
 files = [f for f in os.listdir(log_file_path) if f.endswith('.mtx')]
 
 with open(csv_file_path, mode='w', newline='') as csvfile:
@@ -21,17 +21,21 @@ with open(csv_file_path, mode='w', newline='') as csvfile:
         print(f"Processing: {file_name}...")
         
         try:
-            # Load the matrix from Matrix Market format
+            # 1. Carica la matrice (gestisce automaticamente la somma dei duplicati)
             matrix = mmread(full_path)
             
-            # Ensure the matrix is in CSR format for fast row-wise access
+            # 2. Converti in CSR per manipolazione efficiente
             if not isinstance(matrix, csr_matrix):
                 matrix = matrix.tocsr()
 
-            # Get the number of Non-Zeros (NNZ) for each row
+            # 3. PULIZIA: Rimuove gli zeri espliciti (fondamentale per far coincidere i NNZ col sito)
+            matrix.eliminate_zeros()
+            
+            # 4. Ottieni il numero di Non-Zero effettivi per riga
             nnz_per_row = matrix.getnnz(axis=1)
             
-            # Calculate Mean and Standard Deviation
+            # 5. Calcola Media e Deviazione Standard
+            # Usiamo matrix.nnz (che ora è pulito) per il valore totale
             avg_nnz = np.mean(nnz_per_row)
             std_nnz = np.std(nnz_per_row)
             
@@ -39,10 +43,11 @@ with open(csv_file_path, mode='w', newline='') as csvfile:
                 'Matrix Name': file_name.replace('.mtx', ''),
                 'Rows': matrix.shape[0],
                 'Columns': matrix.shape[1],
-                'NNZ': matrix.nnz,
+                'NNZ': matrix.nnz, # Questo valore ora corrisponderà al sito
                 'Average NNZ for rows': round(avg_nnz, 2),
                 'Dev Std Rows': round(std_nnz, 2)
             })
+            
         except Exception as e:
             print(f"Error processing {file_name}: {e}")
 
