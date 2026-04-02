@@ -3,14 +3,14 @@
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *  * Neither the name of NVIDIA CORPORATION nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of NVIDIA CORPORATION nor the names of its
+ * contributors may be used to endorse or promote products derived
+ * from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -31,11 +31,26 @@
 // std::system includes
 
 #include <cuda_runtime.h>
-#include <helper_cuda.h>
+// #include <helper_cuda.h> // Rimossa per compatibilità cluster
 
 #include <iostream>
 #include <memory>
 #include <string>
+#include <stdio.h>
+
+// Funzione di supporto inserita per sostituire la dipendenza da helper_cuda.h
+int _ConvertSMVer2Cores_Local(int major, int minor) {
+  switch (major) {
+    case 2: return (minor == 1) ? 48 : 32;
+    case 3: return 192;
+    case 5: return 128;
+    case 6: return (minor == 0) ? 64 : 128;
+    case 7: return 64;
+    case 8: return (minor == 0) ? 64 : 128;
+    case 9: return 128;
+    default: return 128;
+  }
+}
 
 int *pArgc = NULL;
 char **pArgv = NULL;
@@ -127,8 +142,8 @@ int main(int argc, char **argv) {
 
     printf("  (%03d) Multiprocessors, (%03d) CUDA Cores/MP:    %d CUDA Cores\n",
            deviceProp.multiProcessorCount,
-           _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor),
-           _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor) *
+           _ConvertSMVer2Cores_Local(deviceProp.major, deviceProp.minor),
+           _ConvertSMVer2Cores_Local(deviceProp.major, deviceProp.minor) *
                deviceProp.multiProcessorCount);
     printf(
         "  GPU Max Clock rate:                            %.0f MHz (%0.2f "
@@ -171,7 +186,7 @@ int main(int argc, char **argv) {
 #endif
 
     printf(
-        "  Maximum Texture Dimension Size (x,y,z)         1D=(%d), 2D=(%d, "
+        "  Maximum Texture Dimension Size (x,y,z)          1D=(%d), 2D=(%d, "
         "%d), 3D=(%d, %d, %d)\n",
         deviceProp.maxTexture1D, deviceProp.maxTexture2D[0],
         deviceProp.maxTexture2D[1], deviceProp.maxTexture3D[0],
@@ -262,7 +277,7 @@ int main(int argc, char **argv) {
     int gpu_p2p_count = 0;
 
     for (int i = 0; i < deviceCount; i++) {
-      checkCudaErrors(cudaGetDeviceProperties(&prop[i], i));
+      cudaGetDeviceProperties(&prop[i], i);
 
       // Only boards based on Fermi or later can support P2P
       if ((prop[i].major >= 2)
@@ -286,8 +301,7 @@ int main(int argc, char **argv) {
           if (gpuid[i] == gpuid[j]) {
             continue;
           }
-          checkCudaErrors(
-              cudaDeviceCanAccessPeer(&can_access_peer, gpuid[i], gpuid[j]));
+          cudaDeviceCanAccessPeer(&can_access_peer, gpuid[i], gpuid[j]);
           printf("> Peer access from %s (GPU%d) -> %s (GPU%d) : %s\n",
                  prop[gpuid[i]].name, gpuid[i], prop[gpuid[j]].name, gpuid[j],
                  can_access_peer ? "Yes" : "No");
