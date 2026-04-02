@@ -3,8 +3,8 @@
 # Configuration (Percorsi Locali Relativi)
 BIN_DIR="./bin"
 MATRIX_DIR="./data"
-LOG_DIR="./results/benchmark/flops-bw"
-LOG_FILE="$LOG_DIR/report_flops-bw-cpu-gpu.log"
+LOG_DIR="./results/benchmark/flops-bw-tts"
+LOG_FILE="$LOG_DIR/report_flops-bw-tts-cpu-gpu.log"
 
 # Create the results directory if it doesn't exist
 mkdir -p "$LOG_DIR"
