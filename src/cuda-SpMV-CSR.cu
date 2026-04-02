@@ -100,7 +100,6 @@ int main(int argc, char **argv) {
     // --- WARMUP PHASE ---
     // Execute multiple runs to stabilize hardware and prime caches
     for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-        CUDA_CHECK(cudaMemset(d_y, 0, M * sizeof(float)));
         spmv_csr_kernel<<<gridSize, blockSize>>>(M, d_row_ptr, d_col_idx, d_vals, d_x, d_y);
     }
     CUDA_CHECK(cudaDeviceSynchronize());
@@ -109,7 +108,6 @@ int main(int argc, char **argv) {
     // Measure time only for the compute kernel and output reset
     CUDA_CHECK(cudaEventRecord(start));
     for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-        CUDA_CHECK(cudaMemset(d_y, 0, M * sizeof(float)));
         spmv_csr_kernel<<<gridSize, blockSize>>>(M, d_row_ptr, d_col_idx, d_vals, d_x, d_y);
     }
     CUDA_CHECK(cudaEventRecord(stop));

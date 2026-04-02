@@ -108,9 +108,6 @@ int main(int argc, char **argv) {
 
     // --- WARMUP PHASE ---
     for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-        // We set y to 0 to match your strict testing environment, 
-        // even though beta = 0.0f would overwrite it anyway.
-        CUDA_CHECK(cudaMemset(d_y, 0, M * sizeof(float)));
         CUSPARSE_CHECK(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                     &alpha, matA, vecX, &beta, vecY, CUDA_R_32F,
                                     CUSPARSE_SPMV_ALG_DEFAULT, dBuffer));
@@ -120,7 +117,6 @@ int main(int argc, char **argv) {
     // --- BENCHMARK PHASE ---
     CUDA_CHECK(cudaEventRecord(start));
     for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-        CUDA_CHECK(cudaMemset(d_y, 0, M * sizeof(float)));
         CUSPARSE_CHECK(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                     &alpha, matA, vecX, &beta, vecY, CUDA_R_32F,
                                     CUSPARSE_SPMV_ALG_DEFAULT, dBuffer));

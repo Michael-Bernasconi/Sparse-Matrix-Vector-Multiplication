@@ -93,7 +93,6 @@ int main(int argc, char **argv) {
     // Run the kernel several times to stabilize GPU clock speeds and prime caches.
     for (int i = 0; i < WARMUP_ITERATIONS; i++) {
         // Reset output vector to zero before each calculation
-        CUDA_CHECK(cudaMemset(d_y, 0, M * sizeof(float)));
         spmv_coo_kernel<<<gridSize, blockSize>>>(nnz, d_rows, d_cols, d_vals, d_x, d_y);
     }
     // Synchronize to ensure warm-up is complete before starting the timer
