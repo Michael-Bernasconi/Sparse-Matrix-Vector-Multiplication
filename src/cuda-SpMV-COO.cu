@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 
 extern "C" {
     #include "spmv_formats.h"
@@ -43,6 +44,7 @@ __global__ void spmv_coo_kernel(int nnz, const int *rows, const int *cols,
 }
 
 int main(int argc, char **argv) {
+    double global_start = omp_get_wtime(); //start measure TTS
     // Verify command line arguments
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <matrix_file.mtx>\n", argv[0]);
@@ -115,10 +117,10 @@ int main(int argc, char **argv) {
     // Calculate average execution time in seconds
     double avg_time_s = (ms / 1000.0) / BENCHMARK_ITERATIONS;
     
-    // Throughput (GFLOPS) and Effective Bandwidth (GB/s)
+    // Throughput (GFLOPS), Effective Bandwidth (GB/s) and TTS
     double gflops = calculate_gflops(nnz, avg_time_s);
     double bw = calculate_bandwidth(M, mat.N, nnz, avg_time_s, "COO");
-
+    double tts = calculate_tts(global_start);
     // Copy the first element of the result back to Host for verification purposes
     float check;
     CUDA_CHECK(cudaMemcpy(&check, d_y, sizeof(float), cudaMemcpyDeviceToHost));
@@ -129,6 +131,7 @@ int main(int argc, char **argv) {
     printf("Avg Time: %e s\n", avg_time_s);
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
+    printf("TTS     : %.4f s\n", tts); 
     printf("Check   : %f (First element of y)\n", check);
 
     // --- CLEANUP ---

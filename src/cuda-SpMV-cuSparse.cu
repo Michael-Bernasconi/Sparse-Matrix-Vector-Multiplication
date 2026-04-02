@@ -2,6 +2,8 @@
 #include <cusparse.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
+
 
 extern "C" {
     #include "spmv_formats.h"
@@ -33,6 +35,7 @@ extern "C" {
     } while (0)
 
 int main(int argc, char **argv) {
+    double global_start = omp_get_wtime(); //start measure TTS
     // Command line argument check
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <matrix_file.mtx>\n", argv[0]);
@@ -133,9 +136,10 @@ int main(int argc, char **argv) {
     float check;
     CUDA_CHECK(cudaMemcpy(&check, d_y, sizeof(float), cudaMemcpyDeviceToHost));
 
-    // Calculate throughput and bandwidth using common utilities
+    // Throughput (GFLOPS), Effective Bandwidth (GB/s) and TTS
     double gflops = calculate_gflops(nnz, avg_time_s);
     double bw = calculate_bandwidth(M, A.N, nnz, avg_time_s, "CSR");
+    double tts = calculate_tts(global_start);
 
     // Display formatted results
     printf("\n--- cuSPARSE BASELINE Benchmark ---\n");
@@ -143,6 +147,7 @@ int main(int argc, char **argv) {
     printf("Avg Time: %e s\n", avg_time_s);
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
+    printf("TTS     : %.4f s\n", tts); 
     printf("Check   : %f (First element of y)\n", check);
 
     // --- CLEANUP ---
