@@ -63,7 +63,6 @@ int main(int argc, char **argv) {
     // 1. Prime the CPU caches (L1, L2, L3)
     // 2. Allow the OS/CPU to reach maximum clock frequency (Turbo Boost)
     for (int i = 0; i < WARMUP_ITERATIONS; i++) {
-        memset(y, 0, mat.M * sizeof(float));
         spmv_csr_cpu(&mat, x, y);
     }
 
@@ -73,8 +72,6 @@ int main(int argc, char **argv) {
     TIMER_START(0);
 
     for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-        // Reset y to ensure we are not accumulating results across iterations
-        memset(y, 0, mat.M * sizeof(float));
         spmv_csr_cpu(&mat, x, y);
     }
 
