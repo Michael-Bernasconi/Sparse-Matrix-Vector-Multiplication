@@ -51,10 +51,11 @@ void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix);
 /**
  * Performance Calculation Functions
  * Calculate throughput (GFLOPS) and memory bandwidth (GB/s).
+ * Calculate time to solution (TTS).
  */
 double calculate_gflops(int nnz, double avg_time_s);
 double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char* format);
-
+double calculate_tts(double start_time);
 /**
  * Vector Initialization
  * Fills a vector with random floating-point values for SpMV testing.

@@ -27,6 +27,7 @@ void spmv_coo_cpu(const COOMatrix *mat, const float *x, float *y) {
 }
 
 int main(int argc, char **argv) {
+    double global_start = omp_get_wtime(); //capture the start time immediatly to (TTS)
     // Validate command line arguments
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <matrix_file.mtx>\n", argv[0]);
@@ -62,7 +63,6 @@ int main(int argc, char **argv) {
     // Accurate timing measurement over several iterations
     TIMER_DEF(0);
     TIMER_START(0);
-
     for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
         // Reset output vector every iteration to simulate a fresh operation
         memset(y, 0, mat.M * sizeof(float));
@@ -75,9 +75,10 @@ int main(int argc, char **argv) {
     // Average execution time in seconds
     double avg_time_s = (TIMER_ELAPSED(0) / 1e6) / BENCHMARK_ITERATIONS;
     
-    // Calculate performance metrics (GFLOPS and Effective Bandwidth)
+    // Calculate performance metrics (GFLOPS, Effective Bandwidth and TTS)
     double gflops = calculate_gflops(mat.nnz, avg_time_s);
     double bw = calculate_bandwidth(mat.M, mat.N, mat.nnz, avg_time_s, "COO");
+    double tts = calculate_tts(global_start); 
 
     // Print results in the extended reporting format
     printf("\n--- CPU COO Benchmark ---\n");
@@ -85,6 +86,7 @@ int main(int argc, char **argv) {
     printf("Avg Time: %e s\n", avg_time_s);
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
+    printf("Time-to-Solution: %.4f s\n", tts);
     printf("Check   : %f (First element of y)\n", y[0]);
 
     // --- CLEANUP ---

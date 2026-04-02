@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 #include "spmv_formats.h"
+#include <omp.h>
 
 /**
  * Reproducibility: Fills a vector with random float values using a fixed seed.
@@ -49,6 +50,19 @@ double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char*
     }
 
     return (double)bytes / (avg_time_s * 1e9);
+}
+
+/**
+ * METRIC 3: TIME TO SOLUTION
+ * Calculates the total Time-to-Solution (TTS).
+ * TTS measures the "wall-clock" time from the beginning of the program 
+ * (including I/O and memory allocation) until the completion of the task.
+ * start_time = The timestamp recorded at the very start of main().
+ * return The elapsed time in seconds.
+ */
+double calculate_tts(double start_time) {
+    // Returns current wall-clock time minus the initial timestamp
+    return omp_get_wtime() - start_time;
 }
 
 /**

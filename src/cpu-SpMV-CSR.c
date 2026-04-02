@@ -35,6 +35,7 @@ void spmv_csr_cpu(const CSRMatrix *mat, const float *x, float *y) {
 }
 
 int main(int argc, char **argv) {
+    double global_start = omp_get_wtime(); //capture the start time immediatly to (TTS)
     // Basic command line argument validation
     if (argc < 2) { 
         printf("Usage: %s <matrix.mtx>\n", argv[0]); 
@@ -81,11 +82,10 @@ int main(int argc, char **argv) {
     // Convert elapsed microseconds to average seconds per iteration
     double avg_time_s = (TIMER_ELAPSED(0) / 1e6) / BENCHMARK_ITERATIONS;
     
-    // GFLOPS = (2 * NNZ) / (Time * 1e9)
+    // Calculate performance metrics (GFLOPS, Effective Bandwidth and TTS)
     double gflops = calculate_gflops(mat.nnz, avg_time_s);
-    
-    // Effective Bandwidth = Bytes Accessed / Time
     double bw = calculate_bandwidth(mat.M, mat.N, mat.nnz, avg_time_s, "CSR");
+    double tts = calculate_tts(global_start);
 
     // Formatted output for reporting
     printf("\n--- CPU CSR Benchmark ---\n");
@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
     printf("Avg Time: %e s\n", avg_time_s);
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
+    printf("Time-to-Solution: %.4f s\n", tts);
     printf("Check   : %f (First element of y)\n", y[0]);
 
     // --- CLEANUP ---
