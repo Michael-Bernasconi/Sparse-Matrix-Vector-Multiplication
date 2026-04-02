@@ -163,7 +163,7 @@ int main(int argc, char **argv) {
 
     // Throughput (GFLOPS), Effective Bandwidth (GB/s) and TTS
     double gflops = calculate_gflops(nnz, avg_time_s);
-    double bw = calculate_bandwidth(M, A.N, nnz, avg_time_s, "CSR-Vector");
+    double bw = calculate_bandwidth(M, A.N, nnz, avg_time_s, "CSR");
     double tts = calculate_tts(global_start);
 
     // Display formatted results
