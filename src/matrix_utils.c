@@ -4,6 +4,7 @@
 #include <time.h>
 #include "spmv_formats.h"
 #include <omp.h>
+#include <math.h>
 
 /**
  * Reproducibility: Fills a vector with random float values using a fixed seed.
@@ -63,6 +64,46 @@ double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char*
 double calculate_tts(double start_time) {
     // Returns current wall-clock time minus the initial timestamp
     return omp_get_wtime() - start_time;
+}
+
+
+/**
+ * Validates the SpMV results by comparing the test vector against a reference vector.
+ * This function uses Relative Error validation. 
+ * In parallel architectures (GPU, cuSPARSE, OpenMP), floating-point operations 
+ * are non-associative; changing the summation order leads to different rounding.
+ * For large values, an absolute epsilon (e.g., 1e-4) is too strict, while for 
+ * values near zero, a pure relative error would cause division by zero.
+ * ref =  The "Gold Standard" result (sequential CPU CSR).
+ * test = The result to be validated (GPU or optimized kernel).
+ * n  =   The number of elements in the vectors (M rows).
+ */
+void validate_results(const float *ref, const float *test, int n) {
+    int errors = 0;
+    const float rel_tolerance = 1e-3f; // 0.1% di tolleranza
+    const float abs_tolerance = 1e-5f; // Guard for values near zero
+
+    for (int i = 0; i < n; i++) {
+        float diff = fabsf(ref[i] - test[i]);
+        
+        // Use the maximum of the absolute reference or the guard to avoid division by zero
+        float max_val = fmaxf(fabsf(ref[i]), abs_tolerance);
+        
+        // Validation check based on relative error
+        if (diff / max_val > rel_tolerance) {
+            if (errors < 5) {
+                printf("Validation Error at index %d: Ref %f, Test %f (Rel Diff: %e)\n", 
+                        i, ref[i], test[i], diff / max_val);
+            }
+            errors++;
+        }
+    }
+
+    if (errors == 0) {
+        printf(">>> VALIDATION PASSED: All %d elements are within the tolerance (rel: 1e-4).\n", n);
+    } else {
+        printf(">>> VALIDATION FAILED: %d total errors found out of %d elements.\n", errors, n);
+    }
 }
 
 /**

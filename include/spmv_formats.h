@@ -62,6 +62,12 @@ double calculate_tts(double start_time);
  */
 void fill_random_vector(float *vec, int n);
 
+/**
+ * Rigorous validation between two result vectors.
+ * Returns 1 if valid, 0 if fail.
+ */
+void validate_results(const float *h_y_ref, const float *h_y_test, int M);
+
 #ifdef __cplusplus
 }
 #endif

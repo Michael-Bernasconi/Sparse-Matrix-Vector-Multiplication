@@ -3,10 +3,26 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
-
+#include <string.h> // Added for memset
 
 extern "C" {
     #include "spmv_formats.h"
+}
+
+/**
+ * Sequential version to provide the "Gold Standard" reference for results validation.
+ * Runs on the CPU using CSR format.
+ */
+void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
+    for (int i = 0; i < mat->M; i++) {
+        float sum = 0.0f;
+        int row_start = mat->row_ptr[i];
+        int row_end   = mat->row_ptr[i+1];
+        for (int j = row_start; j < row_end; j++) {
+            sum += mat->values[j] * x[mat->col_idx[j]];
+        }
+        y[i] = sum;
+    }
 }
 
 /**
@@ -23,7 +39,6 @@ extern "C" {
 
 /**
  * Standard cuSPARSE error checking macro.
- * Specifically checks the return values of cuSPARSE library functions.
  */
 #define CUSPARSE_CHECK(call) \
     do { \
@@ -36,7 +51,7 @@ extern "C" {
 
 int main(int argc, char **argv) {
     double global_start = omp_get_wtime(); //start measure TTS
-    // Command line argument check
+    
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <matrix_file.mtx>\n", argv[0]);
         return 1;
@@ -52,48 +67,49 @@ int main(int argc, char **argv) {
     float *h_x = (float*)malloc(A.N * sizeof(float));
     fill_random_vector(h_x, A.N);
 
-    // Device (GPU) pointers for matrix and vectors
+    // --- 1. REFERENCE GENERATION ---
+    float *h_y_ref = (float*)malloc(M * sizeof(float));
+    float *h_y_gpu = (float*)malloc(M * sizeof(float)); 
+    
+    // Compute the sequential result on CPU as ground truth
+    memset(h_y_ref, 0, M * sizeof(float));
+    spmv_csr_sequential(&A, h_x, h_y_ref);
+
+    // Device (GPU) pointers
     int *d_row_ptr, *d_col_idx;
     float *d_vals, *d_x, *d_y;
 
-    // --- 1. DEVICE MEMORY ALLOCATION ---
+    // --- 2. DEVICE MEMORY ALLOCATION ---
     CUDA_CHECK(cudaMalloc(&d_row_ptr, (M + 1) * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_col_idx, nnz * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_vals, nnz * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_x, A.N * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_y, M * sizeof(float)));
 
-    // --- 2. DATA TRANSFER (HOST TO DEVICE) ---
+    // --- 3. DATA TRANSFER (HOST TO DEVICE) ---
     CUDA_CHECK(cudaMemcpy(d_row_ptr, A.row_ptr, (M + 1) * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_col_idx, A.col_idx, nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_vals, A.values, nnz * sizeof(float), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_x, h_x, A.N * sizeof(float), cudaMemcpyHostToDevice));
 
-    // --- 3. CUSPARSE SETUP AND INITIALIZATION ---
-    // Initialize the cuSPARSE library handle
+    // --- 4. CUSPARSE SETUP AND INITIALIZATION ---
     cusparseHandle_t handle = NULL;
     CUSPARSE_CHECK(cusparseCreate(&handle));
 
-    // Create descriptors for the sparse matrix (A) and dense vectors (x, y)
     cusparseSpMatDescr_t matA;
     cusparseDnVecDescr_t vecX, vecY;
 
-    // Create sparse matrix A descriptor in CSR format
-    // We specify 32-bit integers (CUSPARSE_INDEX_32I) and 32-bit floats (CUDA_R_32F)
     CUSPARSE_CHECK(cusparseCreateCsr(&matA, M, A.N, nnz,
                                       d_row_ptr, d_col_idx, d_vals,
                                       CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
                                       CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F));
 
-    // Create dense vector descriptors
     CUSPARSE_CHECK(cusparseCreateDnVec(&vecX, A.N, d_x, CUDA_R_32F));
     CUSPARSE_CHECK(cusparseCreateDnVec(&vecY, M, d_y, CUDA_R_32F));
 
-    // Set SpMV constants: y = alpha * A * x + beta * y
     float alpha = 1.0f;
     float beta  = 0.0f;
 
-    // Determine the required buffer size for the cuSPARSE SpMV algorithm
     size_t bufferSize = 0;
     void *dBuffer = NULL;
     CUSPARSE_CHECK(cusparseSpMV_bufferSize(
@@ -101,10 +117,8 @@ int main(int argc, char **argv) {
         &alpha, matA, vecX, &beta, vecY, CUDA_R_32F,
         CUSPARSE_SPMV_ALG_DEFAULT, &bufferSize));
     
-    // Allocate the external buffer required by cuSPARSE
     CUDA_CHECK(cudaMalloc(&dBuffer, bufferSize));
 
-    // Initialize CUDA events for high-resolution timing
     cudaEvent_t start, stop;
     CUDA_CHECK(cudaEventCreate(&start));
     CUDA_CHECK(cudaEventCreate(&stop));
@@ -132,11 +146,12 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
     double avg_time_s = (ms / 1000.0) / BENCHMARK_ITERATIONS;
 
-    // Verification: copy first element back to Host to ensure correct computation
-    float check;
-    CUDA_CHECK(cudaMemcpy(&check, d_y, sizeof(float), cudaMemcpyDeviceToHost));
+    // --- VALIDATION PHASE ---
+    // Transfer the result from GPU back to Host
+    CUDA_CHECK(cudaMemcpy(h_y_gpu, d_y, M * sizeof(float), cudaMemcpyDeviceToHost));
+    // Verify results against CPU reference
+    validate_results(h_y_ref, h_y_gpu, M);
 
-    // Throughput (GFLOPS), Effective Bandwidth (GB/s) and TTS
     double gflops = calculate_gflops(nnz, avg_time_s);
     double bw = calculate_bandwidth(M, A.N, nnz, avg_time_s, "CSR");
     double tts = calculate_tts(global_start);
@@ -148,26 +163,29 @@ int main(int argc, char **argv) {
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
     printf("TTS     : %.4f s\n", tts); 
-    printf("Check   : %f (First element of y)\n", check);
+    printf("Check   : %f (First element of y)\n", h_y_gpu[0]);
 
     // --- CLEANUP ---
     CUDA_CHECK(cudaEventDestroy(start));
     CUDA_CHECK(cudaEventDestroy(stop));
-    
-    // Destroy cuSPARSE descriptors and handle
     CUSPARSE_CHECK(cusparseDestroySpMat(matA));
     CUSPARSE_CHECK(cusparseDestroyDnVec(vecX));
     CUSPARSE_CHECK(cusparseDestroyDnVec(vecY));
     CUSPARSE_CHECK(cusparseDestroy(handle));
 
-    // Free GPU memory
     CUDA_CHECK(cudaFree(dBuffer));
     CUDA_CHECK(cudaFree(d_row_ptr));
     CUDA_CHECK(cudaFree(d_col_idx));
     CUDA_CHECK(cudaFree(d_vals));
     CUDA_CHECK(cudaFree(d_x));
     CUDA_CHECK(cudaFree(d_y));
+    
     free(h_x);
+    free(h_y_ref);
+    free(h_y_gpu);
+    free(A.row_ptr);
+    free(A.col_idx);
+    free(A.values);
     
     return 0;
 }

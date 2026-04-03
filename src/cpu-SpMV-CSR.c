@@ -5,6 +5,19 @@
 #include "my_time_lib.h"
 #include <omp.h>
 
+// Sequential version to provide the "Gold Standard" reference for results validation
+void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
+    for (int i = 0; i < mat->M; i++) {
+        float sum = 0.0f;
+        int row_start = mat->row_ptr[i];
+        int row_end   = mat->row_ptr[i+1];
+        for (int j = row_start; j < row_end; j++) {
+            sum += mat->values[j] * x[mat->col_idx[j]];
+        }
+        y[i] = sum;
+    }
+}
+
 /**
  * CPU Implementation of Sparse Matrix-Vector Multiplication (SpMV) using CSR format.
  * Computes the operation: y = A * x
@@ -50,14 +63,21 @@ int main(int argc, char **argv) {
     // Memory allocation for the input vector (x) and output vector (y)
     float *x = (float*)malloc(mat.N * sizeof(float));
     float *y = (float*)malloc(mat.M * sizeof(float));
+    // Allocate memory for the reference vector to verify numerical correctness
+    float *y_ref = (float*)malloc(mat.M * sizeof(float));
     
-    if (!x || !y) {
+    if (!x || !y || !y_ref) {
         fprintf(stderr, "Critical: Memory allocation failed\n");
         return 1;
     }
 
     // Initialize the dense vector x with random values
     fill_random_vector(x, mat.N);
+
+    // --- REFERENCE GENERATION ---
+    // Compute the sequential result once to use as a ground truth for validation
+    memset(y_ref, 0, mat.M * sizeof(float));
+    spmv_csr_sequential(&mat, x, y_ref);
 
     // --- WARM-UP PHASE ---
     // Perform initial iterations to:
@@ -77,6 +97,10 @@ int main(int argc, char **argv) {
     }
 
     TIMER_STOP(0);
+
+    // --- VALIDATION PHASE ---
+    // Rigorous comparison between the parallel result and the sequential reference
+    validate_results(y_ref, y, mat.M);
 
     // --- PERFORMANCE CALCULATIONS ---
     // Convert elapsed microseconds to average seconds per iteration
@@ -100,6 +124,7 @@ int main(int argc, char **argv) {
     // Free allocated memory to avoid leaks
     free(x); 
     free(y); 
+    free(y_ref);
     free(mat.row_ptr); 
     free(mat.col_idx); 
     free(mat.values);

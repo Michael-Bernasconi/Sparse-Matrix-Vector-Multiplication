@@ -2,16 +2,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
-
+#include <string.h> // Added for memset
 
 extern "C" {
     #include "spmv_formats.h"
 }
 
 /**
+ * Sequential version to provide the "Gold Standard" reference for results validation.
+ * Runs on the CPU.
+ */
+void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
+    for (int i = 0; i < mat->M; i++) {
+        float sum = 0.0f;
+        int row_start = mat->row_ptr[i];
+        int row_end   = mat->row_ptr[i+1];
+        for (int j = row_start; j < row_end; j++) {
+            sum += mat->values[j] * x[mat->col_idx[j]];
+        }
+        y[i] = sum;
+    }
+}
+
+/**
  * Standard CUDA error checking macro.
- * Checks the return value of CUDA API calls and prints the error 
- * string along with the file and line number if a failure occurs.
  */
 #define CUDA_CHECK(call) \
     do { \
@@ -24,39 +38,26 @@ extern "C" {
 
 /**
  * CUDA CSR kernel: row-parallel implementation.
- * Thread Mapping: Each thread is responsible for calculating one full row 
- * of the result vector 'y'.
- * * Logic: 
- * The thread fetches its assigned row index, then loops through the 
- * non-zero elements of that row using the row_ptr array to find the 
- * start and end boundaries in values and col_idx.
  */
 __global__ void spmv_csr_kernel(int M, const int *row_ptr, const int *col_idx, 
                                 const float *vals, const float *x, float *y) {
-    // Determine the global row index for this thread
     int row = blockIdx.x * blockDim.x + threadIdx.x;
     
-    // Boundary check: ensure the thread is within the number of rows (M)
     if (row < M) {
         float sum = 0.0f;
-        // Fetch row boundaries from the row pointer array
         int row_start = row_ptr[row];
         int row_end   = row_ptr[row + 1];
         
-        // Accumulate products for all non-zero elements in this row
         for (int i = row_start; i < row_end; i++) {
-            // __ldg() hint for the compiler to use the Read-Only Data Cache
             sum += __ldg(&vals[i]) * __ldg(&x[col_idx[i]]);
         }
-        // Write the final result directly to the output vector
-        // No atomic operations needed as each thread writes to a unique index
         y[row] = sum;
     }
 }
 
 int main(int argc, char **argv) {
     double global_start = omp_get_wtime(); //start measure TTS
-    // Command line argument check
+    
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <matrix_file.mtx>\n", argv[0]);
         return 1;
@@ -72,43 +73,47 @@ int main(int argc, char **argv) {
     float *h_x = (float*)malloc(A.N * sizeof(float));
     fill_random_vector(h_x, A.N);
 
+    // --- 1. REFERENCE GENERATION ---
+    // Allocate host vectors for validation
+    float *h_y_ref = (float*)malloc(M * sizeof(float));
+    float *h_y_gpu = (float*)malloc(M * sizeof(float)); // Buffer to copy back GPU results
+    
+    // Compute the sequential result on CPU as ground truth
+    memset(h_y_ref, 0, M * sizeof(float));
+    spmv_csr_sequential(&A, h_x, h_y_ref);
+
     // Device (GPU) pointers for matrix and vectors
     int *d_row_ptr, *d_col_idx;
     float *d_vals, *d_x, *d_y;
 
-    // --- 1. DEVICE MEMORY ALLOCATION ---
-    // Note: row_ptr size is M+1 to account for the end-of-row boundary
+    // --- 2. DEVICE MEMORY ALLOCATION ---
     CUDA_CHECK(cudaMalloc(&d_row_ptr, (M + 1) * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_col_idx, nnz * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_vals, nnz * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_x, A.N * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_y, M * sizeof(float)));
 
-    // --- 2. DATA TRANSFER (HOST TO DEVICE) ---
+    // --- 3. DATA TRANSFER (HOST TO DEVICE) ---
     CUDA_CHECK(cudaMemcpy(d_row_ptr, A.row_ptr, (M + 1) * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_col_idx, A.col_idx, nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_vals, A.values, nnz * sizeof(float), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_x, h_x, A.N * sizeof(float), cudaMemcpyHostToDevice));
 
-    // --- 3. EXECUTION CONFIGURATION ---
-    // Grid size is based on the number of rows (M) since each thread processes a row
+    // --- 4. EXECUTION CONFIGURATION ---
     int blockSize = 256;
     int gridSize = (M + blockSize - 1) / blockSize;
 
-    // Initialize CUDA events for high-resolution timing
     cudaEvent_t start, stop;
     CUDA_CHECK(cudaEventCreate(&start));
     CUDA_CHECK(cudaEventCreate(&stop));
 
     // --- WARMUP PHASE ---
-    // Execute multiple runs to stabilize hardware and prime caches
     for (int i = 0; i < WARMUP_ITERATIONS; i++) {
         spmv_csr_kernel<<<gridSize, blockSize>>>(M, d_row_ptr, d_col_idx, d_vals, d_x, d_y);
     }
     CUDA_CHECK(cudaDeviceSynchronize());
 
     // --- BENCHMARK PHASE ---
-    // Measure time only for the compute kernel and output reset
     CUDA_CHECK(cudaEventRecord(start));
     for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
         spmv_csr_kernel<<<gridSize, blockSize>>>(M, d_row_ptr, d_col_idx, d_vals, d_x, d_y);
@@ -121,9 +126,11 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
     double avg_time_s = (ms / 1000.0) / BENCHMARK_ITERATIONS;
 
-    // Verification: copy first element back to Host to ensure correct computation
-    float check;
-    CUDA_CHECK(cudaMemcpy(&check, d_y, sizeof(float), cudaMemcpyDeviceToHost));
+    // --- VALIDATION PHASE ---
+    // Copy the full result back from GPU to Host for verification
+    CUDA_CHECK(cudaMemcpy(h_y_gpu, d_y, M * sizeof(float), cudaMemcpyDeviceToHost));
+    // Rigorous element-by-element validation against the CPU reference
+    validate_results(h_y_ref, h_y_gpu, M);
 
     // Throughput (GFLOPS), Effective Bandwidth (GB/s) and TTS
     double gflops = calculate_gflops(nnz, avg_time_s);
@@ -137,7 +144,7 @@ int main(int argc, char **argv) {
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
     printf("TTS     : %.4f s\n", tts); 
-    printf("Check   : %f (First element of y)\n", check);
+    printf("Check   : %f (First element of y)\n", h_y_gpu[0]);
 
     // --- CLEANUP ---
     CUDA_CHECK(cudaEventDestroy(start));
@@ -147,8 +154,13 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaFree(d_vals));
     CUDA_CHECK(cudaFree(d_x));
     CUDA_CHECK(cudaFree(d_y));
+    
     free(h_x);
-    // Note: matrix arrays (A.row_ptr, etc.) are freed during Matrix structure destruction if needed
+    free(h_y_ref);
+    free(h_y_gpu);
+    free(A.row_ptr);
+    free(A.col_idx);
+    free(A.values);
     
     return 0;
 }
