@@ -10,9 +10,11 @@
  * Reproducibility: Fills a vector with random float values using a fixed seed.
  * This ensures that the input vector x is identical across CPU and GPU tests.
  */
-void fill_random_vector(float *vec, int n) {
+void fill_random_vector(float *vec, int n)
+{
     srand(42); // Fixed seed for scientific reproducibility
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++)
+    {
         vec[i] = (float)rand() / RAND_MAX;
     }
 }
@@ -22,8 +24,10 @@ void fill_random_vector(float *vec, int n) {
  * Measures the raw computational throughput.
  * SpMV performs 2 operations (1 multiply, 1 add) per non-zero element.
  */
-double calculate_gflops(int nnz, double avg_time_s) {
-    if (avg_time_s <= 0) return 0;
+double calculate_gflops(int nnz, double avg_time_s)
+{
+    if (avg_time_s <= 0)
+        return 0;
     double total_flops = 2.0 * (double)nnz;
     return total_flops / (avg_time_s * 1e9);
 }
@@ -36,16 +40,21 @@ double calculate_gflops(int nnz, double avg_time_s) {
  * - Matrix values
  * - Input vector x and output vector y
  */
-double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char* format) {
-    if (avg_time_s <= 0) return 0;
+double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char *format)
+{
+    if (avg_time_s <= 0)
+        return 0;
     size_t bytes = 0;
 
-    if (strcmp(format, "CSR") == 0) {
-        // CSR: row_ptr (M+1 ints), col_idx (nnz ints), values (nnz floats) 
+    if (strcmp(format, "CSR") == 0)
+    {
+        // CSR: row_ptr (M+1 ints), col_idx (nnz ints), values (nnz floats)
         // + x vector (N floats) + y vector (M floats)
         bytes = (sizeof(int) * (M + 1 + nnz)) + (sizeof(float) * (nnz + N + M));
-    } else { 
-        // COO: rows (nnz ints), cols (nnz ints), values (nnz floats) 
+    }
+    else
+    {
+        // COO: rows (nnz ints), cols (nnz ints), values (nnz floats)
         // + x vector (N floats) + y vector (M floats)
         bytes = (sizeof(int) * (2 * nnz)) + (sizeof(float) * (nnz + N + M));
     }
@@ -56,52 +65,63 @@ double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char*
 /**
  * METRIC 3: TIME TO SOLUTION
  * Calculates the total Time-to-Solution (TTS).
- * TTS measures the "wall-clock" time from the beginning of the program 
+ * TTS measures the "wall-clock" time from the beginning of the program
  * (including I/O and memory allocation) until the completion of the task.
  * start_time = The timestamp recorded at the very start of main().
  * return The elapsed time in seconds.
  */
-double calculate_tts(double start_time) {
+double calculate_tts(double start_time)
+{
     // Returns current wall-clock time minus the initial timestamp
     return omp_get_wtime() - start_time;
 }
 
-
 /**
  * Validates the SpMV results by comparing the test vector against a reference vector.
- * This function uses Relative Error validation. 
- * In parallel architectures (GPU, cuSPARSE, OpenMP), floating-point operations 
+ * This function uses both Absolute and Relative Error validation.
+ * In parallel architectures (GPU, cuSPARSE, OpenMP), floating-point operations
  * are non-associative; changing the summation order leads to different rounding.
- * For large values, an absolute epsilon (e.g., 1e-4) is too strict, while for 
+ * For large values, an absolute epsilon is too strict, while for
  * values near zero, a pure relative error would cause division by zero.
  * ref =  The "Gold Standard" result (sequential CPU CSR).
  * test = The result to be validated (GPU or optimized kernel).
  * n  =   The number of elements in the vectors (M rows).
  */
-void validate_results(const float *ref, const float *test, int n) {
+void validate_results(const float *ref, const float *test, int n)
+{
     int errors = 0;
-    const float rel_tolerance = 1e-3f; // 0.1% di tolleranza
-    const float abs_tolerance = 1e-5f; // Guard for values near zero
+    const float rel_tolerance = 1e-3f; // 0.1% relative tolerance
+    const float abs_tolerance = 1e-4f; // Absolute tolerance guard for values near zero
 
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++)
+    {
         float diff = fabsf(ref[i] - test[i]);
-        
-        // Use the maximum of the absolute reference or the guard to avoid division by zero
-        float max_val = fmaxf(fabsf(ref[i]), abs_tolerance);
-        
-        // Validation check based on relative error
-        if (diff / max_val > rel_tolerance) {
-            if (errors < 5) {
-                printf("Validation Error at index %d: Ref %f, Test %f (Rel Diff: %e)\n", 
-                        i, ref[i], test[i], diff / max_val);
+        float abs_ref = fabsf(ref[i]);
+
+        // Calculate the relative error.
+        // Adding 1e-7f safely prevents division by zero for extremely small or zero values.
+        float rel_diff = diff / (abs_ref + 1e-7f);
+
+        // Validation check: it fails ONLY IF the difference exceeds BOTH absolute AND relative tolerances.
+        if (diff > abs_tolerance && rel_diff > rel_tolerance)
+        {
+            if (errors < 5)
+            {
+                printf("Validation Error at index %d: Ref %f, Test %f (Abs Diff: %e, Rel Diff: %e)\n",
+                       i, ref[i], test[i], diff, rel_diff);
             }
             errors++;
         }
     }
 
-    if (errors == 0) {
-        printf(">>> VALIDATION PASSED: All %d elements are within the tolerance (rel: 1e-4).\n", n);
-    } else {
+    if (errors == 0)
+    {
+        // Log dynamically reports the exact variables used, avoiding hardcoded text mismatch.
+        printf(">>> VALIDATION PASSED: All %d elements are within the tolerance (abs: %g, rel: %g).\n",
+               n, abs_tolerance, rel_tolerance);
+    }
+    else
+    {
         printf(">>> VALIDATION FAILED: %d total errors found out of %d elements.\n", errors, n);
     }
 }
@@ -109,22 +129,31 @@ void validate_results(const float *ref, const float *test, int n) {
 /**
  * Loads a Matrix Market file (.mtx) and converts it to CSR format.
  */
-void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix) {
+void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix)
+{
     FILE *f = fopen(filename, "r");
-    if (!f) { fprintf(stderr, "Error opening %s\n", filename); exit(1); }
+    if (!f)
+    {
+        fprintf(stderr, "Error opening %s\n", filename);
+        exit(1);
+    }
 
     char line[1024];
-    while (fgets(line, sizeof(line), f) && line[0] == '%');
+    while (fgets(line, sizeof(line), f) && line[0] == '%')
+        ;
 
     int rows, cols, nnz;
     sscanf(line, "%d %d %d", &rows, &cols, &nnz);
-    matrix->M = rows; matrix->N = cols; matrix->nnz = nnz;
+    matrix->M = rows;
+    matrix->N = cols;
+    matrix->nnz = nnz;
 
     int *coo_rows = malloc(nnz * sizeof(int));
     int *coo_cols = malloc(nnz * sizeof(int));
     float *coo_vals = malloc(nnz * sizeof(float));
 
-    for (int i = 0; i < nnz; i++) {
+    for (int i = 0; i < nnz; i++)
+    {
         double val;
         fscanf(f, "%d %d %lf", &coo_rows[i], &coo_cols[i], &val);
         coo_rows[i] -= 1; // Convert to 0-based indexing
@@ -138,38 +167,51 @@ void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix) {
     matrix->values = malloc(nnz * sizeof(float));
 
     // Histogram for row_ptr
-    for (int i = 0; i < nnz; i++) matrix->row_ptr[coo_rows[i] + 1]++;
+    for (int i = 0; i < nnz; i++)
+        matrix->row_ptr[coo_rows[i] + 1]++;
     // Prefix sum
-    for (int i = 0; i < rows; i++) matrix->row_ptr[i + 1] += matrix->row_ptr[i];
+    for (int i = 0; i < rows; i++)
+        matrix->row_ptr[i + 1] += matrix->row_ptr[i];
 
     int *temp_ptr = malloc(rows * sizeof(int));
     memcpy(temp_ptr, matrix->row_ptr, rows * sizeof(int));
-    for (int i = 0; i < nnz; i++) {
+    for (int i = 0; i < nnz; i++)
+    {
         int r = coo_rows[i];
         int dest = temp_ptr[r]++;
         matrix->col_idx[dest] = coo_cols[i];
         matrix->values[dest] = coo_vals[i];
     }
 
-    free(coo_rows); free(coo_cols); free(coo_vals); free(temp_ptr);
+    free(coo_rows);
+    free(coo_cols);
+    free(coo_vals);
+    free(temp_ptr);
 }
 
 /**
  * Loads a Matrix Market file (.mtx) directly into COO format.
  */
-void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix) {
+void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix)
+{
     FILE *f = fopen(filename, "r");
-    if (!f) { fprintf(stderr, "Error opening %s\n", filename); exit(1); }
+    if (!f)
+    {
+        fprintf(stderr, "Error opening %s\n", filename);
+        exit(1);
+    }
 
     char line[1024];
-    while (fgets(line, sizeof(line), f) && line[0] == '%');
+    while (fgets(line, sizeof(line), f) && line[0] == '%')
+        ;
     sscanf(line, "%d %d %d", &matrix->M, &matrix->N, &matrix->nnz);
 
     matrix->rows = malloc(matrix->nnz * sizeof(int));
     matrix->cols = malloc(matrix->nnz * sizeof(int));
     matrix->values = malloc(matrix->nnz * sizeof(float));
 
-    for (int i = 0; i < matrix->nnz; i++) {
+    for (int i = 0; i < matrix->nnz; i++)
+    {
         double val;
         fscanf(f, "%d %d %lf", &matrix->rows[i], &matrix->cols[i], &val);
         matrix->rows[i] -= 1; // 0-based indexing
