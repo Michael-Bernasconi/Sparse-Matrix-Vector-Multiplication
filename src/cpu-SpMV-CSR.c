@@ -27,7 +27,7 @@ void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
  * the values and col_idx arrays.
  */
 void spmv_csr_cpu(const CSRMatrix *mat, const float *x, float *y) {
-    #pragma omp parallel for //multi-core
+    #pragma omp parallel for // Enable multi-core parallelization
     // Iterate over each row of the matrix
     for (int i = 0; i < mat->M; i++) {
         float sum = 0.0f;
@@ -35,20 +35,21 @@ void spmv_csr_cpu(const CSRMatrix *mat, const float *x, float *y) {
         // Boundaries of the current row in the packed arrays
         int row_start = mat->row_ptr[i];
         int row_end   = mat->row_ptr[i+1];
-        //There is no need for omp atomic since each thread is assigned a unique row index i. 
-        //This prevents write conflicts and ensures there are no race conditions on the output vector y.
+        // There is no need for omp atomic since each thread is assigned a unique row index i. 
+        // This prevents write conflicts and ensures there are no race conditions on the output vector y.
         // Dot product between the sparse row and the dense vector x
         for (int j = row_start; j < row_end; j++) {
             // values[j] is the non-zero element, col_idx[j] is its column position
             sum += mat->values[j] * x[mat->col_idx[j]];
         }
-        // Store the result in the output vector y
+        // Store the result in the output vector y (direct assignment, no += needed)
         y[i] = sum;
     }
 }
 
 int main(int argc, char **argv) {
-    double global_start = omp_get_wtime(); //capture the start time immediatly to (TTS)
+    double global_start = omp_get_wtime(); // Capture the start time immediately for Time-to-Solution (TTS)
+    
     // Basic command line argument validation
     if (argc < 2) { 
         printf("Usage: %s <matrix.mtx>\n", argv[0]); 
@@ -71,7 +72,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // Initialize the dense vector x with random values
+    // Initialize the dense vector x with random values (fixed seed for reproducibility)
     fill_random_vector(x, mat.N);
 
     // --- REFERENCE GENERATION ---
@@ -88,23 +89,32 @@ int main(int argc, char **argv) {
     }
 
     // --- BENCHMARK PHASE ---
-    // Measure only the kernel execution time over multiple iterations
-    TIMER_DEF(0);
-    TIMER_START(0);
-
-    for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
-        spmv_csr_cpu(&mat, x, y);
+    // Allocate array to store the execution time of each individual iteration
+    double *iter_times = (double *)malloc(BENCHMARK_ITERATIONS * sizeof(double));
+    if (!iter_times) {
+        fprintf(stderr, "Critical: Memory allocation failed for iter_times array\n");
+        return 1;
     }
 
-    TIMER_STOP(0);
+    TIMER_DEF(0);
+    // Accurate timing measurement recording every single iteration
+    for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
+        TIMER_START(0);
+        spmv_csr_cpu(&mat, x, y);
+        TIMER_STOP(0);
+
+        // Store the elapsed time for this specific iteration in seconds
+        iter_times[i] = TIMER_ELAPSED(0) / 1e6;
+    }
 
     // --- VALIDATION PHASE ---
     // Rigorous comparison between the parallel result and the sequential reference
     validate_results(y_ref, y, mat.M);
 
     // --- PERFORMANCE CALCULATIONS ---
-    // Convert elapsed microseconds to average seconds per iteration
-    double avg_time_s = (TIMER_ELAPSED(0) / 1e6) / BENCHMARK_ITERATIONS;
+    // Calculate the arithmetic mean and standard deviation (variability) of the iteration times
+    double avg_time_s = arithmetic_mean(iter_times, BENCHMARK_ITERATIONS);
+    double std_dev_s = sigma_fn_sol(iter_times, avg_time_s, BENCHMARK_ITERATIONS);
     
     // Calculate performance metrics (GFLOPS, Effective Bandwidth and TTS)
     double gflops = calculate_gflops(mat.nnz, avg_time_s);
@@ -113,15 +123,17 @@ int main(int argc, char **argv) {
 
     // Formatted output for reporting
     printf("\n--- CPU CSR Benchmark ---\n");
-    printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], mat.M, mat.N, mat.nnz);
-    printf("Avg Time: %e s\n", avg_time_s);
+    printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], mat.M, mat.N, mat.nnz);    
+    printf("Avg Time: %e s ", avg_time_s);
+    printf("Std Dev Time(± %e s)\n", std_dev_s);
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
-    printf("Time-to-Solution: %.4f s\n", tts);
+    printf("TTS     : %.4f s\n", tts);
     printf("Check   : %f (First element of y)\n", y[0]);
 
     // --- CLEANUP ---
-    // Free allocated memory to avoid leaks
+    // Free all allocated memory to prevent memory leaks
+    free(iter_times);
     free(x); 
     free(y); 
     free(y_ref);

@@ -3,10 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
-#include <string.h> // Added for memset
+#include <string.h>
 
 extern "C" {
     #include "spmv_formats.h"
+    #include "my_time_lib.h" // Added to use arithmetic_mean and sigma_fn_sol
 }
 
 /**
@@ -132,19 +133,36 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaDeviceSynchronize());
 
     // --- BENCHMARK PHASE ---
-    CUDA_CHECK(cudaEventRecord(start));
+    // Allocate array to store the execution time of each individual iteration
+    double *iter_times = (double *)malloc(BENCHMARK_ITERATIONS * sizeof(double));
+    if (!iter_times) {
+        fprintf(stderr, "Critical: Memory allocation failed for iter_times array\n");
+        return 1;
+    }
+
+    // Accurate timing measurement recording every single iteration on the GPU
     for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
+        // Start recording time
+        CUDA_CHECK(cudaEventRecord(start));
         CUSPARSE_CHECK(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                     &alpha, matA, vecX, &beta, vecY, CUDA_R_32F,
                                     CUSPARSE_SPMV_ALG_DEFAULT, dBuffer));
+        // Stop recording time
+        CUDA_CHECK(cudaEventRecord(stop));
+        
+        // Wait for the GPU to finish this specific iteration
+        CUDA_CHECK(cudaEventSynchronize(stop));
+
+        // Calculate elapsed time in milliseconds and convert to seconds
+        float ms = 0;
+        CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
+        iter_times[i] = (double)ms / 1000.0;
     }
-    CUDA_CHECK(cudaEventRecord(stop));
-    CUDA_CHECK(cudaEventSynchronize(stop));
 
     // --- PERFORMANCE CALCULATIONS ---
-    float ms = 0;
-    CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
-    double avg_time_s = (ms / 1000.0) / BENCHMARK_ITERATIONS;
+    // Calculate the arithmetic mean and standard deviation (variability) of the iteration times
+    double avg_time_s = arithmetic_mean(iter_times, BENCHMARK_ITERATIONS);
+    double std_dev_s  = sigma_fn_sol(iter_times, avg_time_s, BENCHMARK_ITERATIONS);
 
     // --- VALIDATION PHASE ---
     // Transfer the result from GPU back to Host
@@ -156,10 +174,10 @@ int main(int argc, char **argv) {
     double bw = calculate_bandwidth(M, A.N, nnz, avg_time_s, "CSR");
     double tts = calculate_tts(global_start);
 
-    // Display formatted results
     printf("\n--- cuSPARSE BASELINE Benchmark ---\n");
     printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], M, A.N, nnz);
-    printf("Avg Time: %e s\n", avg_time_s);
+    printf("Avg Time: %e s ", avg_time_s);
+    printf("Std Dev Time(± %e s)\n", std_dev_s);    
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
     printf("TTS     : %.4f s\n", tts); 
@@ -180,6 +198,8 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaFree(d_x));
     CUDA_CHECK(cudaFree(d_y));
     
+    // Free all host allocated memory to prevent memory leaks
+    free(iter_times);
     free(h_x);
     free(h_y_ref);
     free(h_y_gpu);
