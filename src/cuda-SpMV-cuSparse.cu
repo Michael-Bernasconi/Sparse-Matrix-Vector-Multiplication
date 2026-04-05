@@ -5,21 +5,25 @@
 #include <omp.h>
 #include <string.h>
 
-extern "C" {
-    #include "spmv_formats.h"
-    #include "my_time_lib.h" // Added to use arithmetic_mean and sigma_fn_sol
+extern "C"
+{
+#include "spmv_formats.h"
+#include "my_time_lib.h" // Added to use arithmetic_mean and sigma_fn_sol
 }
 
 /**
  * Sequential version to provide the "Gold Standard" reference for results validation.
  * Runs on the CPU using CSR format.
  */
-void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
-    for (int i = 0; i < mat->M; i++) {
+void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y)
+{
+    for (int i = 0; i < mat->M; i++)
+    {
         float sum = 0.0f;
         int row_start = mat->row_ptr[i];
-        int row_end   = mat->row_ptr[i+1];
-        for (int j = row_start; j < row_end; j++) {
+        int row_end = mat->row_ptr[i + 1];
+        for (int j = row_start; j < row_end; j++)
+        {
             sum += mat->values[j] * x[mat->col_idx[j]];
         }
         y[i] = sum;
@@ -29,31 +33,37 @@ void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
 /**
  * Standard CUDA error checking macro.
  */
-#define CUDA_CHECK(call) \
-    do { \
-        cudaError_t err = call; \
-        if (err != cudaSuccess) { \
+#define CUDA_CHECK(call)                                                                       \
+    do                                                                                         \
+    {                                                                                          \
+        cudaError_t err = call;                                                                \
+        if (err != cudaSuccess)                                                                \
+        {                                                                                      \
             printf("CUDA Error at %s:%d - %s\n", __FILE__, __LINE__, cudaGetErrorString(err)); \
-            exit(1); \
-        } \
+            exit(1);                                                                           \
+        }                                                                                      \
     } while (0)
 
 /**
  * Standard cuSPARSE error checking macro.
  */
-#define CUSPARSE_CHECK(call) \
-    do { \
-        cusparseStatus_t status = call; \
-        if (status != CUSPARSE_STATUS_SUCCESS) { \
+#define CUSPARSE_CHECK(call)                                                           \
+    do                                                                                 \
+    {                                                                                  \
+        cusparseStatus_t status = call;                                                \
+        if (status != CUSPARSE_STATUS_SUCCESS)                                         \
+        {                                                                              \
             printf("cuSPARSE Error at %s:%d - code %d\n", __FILE__, __LINE__, status); \
-            exit(1); \
-        } \
+            exit(1);                                                                   \
+        }                                                                              \
     } while (0)
 
-int main(int argc, char **argv) {
-    double global_start = omp_get_wtime(); //start measure TTS
-    
-    if (argc < 2) {
+int main(int argc, char **argv)
+{
+    double global_start = omp_get_wtime(); // start measure TTS
+
+    if (argc < 2)
+    {
         fprintf(stderr, "Usage: %s <matrix_file.mtx>\n", argv[0]);
         return 1;
     }
@@ -61,17 +71,17 @@ int main(int argc, char **argv) {
     // Load matrix into host memory directly in CSR format
     CSRMatrix A;
     load_matrix_market_to_csr(argv[1], &A);
-    int M = A.M; 
+    int M = A.M;
     int nnz = A.nnz;
 
     // Allocate and initialize the input vector x on the Host
-    float *h_x = (float*)malloc(A.N * sizeof(float));
+    float *h_x = (float *)malloc(A.N * sizeof(float));
     fill_random_vector(h_x, A.N);
 
     // --- 1. REFERENCE GENERATION ---
-    float *h_y_ref = (float*)malloc(M * sizeof(float));
-    float *h_y_gpu = (float*)malloc(M * sizeof(float)); 
-    
+    float *h_y_ref = (float *)malloc(M * sizeof(float));
+    float *h_y_gpu = (float *)malloc(M * sizeof(float));
+
     // Compute the sequential result on CPU as ground truth
     memset(h_y_ref, 0, M * sizeof(float));
     spmv_csr_sequential(&A, h_x, h_y_ref);
@@ -101,15 +111,15 @@ int main(int argc, char **argv) {
     cusparseDnVecDescr_t vecX, vecY;
 
     CUSPARSE_CHECK(cusparseCreateCsr(&matA, M, A.N, nnz,
-                                      d_row_ptr, d_col_idx, d_vals,
-                                      CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
-                                      CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F));
+                                     d_row_ptr, d_col_idx, d_vals,
+                                     CUSPARSE_INDEX_32I, CUSPARSE_INDEX_32I,
+                                     CUSPARSE_INDEX_BASE_ZERO, CUDA_R_32F));
 
     CUSPARSE_CHECK(cusparseCreateDnVec(&vecX, A.N, d_x, CUDA_R_32F));
     CUSPARSE_CHECK(cusparseCreateDnVec(&vecY, M, d_y, CUDA_R_32F));
 
     float alpha = 1.0f;
-    float beta  = 0.0f;
+    float beta = 0.0f;
 
     size_t bufferSize = 0;
     void *dBuffer = NULL;
@@ -117,7 +127,7 @@ int main(int argc, char **argv) {
         handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
         &alpha, matA, vecX, &beta, vecY, CUDA_R_32F,
         CUSPARSE_SPMV_ALG_DEFAULT, &bufferSize));
-    
+
     CUDA_CHECK(cudaMalloc(&dBuffer, bufferSize));
 
     cudaEvent_t start, stop;
@@ -125,7 +135,8 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaEventCreate(&stop));
 
     // --- WARMUP PHASE ---
-    for (int i = 0; i < WARMUP_ITERATIONS; i++) {
+    for (int i = 0; i < WARMUP_ITERATIONS; i++)
+    {
         CUSPARSE_CHECK(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
                                     &alpha, matA, vecX, &beta, vecY, CUDA_R_32F,
                                     CUSPARSE_SPMV_ALG_DEFAULT, dBuffer));
@@ -135,13 +146,15 @@ int main(int argc, char **argv) {
     // --- BENCHMARK PHASE ---
     // Allocate array to store the execution time of each individual iteration
     double *iter_times = (double *)malloc(BENCHMARK_ITERATIONS * sizeof(double));
-    if (!iter_times) {
+    if (!iter_times)
+    {
         fprintf(stderr, "Critical: Memory allocation failed for iter_times array\n");
         return 1;
     }
 
     // Accurate timing measurement recording every single iteration on the GPU
-    for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
+    for (int i = 0; i < BENCHMARK_ITERATIONS; i++)
+    {
         // Start recording time
         CUDA_CHECK(cudaEventRecord(start));
         CUSPARSE_CHECK(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE,
@@ -149,7 +162,7 @@ int main(int argc, char **argv) {
                                     CUSPARSE_SPMV_ALG_DEFAULT, dBuffer));
         // Stop recording time
         CUDA_CHECK(cudaEventRecord(stop));
-        
+
         // Wait for the GPU to finish this specific iteration
         CUDA_CHECK(cudaEventSynchronize(stop));
 
@@ -162,7 +175,7 @@ int main(int argc, char **argv) {
     // --- PERFORMANCE CALCULATIONS ---
     // Calculate the arithmetic mean and standard deviation (variability) of the iteration times
     double avg_time_s = arithmetic_mean(iter_times, BENCHMARK_ITERATIONS);
-    double std_dev_s  = sigma_fn_sol(iter_times, avg_time_s, BENCHMARK_ITERATIONS);
+    double std_dev_s = sigma_fn_sol(iter_times, avg_time_s, BENCHMARK_ITERATIONS);
 
     // --- VALIDATION PHASE ---
     // Transfer the result from GPU back to Host
@@ -177,10 +190,10 @@ int main(int argc, char **argv) {
     printf("\n--- cuSPARSE BASELINE Benchmark ---\n");
     printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], M, A.N, nnz);
     printf("Avg Time: %e s ", avg_time_s);
-    printf("Std Dev Time(± %e s)\n", std_dev_s);    
+    printf("Std Dev Time(± %e s)\n", std_dev_s);
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
-    printf("TTS     : %.4f s\n", tts); 
+    printf("TTS     : %.4f s\n", tts);
     printf("Check   : %f (First element of y)\n", h_y_gpu[0]);
 
     // --- CLEANUP ---
@@ -197,7 +210,7 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaFree(d_vals));
     CUDA_CHECK(cudaFree(d_x));
     CUDA_CHECK(cudaFree(d_y));
-    
+
     // Free all host allocated memory to prevent memory leaks
     free(iter_times);
     free(h_x);
@@ -206,6 +219,6 @@ int main(int argc, char **argv) {
     free(A.row_ptr);
     free(A.col_idx);
     free(A.values);
-    
+
     return 0;
 }

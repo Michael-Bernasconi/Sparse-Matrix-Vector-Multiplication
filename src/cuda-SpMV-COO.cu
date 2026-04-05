@@ -4,17 +4,20 @@
 #include <omp.h>
 #include <string.h>
 
-extern "C" {
-    #include "spmv_formats.h"
-    #include "my_time_lib.h" // Added to use arithmetic_mean and sigma_fn_sol
+extern "C"
+{
+#include "spmv_formats.h"
+#include "my_time_lib.h" // Added to use arithmetic_mean and sigma_fn_sol
 }
 
 /**
  * Sequential version to provide the "Gold Standard" reference for results validation.
  * Runs on the CPU.
  */
-void spmv_coo_sequential(const COOMatrix *mat, const float *x, float *y) {
-    for (int i = 0; i < mat->nnz; i++) {
+void spmv_coo_sequential(const COOMatrix *mat, const float *x, float *y)
+{
+    for (int i = 0; i < mat->nnz; i++)
+    {
         y[mat->rows[i]] += mat->values[i] * x[mat->cols[i]];
     }
 }
@@ -22,31 +25,37 @@ void spmv_coo_sequential(const COOMatrix *mat, const float *x, float *y) {
 /**
  * Standard CUDA error checking macro.
  */
-#define CUDA_CHECK(call) \
-    do { \
-        cudaError_t err = call; \
-        if (err != cudaSuccess) { \
+#define CUDA_CHECK(call)                                                                       \
+    do                                                                                         \
+    {                                                                                          \
+        cudaError_t err = call;                                                                \
+        if (err != cudaSuccess)                                                                \
+        {                                                                                      \
             printf("CUDA Error at %s:%d - %s\n", __FILE__, __LINE__, cudaGetErrorString(err)); \
-            exit(1); \
-        } \
+            exit(1);                                                                           \
+        }                                                                                      \
     } while (0)
 
 /**
  * CUDA Kernel for COO SpMV.
  */
-__global__ void spmv_coo_kernel(int nnz, const int *rows, const int *cols, 
-                                const float *vals, const float *x, float *y) {
+__global__ void spmv_coo_kernel(int nnz, const int *rows, const int *cols,
+                                const float *vals, const float *x, float *y)
+{
     int i = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (i < nnz) {
+    if (i < nnz)
+    {
         atomicAdd(&y[rows[i]], __ldg(&vals[i]) * __ldg(&x[cols[i]]));
     }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     double global_start = omp_get_wtime(); // TTS start measurement
-    
-    if (argc < 2) {
+
+    if (argc < 2)
+    {
         fprintf(stderr, "Usage: %s <matrix_file.mtx>\n", argv[0]);
         return 1;
     }
@@ -58,14 +67,14 @@ int main(int argc, char **argv) {
     int M = mat.M;
 
     // Allocate and initialize input vector x on the Host
-    float *h_x = (float*)malloc(mat.N * sizeof(float));
+    float *h_x = (float *)malloc(mat.N * sizeof(float));
     fill_random_vector(h_x, mat.N);
 
     // --- 1. REFERENCE GENERATION ---
     // Allocate host vectors for validation
-    float *h_y_ref = (float*)malloc(M * sizeof(float));
-    float *h_y_gpu = (float*)malloc(M * sizeof(float)); // Buffer to copy back GPU results
-    
+    float *h_y_ref = (float *)malloc(M * sizeof(float));
+    float *h_y_gpu = (float *)malloc(M * sizeof(float)); // Buffer to copy back GPU results
+
     // Compute the sequential result on CPU as ground truth
     memset(h_y_ref, 0, M * sizeof(float));
     spmv_coo_sequential(&mat, h_x, h_y_ref);
@@ -96,7 +105,8 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaEventCreate(&stop));
 
     // --- WARM-UP PHASE ---
-    for (int i = 0; i < WARMUP_ITERATIONS; i++) {
+    for (int i = 0; i < WARMUP_ITERATIONS; i++)
+    {
         CUDA_CHECK(cudaMemset(d_y, 0, M * sizeof(float)));
         spmv_coo_kernel<<<gridSize, blockSize>>>(nnz, d_rows, d_cols, d_vals, d_x, d_y);
     }
@@ -105,22 +115,24 @@ int main(int argc, char **argv) {
     // --- BENCHMARK PHASE ---
     // Allocate array to store the execution time of each individual iteration
     double *iter_times = (double *)malloc(BENCHMARK_ITERATIONS * sizeof(double));
-    if (!iter_times) {
+    if (!iter_times)
+    {
         fprintf(stderr, "Critical: Memory allocation failed for iter_times array\n");
         return 1;
     }
 
     // Accurate timing measurement recording every single iteration on the GPU
-    for (int i = 0; i < BENCHMARK_ITERATIONS; i++) {
+    for (int i = 0; i < BENCHMARK_ITERATIONS; i++)
+    {
         // Reset output vector every iteration outside the timed region
         CUDA_CHECK(cudaMemset(d_y, 0, M * sizeof(float)));
-        
+
         // Start recording time
         CUDA_CHECK(cudaEventRecord(start));
         spmv_coo_kernel<<<gridSize, blockSize>>>(nnz, d_rows, d_cols, d_vals, d_x, d_y);
         // Stop recording time
         CUDA_CHECK(cudaEventRecord(stop));
-        
+
         // Wait for the GPU to finish this specific iteration
         CUDA_CHECK(cudaEventSynchronize(stop));
 
@@ -134,7 +146,7 @@ int main(int argc, char **argv) {
     // Calculate the arithmetic mean and standard deviation (variability) of the iteration times
     double avg_time_s = arithmetic_mean(iter_times, BENCHMARK_ITERATIONS);
     double std_dev_s = sigma_fn_sol(iter_times, avg_time_s, BENCHMARK_ITERATIONS);
-    
+
     // Calculate performance metrics (GFLOPS, Effective Bandwidth and TTS)
     double gflops = calculate_gflops(nnz, avg_time_s);
     double bw = calculate_bandwidth(M, mat.N, nnz, avg_time_s, "COO");
@@ -149,12 +161,12 @@ int main(int argc, char **argv) {
     // --- REPORTING ---
     // Display formatted results including variability
     printf("\n--- GPU COO Benchmark ---\n");
-    printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], M, mat.N, nnz);    
+    printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], M, mat.N, nnz);
     printf("Avg Time: %e s ", avg_time_s);
     printf("Std Dev Time(± %e s)\n", std_dev_s);
     printf("GFLOPS  : %.4f\n", gflops);
     printf("BW      : %.4f GB/s\n", bw);
-    printf("TTS     : %.4f s\n", tts); 
+    printf("TTS     : %.4f s\n", tts);
     printf("Check   : %f (First element of y)\n", h_y_gpu[0]);
 
     // --- CLEANUP ---

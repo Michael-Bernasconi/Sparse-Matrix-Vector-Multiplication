@@ -8,7 +8,7 @@
  * Defines the necessary variables for the timer.
  * Creates two cudaEvent_t objects (start and stop) and a float to store duration.
  */
-#define CUDA_TIMER_DEF(name) \
+#define CUDA_TIMER_DEF(name)               \
     cudaEvent_t start_##name, stop_##name; \
     float elapsed_##name = 0.0f;
 
@@ -16,7 +16,7 @@
  * Initializes the CUDA events.
  * Must be called before starting the timer.
  */
-#define CUDA_TIMER_INIT(name) \
+#define CUDA_TIMER_INIT(name)       \
     cudaEventCreate(&start_##name); \
     cudaEventCreate(&stop_##name);
 
@@ -33,8 +33,8 @@
  * 2. Synchronizes the CPU with the stop event (waits for GPU to finish).
  * 3. Computes the time difference between start and stop in milliseconds.
  */
-#define CUDA_TIMER_STOP(name) \
-    cudaEventRecord(stop_##name); \
+#define CUDA_TIMER_STOP(name)          \
+    cudaEventRecord(stop_##name);      \
     cudaEventSynchronize(stop_##name); \
     cudaEventElapsedTime(&elapsed_##name, start_##name, stop_##name);
 
@@ -47,7 +47,7 @@
  * Destroys the CUDA events to free up GPU resources.
  * Should be called when the timer is no longer needed.
  */
-#define CUDA_TIMER_CLEAN(name) \
+#define CUDA_TIMER_CLEAN(name)      \
     cudaEventDestroy(start_##name); \
     cudaEventDestroy(stop_##name);
 
