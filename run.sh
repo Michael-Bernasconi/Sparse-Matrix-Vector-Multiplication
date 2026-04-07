@@ -21,7 +21,7 @@ echo ""
 
 # Check if matrix directory exists
 if [ ! -d "$MATRIX_DIR" ]; then
-    echo "Error: Directory $MATRIX_DIR not found. (Assicurati di mettere i file .mtx in una cartella chiamata 'data')"
+    echo "Error: Directory $MATRIX_DIR not found. (insert file .mtx in data folder)"
     exit 1
 fi
 
@@ -31,7 +31,7 @@ echo "------------------------------------------------" >> "$LOG_FILE"
 
 # 2. Iterate through every .mtx file in the folder
 for matrix in "$MATRIX_DIR"/*.mtx; do
-    # Controllo di sicurezza se la cartella è vuota
+    # check folder
     [ -e "$matrix" ] || { echo "No .mtx files found in $MATRIX_DIR"; exit 1; }
 
     matrix_name=$(basename "$matrix")
@@ -41,7 +41,7 @@ for matrix in "$MATRIX_DIR"/*.mtx; do
     echo "=========================================================="
     echo "Matrix: $matrix_name" >> "$LOG_FILE"
 
-    # List of executables to run (AGGIORNATA CON I DUE NUOVI FILE)
+    # List of executables to run 
     executables=(
         "cpu-SpMV-CSR" 
         "cpu-SpMV-COO" 
