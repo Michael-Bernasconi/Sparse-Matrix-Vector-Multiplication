@@ -28,10 +28,10 @@ void spmv_coo_cpu(const COOMatrix *mat, const float *x, float *y)
 #pragma omp parallel for // Enable multi-core parallelization
     for (int i = 0; i < mat->nnz; i++)
     {
-// mat->rows[i]: destination row index
-// mat->cols[i]: index for the input vector x
-// mat->values[i]: the non-zero value
-#pragma omp atomic // Atomic operation to prevent RACE CONDITIONS when multiple threads write to the same y[row]
+        // mat->rows[i]: destination row index
+        // mat->cols[i]: index for the input vector x
+        // mat->values[i]: the non-zero value
+        #pragma omp atomic // Atomic operation to prevent RACE CONDITIONS when multiple threads write to the same y[row]
         y[mat->rows[i]] += mat->values[i] * x[mat->cols[i]];
     }
 }

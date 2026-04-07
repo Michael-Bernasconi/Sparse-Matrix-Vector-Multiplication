@@ -2,12 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
-#include <string.h> // Added for memset
+#include <string.h> 
 
 extern "C"
 {
 #include "spmv_formats.h"
-#include "my_time_lib.h" // Added to use arithmetic_mean and sigma_fn_sol
+#include "my_time_lib.h" 
 }
 
 /**
@@ -54,9 +54,7 @@ __global__ void spmv_csr_vector_kernel(int M, const int *row_ptr, const int *col
     int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     int warp_id = thread_id / 32;
     int lane_id = threadIdx.x % 32;
-
     int row = warp_id;
-
     if (row < M)
     {
         float sum = 0.0f;
@@ -90,8 +88,7 @@ __global__ void spmv_csr_vector_kernel(int M, const int *row_ptr, const int *col
 
         if (lane_id == 0)
         {
-            // Store the result directly (no atomic operations needed for CSR)
-            y[row] = sdata[threadIdx.x];
+            y[row] = sdata[threadIdx.x];             // Store the result directly (no atomic operations needed for CSR)
         }
     }
 }
@@ -115,7 +112,7 @@ int main(int argc, char **argv)
     float *h_x = (float *)malloc(A.N * sizeof(float));
     fill_random_vector(h_x, A.N);
 
-    // --- 1. REFERENCE GENERATION ---
+    // --- REFERENCE GENERATION ---
     float *h_y_ref = (float *)malloc(M * sizeof(float));
     float *h_y_gpu = (float *)malloc(M * sizeof(float));
 
@@ -126,20 +123,20 @@ int main(int argc, char **argv)
     int *d_row_ptr, *d_col_idx;
     float *d_vals, *d_x, *d_y;
 
-    // --- 2. DEVICE MEMORY ALLOCATION ---
+    // --- DEVICE MEMORY ALLOCATION ---
     CUDA_CHECK(cudaMalloc(&d_row_ptr, (M + 1) * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_col_idx, nnz * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_vals, nnz * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_x, A.N * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_y, M * sizeof(float)));
 
-    // --- 3. DATA TRANSFER (HOST TO DEVICE) ---
+    // --- DATA TRANSFER (HOST TO DEVICE) ---
     CUDA_CHECK(cudaMemcpy(d_row_ptr, A.row_ptr, (M + 1) * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_col_idx, A.col_idx, nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_vals, A.values, nnz * sizeof(float), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_x, h_x, A.N * sizeof(float), cudaMemcpyHostToDevice));
 
-    // --- 4. EXECUTION CONFIGURATION ---
+    // --- EXECUTION CONFIGURATION ---
     int blockSize = 256;
     int warpsPerBlock = blockSize / 32;
     int gridSize = (M + warpsPerBlock - 1) / warpsPerBlock;

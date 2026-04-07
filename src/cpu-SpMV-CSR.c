@@ -31,12 +31,11 @@ void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y)
  */
 void spmv_csr_cpu(const CSRMatrix *mat, const float *x, float *y)
 {
-#pragma omp parallel for // Enable multi-core parallelization
+    #pragma omp parallel for // Enable multi-core parallelization
     // Iterate over each row of the matrix
     for (int i = 0; i < mat->M; i++)
     {
         float sum = 0.0f;
-
         // Boundaries of the current row in the packed arrays
         int row_start = mat->row_ptr[i];
         int row_end = mat->row_ptr[i + 1];

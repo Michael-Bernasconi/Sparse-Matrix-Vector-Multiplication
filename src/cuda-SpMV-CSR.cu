@@ -7,7 +7,7 @@
 extern "C"
 {
 #include "spmv_formats.h"
-#include "my_time_lib.h" // Added to use arithmetic_mean and sigma_fn_sol
+#include "my_time_lib.h" 
 }
 
 /**
@@ -56,7 +56,6 @@ __global__ void spmv_csr_kernel(int M, const int *row_ptr, const int *col_idx,
         float sum = 0.0f;
         int row_start = row_ptr[row];
         int row_end = row_ptr[row + 1];
-
         for (int i = row_start; i < row_end; i++)
         {
             sum += __ldg(&vals[i]) * __ldg(&x[col_idx[i]]);
@@ -85,7 +84,7 @@ int main(int argc, char **argv)
     float *h_x = (float *)malloc(A.N * sizeof(float));
     fill_random_vector(h_x, A.N);
 
-    // --- 1. REFERENCE GENERATION ---
+    // --- REFERENCE GENERATION ---
     // Allocate host vectors for validation
     float *h_y_ref = (float *)malloc(M * sizeof(float));
     float *h_y_gpu = (float *)malloc(M * sizeof(float)); // Buffer to copy back GPU results
@@ -98,20 +97,20 @@ int main(int argc, char **argv)
     int *d_row_ptr, *d_col_idx;
     float *d_vals, *d_x, *d_y;
 
-    // --- 2. DEVICE MEMORY ALLOCATION ---
+    // --- DEVICE MEMORY ALLOCATION ---
     CUDA_CHECK(cudaMalloc(&d_row_ptr, (M + 1) * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_col_idx, nnz * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_vals, nnz * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_x, A.N * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_y, M * sizeof(float)));
 
-    // --- 3. DATA TRANSFER (HOST TO DEVICE) ---
+    // --- DATA TRANSFER (HOST TO DEVICE) ---
     CUDA_CHECK(cudaMemcpy(d_row_ptr, A.row_ptr, (M + 1) * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_col_idx, A.col_idx, nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_vals, A.values, nnz * sizeof(float), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_x, h_x, A.N * sizeof(float), cudaMemcpyHostToDevice));
 
-    // --- 4. EXECUTION CONFIGURATION ---
+    // --- EXECUTION CONFIGURATION ---
     int blockSize = 256;
     int gridSize = (M + blockSize - 1) / blockSize;
 

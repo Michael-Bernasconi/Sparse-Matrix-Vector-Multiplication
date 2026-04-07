@@ -15,7 +15,7 @@ double arithmetic_mean(double *v, int len)
 
 /**
  * Calculates the Geometric Mean using logarithms to prevent numerical overflow.
- * Note: Only processes values > 0.
+ * Note ==>  Only processes values > 0.
  */
 double geometric_mean(double *v, int len)
 {
@@ -24,8 +24,7 @@ double geometric_mean(double *v, int len)
     double log_sum = 0.0;
     for (int i = 0; i < len; i++)
     {
-        // Logarithm is only defined for positive numbers
-        log_sum += (v[i] > 0) ? log((double)v[i]) : 0.0;
+        log_sum += (v[i] > 0) ? log((double)v[i]) : 0.0;           // Logarithm is only defined for positive numbers
     }
     return exp(log_sum / (double)len);
 }
@@ -43,9 +42,7 @@ double sigma_fn_sol(double *v, double mu, int len)
     double sigma = 0.0;
     for (int i = 0; i < len; i++)
     {
-        // Sum of squared differences from the mean
-        sigma += ((double)v[i] - mu) * ((double)v[i] - mu);
+        sigma += ((double)v[i] - mu) * ((double)v[i] - mu);           // Sum of squared differences from the mean
     }
-    // Square root converts variance into standard deviation
-    return sqrt(sigma / (double)len);
+    return sqrt(sigma / (double)len);        // Square root converts variance into standard deviation
 }

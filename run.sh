@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Configuration (Percorsi Locali Relativi)
+# Configuration 
 BIN_DIR="./bin"
 MATRIX_DIR="./data"
 LOG_DIR="./results/benchmark/flops-bw-tts"

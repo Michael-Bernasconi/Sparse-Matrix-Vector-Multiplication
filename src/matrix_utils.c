@@ -45,7 +45,6 @@ double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char 
     if (avg_time_s <= 0)
         return 0;
     size_t bytes = 0;
-
     if (strcmp(format, "CSR") == 0)
     {
         // CSR: row_ptr (M+1 ints), col_idx (nnz ints), values (nnz floats)
@@ -58,7 +57,6 @@ double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char 
         // + x vector (N floats) + y vector (M floats)
         bytes = (sizeof(int) * (2 * nnz)) + (sizeof(float) * (nnz + N + M));
     }
-
     return (double)bytes / (avg_time_s * 1e9);
 }
 
@@ -72,8 +70,7 @@ double calculate_bandwidth(int M, int N, int nnz, double avg_time_s, const char 
  */
 double calculate_tts(double start_time)
 {
-    // Returns current wall-clock time minus the initial timestamp
-    return omp_get_wtime() - start_time;
+    return omp_get_wtime() - start_time;       // Returns current wall-clock time minus the initial timestamp
 }
 
 /**
@@ -92,7 +89,6 @@ void validate_results(const float *ref, const float *test, int n)
     int errors = 0;
     const float rel_tolerance = 1e-3f; // 0.1% relative tolerance
     const float abs_tolerance = 1e-4f; // Absolute tolerance guard for values near zero
-
     for (int i = 0; i < n; i++)
     {
         float diff = fabsf(ref[i] - test[i]);
@@ -113,7 +109,6 @@ void validate_results(const float *ref, const float *test, int n)
             errors++;
         }
     }
-
     if (errors == 0)
     {
         // Log dynamically reports the exact variables used, avoiding hardcoded text mismatch.
@@ -137,7 +132,6 @@ void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix)
         fprintf(stderr, "Error opening %s\n", filename);
         exit(1);
     }
-
     char line[1024];
     while (fgets(line, sizeof(line), f) && line[0] == '%')
         ;
@@ -151,7 +145,6 @@ void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix)
     int *coo_rows = malloc(nnz * sizeof(int));
     int *coo_cols = malloc(nnz * sizeof(int));
     float *coo_vals = malloc(nnz * sizeof(float));
-
     for (int i = 0; i < nnz; i++)
     {
         double val;
@@ -209,7 +202,6 @@ void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix)
     matrix->rows = malloc(matrix->nnz * sizeof(int));
     matrix->cols = malloc(matrix->nnz * sizeof(int));
     matrix->values = malloc(matrix->nnz * sizeof(float));
-
     for (int i = 0; i < matrix->nnz; i++)
     {
         double val;

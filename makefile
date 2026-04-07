@@ -19,7 +19,7 @@ BIN_FOLDER := bin
 OBJ_FOLDER := obj
 SRC_FOLDER := src
 
-# Executable Targets (Aggiunti i due nuovi)
+# Executable Targets 
 TARGETS = $(BIN_FOLDER)/cpu-SpMV-COO \
           $(BIN_FOLDER)/cpu-SpMV-CSR \
           $(BIN_FOLDER)/cuda-SpMV-COO \
@@ -66,18 +66,13 @@ $(BIN_FOLDER)/cuda-SpMV-CSR: $(SRC_FOLDER)/cuda-SpMV-CSR.cu $(OBJ_FOLDER)/my_tim
 	@mkdir -p $(BIN_FOLDER)
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(INCLUDES) $(LIBS)
 
-# --- NUOVI GPU Executables ---
-
 $(BIN_FOLDER)/cuda-SpMV-CSR-Vector: $(SRC_FOLDER)/cuda-SpMV-CSR-Vector.cu $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
 	@mkdir -p $(BIN_FOLDER)
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(INCLUDES) $(LIBS)
 
-# NOTA: Qui viene passata la variabile $(CUSPARSE_LIBS) al linker
 $(BIN_FOLDER)/cuda-SpMV-cuSPARSE: $(SRC_FOLDER)/cuda-SpMV-cuSPARSE.cu $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
 	@mkdir -p $(BIN_FOLDER)
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(INCLUDES) $(LIBS) $(CUSPARSE_LIBS)
-
-# --- Utilities ---
 
 clean:
 	rm -rf $(BIN_FOLDER) $(OBJ_FOLDER)
