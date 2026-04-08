@@ -39,6 +39,20 @@ for (( run=1; run<=NUM_RUNS; run++ )); do
     echo "Benchmark Execution $run of $NUM_RUNS - $(date)" > "$LOG_FILE"
     echo "------------------------------------------------" >> "$LOG_FILE"
 
+    # --- HARDWARE INFO ---
+    echo "==========================================================" >> "$LOG_FILE"
+    echo "                   SYSTEM ARCHITECTURE                    " >> "$LOG_FILE"
+    echo "==========================================================" >> "$LOG_FILE"
+    echo "--> CPU Info (lscpu):" >> "$LOG_FILE"
+    lscpu >> "$LOG_FILE"
+    echo "" >> "$LOG_FILE"
+    echo "--> GPU Info (nvidia-smi):" >> "$LOG_FILE"
+    # Il 2>/dev/null nasconde eventuali errori a schermo se la GPU non c'è in quel momento
+    nvidia-smi >> "$LOG_FILE" 2>/dev/null || echo "NVIDIA GPU not found or nvidia-smi not available." >> "$LOG_FILE"
+    echo "==========================================================" >> "$LOG_FILE"
+    echo "" >> "$LOG_FILE"
+    # ---------------------
+
     # Iterate through every .mtx file in the folder
     for matrix in "$MATRIX_DIR"/*.mtx; do
         # Check if the file exists to avoid edge cases with empty folders

@@ -6,8 +6,8 @@ NVCC=nvcc
 CFLAGS=-O3 -Wall -g -fopenmp
 
 # CUDA Compiler Flags: Added -g and -lineinfo for profiling (required for Nsight Compute)
-# -arch=sm_89: Targets NVIDIA Ada Lovelace architecture (RTX 40 series)
-NVCCFLAGS=-O3 -arch=sm_89 --use_fast_math -Xptxas -v -g -lineinfo
+# -arch=sm_80: Targets NVIDIA Ampere architecture (Standard for Cluster A100 GPUs)
+NVCCFLAGS=-O3 -arch=sm_80 --use_fast_math -Xptxas -v -g -lineinfo
 
 # Libraries and Include paths
 LIBS=-lm -lgomp
@@ -25,7 +25,8 @@ TARGETS = $(BIN_FOLDER)/cpu-SpMV-COO \
           $(BIN_FOLDER)/cuda-SpMV-COO \
           $(BIN_FOLDER)/cuda-SpMV-CSR \
           $(BIN_FOLDER)/cuda-SpMV-CSR-Vector \
-          $(BIN_FOLDER)/cuda-SpMV-cuSPARSE
+          $(BIN_FOLDER)/cuda-SpMV-cuSPARSE \
+          $(BIN_FOLDER)/deviceQuery
 
 # Default target
 all: $(TARGETS)
@@ -73,6 +74,12 @@ $(BIN_FOLDER)/cuda-SpMV-CSR-Vector: $(SRC_FOLDER)/cuda-SpMV-CSR-Vector.cu $(OBJ_
 $(BIN_FOLDER)/cuda-SpMV-cuSPARSE: $(SRC_FOLDER)/cuda-SpMV-cuSPARSE.cu $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
 	@mkdir -p $(BIN_FOLDER)
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(INCLUDES) $(LIBS) $(CUSPARSE_LIBS)
+
+# --- Hardware Query Executable ---
+
+$(BIN_FOLDER)/deviceQuery: $(SRC_FOLDER)/deviceQuery.cpp
+	@mkdir -p $(BIN_FOLDER)
+	$(NVCC) $(NVCCFLAGS) $< -o $@
 
 clean:
 	rm -rf $(BIN_FOLDER) $(OBJ_FOLDER)
