@@ -5,8 +5,7 @@ NVCC=nvcc
 # C Compiler Flags: Added -g for debug symbols (required for Valgrind)
 CFLAGS=-O3 -Wall -g -fopenmp
 
-# CUDA Compiler Flags: Added -g and -lineinfo for profiling (required for Nsight Compute)
-# -arch=sm_80: Targets NVIDIA Ampere architecture (Standard for Cluster A100 GPUs)
+# CUDA Compiler Flags: Target set to sm_80 (Standard for Cluster A100/A30 GPUs)
 NVCCFLAGS=-O3 -arch=sm_80 --use_fast_math -Xptxas -v -g -lineinfo
 
 # Libraries and Include paths
@@ -20,8 +19,7 @@ OBJ_FOLDER := obj
 SRC_FOLDER := src
 
 # Executable Targets 
-TARGETS = $(BIN_FOLDER)/cpu-SpMV-COO \
-          $(BIN_FOLDER)/cpu-SpMV-CSR \
+TARGETS = $(BIN_FOLDER)/cpu-SpMV-CSR \
           $(BIN_FOLDER)/cuda-SpMV-COO \
           $(BIN_FOLDER)/cuda-SpMV-CSR \
           $(BIN_FOLDER)/cuda-SpMV-CSR-Vector \
@@ -48,10 +46,6 @@ $(OBJ_FOLDER)/matrix_utils.o: $(SRC_FOLDER)/matrix_utils.c
 	$(CC) $(CFLAGS) -c $< -o $@ $(INCLUDES)
 
 # --- CPU Executables ---
-
-$(BIN_FOLDER)/cpu-SpMV-COO: $(SRC_FOLDER)/cpu-SpMV-COO.c $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
-	@mkdir -p $(BIN_FOLDER)
-	$(CC) $(CFLAGS) $^ -o $@ $(INCLUDES) $(LIBS)
 
 $(BIN_FOLDER)/cpu-SpMV-CSR: $(SRC_FOLDER)/cpu-SpMV-CSR.c $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
 	@mkdir -p $(BIN_FOLDER)
