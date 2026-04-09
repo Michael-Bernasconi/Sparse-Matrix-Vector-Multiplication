@@ -24,7 +24,6 @@ data/*.zip
 *.nvvp
 *.nsys-rep
 *.log
-*.txt
 Notes.md
 todo.md
 Deliverable1_SpMV_Guidance_v2.pdf

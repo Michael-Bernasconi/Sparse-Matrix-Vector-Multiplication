@@ -25,7 +25,8 @@ for matrix in "$MATRIX_DIR"/*.mtx; do
          --ntasks=1 \
          --cpus-per-task=1 \
          --gres=gpu:1 \
-         --partition=edu-long \
+         --partition=edu-long\
+         --time=01:00:00 \
          --account=gpu.computing26 \
          ./run_single.sh "$matrix"
 
