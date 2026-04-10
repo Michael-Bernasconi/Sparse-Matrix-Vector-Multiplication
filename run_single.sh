@@ -26,7 +26,7 @@ for exe in "${executables[@]}"; do
             
             if [ "$exe" == "cpu-SpMV-CSR" ]; then
                 echo "    [Profiling CPU Cache...]"
-                # Valgrind con tool Cachegrind:
+                # Valgrind tool Cachegrind:
                 valgrind --tool=cachegrind --cache-sim=yes $BIN_DIR/$exe "$MATRIX_PATH" >> "$LOG_FILE" 2>&1
             else
                 $BIN_DIR/$exe "$MATRIX_PATH" >> "$LOG_FILE" 2>&1
