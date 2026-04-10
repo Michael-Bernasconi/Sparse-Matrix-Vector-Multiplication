@@ -20,8 +20,8 @@ for exe in "${executables[@]}"; do
         echo "--> Testing $exe..."
         echo -e "\n[$exe]" >> "$LOG_FILE"
         
-        for i in {1..5}; do
-            echo "    Run $i/5..."
+        for i in {1..1}; do
+            echo "    Run $i/1..."
             echo "--- Run $i ---" >> "$LOG_FILE"
             # execute and log
             $BIN_DIR/$exe "$MATRIX_PATH" >> "$LOG_FILE" 2>&1
