@@ -27,7 +27,6 @@ for matrix in "$MATRIX_DIR"/*.mtx; do
          --gres=gpu:1 \
          -w edu02 \
          --partition=edu-short \
-         --time=01:00:00 \
          --account=gpu.computing26 \
          ./run_single.sh "$matrix"
 
