@@ -24,7 +24,7 @@ for matrix in "$MATRIX_DIR"/*.mtx; do
 
     # --- JOB 2: CACHE ---
     echo "Submitting CACHE job..."
-    srun --nodes=1 --ntasks=1 --cpus-per-task=1 \
+    srun --nodes=1 --ntasks=1 --cpus-per-task=1 --gres=gpu:0 \
          --partition=edu-short -w edu01 --account=gpu.computing26 \
          ./run_cache.sh "$matrix"
 
