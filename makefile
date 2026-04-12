@@ -29,29 +29,18 @@ TARGETS = $(BIN_FOLDER)/cpu-SpMV-CSR \
 # Default target
 all: $(TARGETS)
 
-# Special target for profiling (overrides iterations from the command line)
-# Usage: make profile_build ITER="-DBENCHMARK_ITERATIONS=1 -DWARMUP_ITERATIONS=0"
+# Special target for profiling
 profile_build: CFLAGS += $(ITER)
 profile_build: NVCCFLAGS += $(ITER)
 profile_build: all
 
-# --- Compilation of Shared Objects ---
-
-$(OBJ_FOLDER)/my_time_lib.o: $(SRC_FOLDER)/my_time_lib.c
+$(OBJ_FOLDER)/%.o: $(SRC_FOLDER)/%.c
 	@mkdir -p $(OBJ_FOLDER)
 	$(CC) $(CFLAGS) -c $< -o $@ $(INCLUDES)
-
-$(OBJ_FOLDER)/matrix_utils.o: $(SRC_FOLDER)/matrix_utils.c
-	@mkdir -p $(OBJ_FOLDER)
-	$(CC) $(CFLAGS) -c $< -o $@ $(INCLUDES)
-
-# --- CPU Executables ---
 
 $(BIN_FOLDER)/cpu-SpMV-CSR: $(SRC_FOLDER)/cpu-SpMV-CSR.c $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
 	@mkdir -p $(BIN_FOLDER)
 	$(CC) $(CFLAGS) $^ -o $@ $(INCLUDES) $(LIBS)
-
-# --- GPU (CUDA) Executables ---
 
 $(BIN_FOLDER)/cuda-SpMV-COO: $(SRC_FOLDER)/cuda-SpMV-COO.cu $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
 	@mkdir -p $(BIN_FOLDER)
@@ -68,8 +57,6 @@ $(BIN_FOLDER)/cuda-SpMV-CSR-Vector: $(SRC_FOLDER)/cuda-SpMV-CSR-Vector.cu $(OBJ_
 $(BIN_FOLDER)/cuda-SpMV-cuSPARSE: $(SRC_FOLDER)/cuda-SpMV-cuSPARSE.cu $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
 	@mkdir -p $(BIN_FOLDER)
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(INCLUDES) $(LIBS) $(CUSPARSE_LIBS)
-
-# --- Hardware Query Executable ---
 
 $(BIN_FOLDER)/deviceQuery: $(SRC_FOLDER)/deviceQuery.cpp
 	@mkdir -p $(BIN_FOLDER)

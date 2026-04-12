@@ -14,18 +14,16 @@ LOG_FILE="$LOG_DIR/PERF_${MATRIX_NAME}_${TIMESTAMP}.log"
 echo "--- PERFORMANCE TESTING: $MATRIX_NAME ---"
 echo "Start time: $(date)" > "$LOG_FILE"
 
-# Standard binaries (default iterations)
+# List of executables to test
 executables=("cpu-SpMV-CSR" "cuda-SpMV-CSR" "cuda-SpMV-COO" "cuda-SpMV-CSR-Vector" "cuda-SpMV-cuSPARSE")
 
 for exe in "${executables[@]}"; do
     if [ -f "$BIN_DIR/$exe" ]; then
         echo "--> Testing $exe (Standard iterations)..."
         echo -e "\n[$exe]" >> "$LOG_FILE"
-        
         $BIN_DIR/$exe "$MATRIX_PATH" >> "$LOG_FILE" 2>&1
-        
         echo "-----------------------" >> "$LOG_FILE"
     else
-        echo "Warning: $exe not found"
+        echo "Warning: $exe not found in $BIN_DIR"
     fi
 done
