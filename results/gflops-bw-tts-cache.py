@@ -4,55 +4,54 @@ import seaborn as sns
 import os
 
 # 1. Path Settings
-csv_path = r'C:\Users\micha\Documents\GitHub\Sparse-Matrix-Vector-Multiplication\results\plots-table\1_deliverable_analysis_report.csv'
-output_dir = r'C:\Users\micha\Documents\GitHub\Sparse-Matrix-Vector-Multiplication\results\plots-table'
+csv_path = r'C:\Users\micha\Documents\GitHub\Sparse-Matrix-Vector-Multiplication\results\tables\1_deliverable_analysis_report.csv'
+output_dir = r'C:\Users\micha\Documents\GitHub\Sparse-Matrix-Vector-Multiplication\results\plots'
 
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-# 2. Data Loading & Cleaning
+# 2. Data Loading
 df = pd.read_csv(csv_path)
-df['Config'] = df['Config'].replace('cpu-SpMV-CSR-lite', 'cpu-SpMV-CSR')
 
-# 3. Light Professional Colors (Red, Yellow, Green, Blue, Pink - Soft versions)
-light_colors = ["#ff7675", "#ffeaa7", "#55efc4", "#74b9ff", "#fd98c0"]
+# 3. Vibrant Colors
+vibrant_colors = ["#ff4649", "#fffc35", "#76ff36", "#2ea8ff", "#7A2EFF"]
 
 def save_spmv_plot_minimal(data, metric, title, filename, ylabel, log_scale=False):
-    # Setup ultra-clean white style
     plt.figure(figsize=(20, 10))
-    sns.set_style("white", {'axes.grid': True, 'grid.color': '#f2f2f2', 'axes.edgecolor': '#404040'})
+    sns.set_style("white", {'axes.grid': True, 'grid.color': '#f8f9fa', 'grid.linestyle': '--'})
     
-    # Create the grouped bar chart
     ax = sns.barplot(
         data=data, 
         x='Matrix', 
         y=metric, 
         hue='Config', 
-        palette=light_colors, 
-        edgecolor="#404040", 
-        linewidth=0.8
+        palette=vibrant_colors, 
+        edgecolor="#666666", 
+        linewidth=1.0,
+        width=0.8
     )
     
-    # Titles and Labels
-    plt.title(title, fontsize=26, fontweight='bold', pad=30)
-    plt.xlabel('Matrix Name', fontsize=18, labelpad=15)
-    plt.ylabel(ylabel, fontsize=18, labelpad=15)
-    plt.xticks(rotation=45, ha='right', fontsize=14)
+    plt.title(title, fontsize=24, fontweight='bold', pad=60, color="#333333") 
+    plt.xlabel('Matrix Name', fontsize=16, labelpad=15, color="#555555")
+    plt.ylabel(ylabel, fontsize=16, labelpad=15, color="#555555")
+    plt.xticks(rotation=45, ha='right', fontsize=14, color="#333333")
+    plt.yticks(fontsize=14, color="#333333")
     
-    # LEGEND ON ONE ROW (Horizontal)
     plt.legend(
         title=None, 
-        loc='upper center', 
-        bbox_to_anchor=(0.5, -0.15), # Moves it below the X-axis
-        ncol=5,                      # Forces implementations on one row
-        frameon=False,               # No box around legend
+        loc='lower center', 
+        bbox_to_anchor=(0.5, 1.02),
+        ncol=5,
+        frameon=False,
         fontsize=14
     )
     
     if log_scale:
         ax.set_yscale("log")
+    else:
+        curr_ylim = ax.get_ylim()
+        ax.set_ylim(0, max(curr_ylim[1], 1) * 1.15)
 
-    # --- MINIMAL VERTICAL DATA LABELS (No boxes, no shadows) ---
     for p in ax.patches:
         val = p.get_height()
         if val > 0:
@@ -60,65 +59,73 @@ def save_spmv_plot_minimal(data, metric, title, filename, ylabel, log_scale=Fals
             elif val < 1: label = f'{val:.3f}'
             else: label = f'{val:.2f}'
             
-            # Simple text without background box
+            y_range = ax.get_ylim()[1] - ax.get_ylim()[0]
+            offset = y_range * 0.01 
+            
             ax.text(
                 p.get_x() + p.get_width() / 2., 
-                val + (val * 0.05 if not log_scale else val * 0.2), # Dynamic spacing
+                val + offset, 
                 label,
                 ha='center', 
                 va='bottom', 
                 fontsize=11, 
-                fontweight='bold', 
-                color='#333333',
+                color='#333333', 
                 rotation=90
             )
 
-    # Despine for a modern look (remove top and right borders)
-    sns.despine()
-    
+    sns.despine(left=False, bottom=False, top=True, right=True)
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, filename), dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"Exported: {filename}")
 
-# --- 1. BANDWIDTH ---
-df_bw = df[df['Avg BW (GB/s)'] > 0].copy()
-save_spmv_plot_minimal(df_bw, 'Avg BW (GB/s)', 'Memory Bandwidth Performance', 
-                      'bandwidth_minimal.png', 'GB/s')
+# --- 1, 2, 3. PERFORMANCES: ---
+df_perf = df[df['Config'] != 'cpu-SpMV-CSR-lite'].copy()
 
-# --- 2. GFLOPS ---
-df_gflops = df[df['Avg GFLOPS'] > 0].copy()
-save_spmv_plot_minimal(df_gflops, 'Avg GFLOPS', 'Computational Throughput', 
-                      'gflops_minimal.png', 'GFLOPS')
+save_spmv_plot_minimal(df_perf[df_perf['Avg BW (GB/s)'] >= 0], 'Avg BW (GB/s)', 
+                      'Memory Bandwidth Performance', '1_del_bandwidth.png', 'GB/s')
 
-# --- 3. EXECUTION TIME (TTS) ---
-df_tts = df[df['Avg TTS (s)'] > 0].copy()
-save_spmv_plot_minimal(df_tts, 'Avg TTS (s)', 'Time To Solution (TTS)', 
-                      'tts_minimal.png', 'Seconds', log_scale=True)
+save_spmv_plot_minimal(df_perf[df_perf['Avg GFLOPS'] >= 0], 'Avg GFLOPS', 
+                      'Computational Throughput', '1_del_gflops.png', 'GFLOPS')
 
-# --- 4. CACHE MISS RATE ---
-df_cache = df[df['D1 Miss %'] != "N/A"].copy()
-df_cache['D1 Miss %'] = pd.to_numeric(df_cache['D1 Miss %'])
+save_spmv_plot_minimal(df_perf[df_perf['Avg TTS (s)'] >= 0], 'Avg TTS (s)', 
+                      'Time To Solution (TTS)', '1_del_tts.png', 'Seconds')
+
+
+# --- 4. CACHE MISS RATE: only lite ---
+all_matrices = df['Matrix'].unique()
+
+df_cache = df[df['Config'] == 'cpu-SpMV-CSR-lite'].copy()
+df_cache['Config'] = 'cpu-SpMV-CSR'
+df_cache['D1 Miss %'] = pd.to_numeric(df_cache['D1 Miss %'], errors='coerce').fillna(0)
 
 plt.figure(figsize=(16, 8))
-sns.set_style("white", {'axes.grid': True, 'grid.color': '#f2f2f2'})
-ax = sns.barplot(data=df_cache, x='Matrix', y='D1 Miss %', color='#b2bec3', edgecolor="#404040")
+sns.set_style("white", {'axes.grid': True, 'grid.color': '#f8f9fa', 'grid.linestyle': '--'})
 
-plt.title('CPU L1 Cache Miss Rate', fontsize=24, fontweight='bold', pad=25)
-plt.ylabel('Percentage (%)', fontsize=16)
-plt.xticks(rotation=45, ha='right')
+# order
+ax = sns.barplot(data=df_cache, x='Matrix', y='D1 Miss %', color='#2ea8ff', 
+                 edgecolor="#666666", linewidth=1.0, width=0.5, order=all_matrices)
+
+plt.title('CPU L1 Cache Miss Rate', fontsize=24, fontweight='bold', pad=30, color="#333333")
+plt.ylabel('Percentage (%)', fontsize=16, color="#555555")
+plt.xticks(rotation=45, ha='right', fontsize=14, color="#333333")
+plt.yticks(fontsize=14, color="#333333")
+
+ax.set_ylim(0, max(ax.get_ylim()[1], 0.3) * 1.1)
 
 for p in ax.patches:
-    ax.text(
-        p.get_x() + p.get_width() / 2., 
-        p.get_height() + 0.01, 
-        f'{p.get_height():.2f}%', 
-        ha='center', va='bottom', fontsize=12, fontweight='bold', rotation=90
-    )
+    val = p.get_height()
+    if val > 0:
+        y_range = ax.get_ylim()[1] - ax.get_ylim()[0]
+        ax.text(
+            p.get_x() + p.get_width() / 2., 
+            val + (y_range * 0.01), 
+            f'{val:.2f}%', 
+            ha='center', va='bottom', fontsize=12, color='#333333', rotation=0
+        )
 
-sns.despine()
+sns.despine(left=False, bottom=False, top=True, right=True)
 plt.tight_layout()
-plt.savefig(os.path.join(output_dir, 'cache_miss_minimal.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(output_dir, '1_del_cache_cpu_miss.png'), dpi=300, bbox_inches='tight')
 plt.close()
 
-print(f"\nMinimalist plots saved in: {output_dir}")
+print(f"\nPlots saved in: {output_dir}")
