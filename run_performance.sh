@@ -3,7 +3,8 @@
 module load CUDA/11.8.0
 
 BIN_DIR="./bin"
-LOG_DIR="./results/single_matrices"
+# Get the log directory from the second argument, fallback to a default if empty
+LOG_DIR=${2:-"./results/single_matrices"}
 mkdir -p "$LOG_DIR"
 
 MATRIX_PATH=$1

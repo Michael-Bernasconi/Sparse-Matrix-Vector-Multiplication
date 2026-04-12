@@ -29,7 +29,7 @@ TARGETS = $(BIN_FOLDER)/cpu-SpMV-CSR \
 # Default target
 all: $(TARGETS)
 
-# Special target for profiling
+# Special target for profiling (custom iterations via command line)
 profile_build: CFLAGS += $(ITER)
 profile_build: NVCCFLAGS += $(ITER)
 profile_build: all

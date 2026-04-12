@@ -1,7 +1,8 @@
 #!/bin/bash
-# Script for CPU Cache profiling using perf (Hardware Counters)
+# Script for CPU Cache profiling using Valgrind Cachegrind
 BIN_DIR="./bin"
-LOG_DIR="./results/single_matrices"
+# Get the log directory from the second argument, fallback to a default if empty
+LOG_DIR=${2:-"./results/single_matrices"}
 mkdir -p "$LOG_DIR"
 
 MATRIX_PATH=$1
@@ -12,15 +13,14 @@ LOG_FILE="$LOG_DIR/CACHE_${MATRIX_NAME}_${TIMESTAMP}.log"
 echo "--- CACHE PROFILING: $MATRIX_NAME ---"
 echo "Start time: $(date)" > "$LOG_FILE"
 
-# We use the lite version (1 iteration) which is sufficient
+# Use the lite version (1 iteration) for cache simulation
 EXE="cpu-SpMV-CSR-lite"
 
 if [ -f "$BIN_DIR/$EXE" ]; then
-    echo "--> Profiling $EXE with perf..."
+    echo "--> Profiling $EXE with Valgrind..."
     echo -e "\n[Cache Profiling - $EXE]" >> "$LOG_FILE"
-    
-    perf stat -e cache-references,cache-misses "$BIN_DIR/$EXE" "$MATRIX_PATH" >> "$LOG_FILE" 2>&1
-    
+    # Execute cache simulation
+    valgrind --tool=cachegrind --cache-sim=yes "$BIN_DIR/$EXE" "$MATRIX_PATH" >> "$LOG_FILE" 2>&1    
     echo "-----------------------" >> "$LOG_FILE"
 else
     echo "Error: $EXE not found. Check compilation in master script."
