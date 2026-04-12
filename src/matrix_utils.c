@@ -281,7 +281,6 @@ void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix)
     matrix->N = N;
     matrix->nnz = actual_nnz;
 
-    // Optional: Reallocate to shrink memory to actual_nnz
     if (actual_nnz < max_nnz) {
         matrix->rows = (int *)realloc(matrix->rows, actual_nnz * sizeof(int));
         matrix->cols = (int *)realloc(matrix->cols, actual_nnz * sizeof(int));
