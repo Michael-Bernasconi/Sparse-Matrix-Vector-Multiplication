@@ -123,92 +123,170 @@ void validate_results(const float *ref, const float *test, int n)
 
 /**
  * Loads a Matrix Market file (.mtx) and converts it to CSR format.
+ * This version handles both 'general' and 'symmetric' storage types.
  */
-void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix)
-{
+void load_matrix_market_to_csr(const char *filename, CSRMatrix *matrix) {
     FILE *f = fopen(filename, "r");
-    if (!f)
-    {
-        fprintf(stderr, "Error opening %s\n", filename);
-        exit(1);
+    if (!f) { 
+        fprintf(stderr, "Error: Could not open file %s\n", filename); 
+        exit(1); 
     }
+
     char line[1024];
-    while (fgets(line, sizeof(line), f) && line[0] == '%')
-        ;
+    int is_symmetric = 0;
 
-    int rows, cols, nnz;
-    sscanf(line, "%d %d %d", &rows, &cols, &nnz);
-    matrix->M = rows;
-    matrix->N = cols;
-    matrix->nnz = nnz;
+    // 1. Parse the header to detect storage type (general vs symmetric)
+    if (fgets(line, sizeof(line), f)) {
+        if (strstr(line, "symmetric")) {
+            is_symmetric = 1;
+        }
+    }
 
-    int *coo_rows = malloc(nnz * sizeof(int));
-    int *coo_cols = malloc(nnz * sizeof(int));
-    float *coo_vals = malloc(nnz * sizeof(float));
-    for (int i = 0; i < nnz; i++)
-    {
-        double val;
-        fscanf(f, "%d %d %lf", &coo_rows[i], &coo_cols[i], &val);
-        coo_rows[i] -= 1; // Convert to 0-based indexing
-        coo_cols[i] -= 1;
-        coo_vals[i] = (float)val;
+    // 2. Skip comment lines (starting with %)
+    while (fgets(line, sizeof(line), f) && line[0] == '%');
+
+    // 3. Read matrix dimensions and number of non-zero elements (nnz)
+    int rows, cols, nnz_in_file;
+    sscanf(line, "%d %d %d", &rows, &cols, &nnz_in_file);
+
+    // Temporary COO storage allocation
+    // If symmetric, we might need up to twice the file's nnz (excluding diagonal)
+    int max_nnz = is_symmetric ? nnz_in_file * 2 : nnz_in_file;
+    int *coo_rows = (int *)malloc(max_nnz * sizeof(int));
+    int *coo_cols = (int *)malloc(max_nnz * sizeof(int));
+    float *coo_vals = (float *)malloc(max_nnz * sizeof(float));
+
+    int actual_nnz = 0;
+    for (int i = 0; i < nnz_in_file; i++) {
+        int r, c;
+        float v;
+        if (fscanf(f, "%d %d %f", &r, &c, &v) != 3) break;
+        
+        // Convert from 1-based (Matrix Market) to 0-based indexing
+        r--; c--; 
+
+        coo_rows[actual_nnz] = r;
+        coo_cols[actual_nnz] = c;
+        coo_vals[actual_nnz] = v;
+        actual_nnz++;
+
+        // If the matrix is symmetric and the element is off-diagonal,
+        // add the mirrored element (c, r, v)
+        if (is_symmetric && r != c) {
+            coo_rows[actual_nnz] = c;
+            coo_cols[actual_nnz] = r;
+            coo_vals[actual_nnz] = v;
+            actual_nnz++;
+        }
     }
     fclose(f);
 
-    matrix->row_ptr = calloc((rows + 1), sizeof(int));
-    matrix->col_idx = malloc(nnz * sizeof(int));
-    matrix->values = malloc(nnz * sizeof(float));
+    // 4. Initialize CSR structure with the actual total number of non-zeros
+    matrix->M = rows;
+    matrix->N = cols;
+    matrix->nnz = actual_nnz;
+    matrix->row_ptr = (int *)calloc(rows + 1, sizeof(int));
+    matrix->col_idx = (int *)malloc(actual_nnz * sizeof(int));
+    matrix->values = (float *)malloc(actual_nnz * sizeof(float));
 
-    // Histogram for row_ptr
-    for (int i = 0; i < nnz; i++)
+    // Histogram of non-zeros per row
+    for (int i = 0; i < actual_nnz; i++)
         matrix->row_ptr[coo_rows[i] + 1]++;
-    // Prefix sum
+
+    // Prefix sum to calculate row_ptr offsets
     for (int i = 0; i < rows; i++)
         matrix->row_ptr[i + 1] += matrix->row_ptr[i];
 
-    int *temp_ptr = malloc(rows * sizeof(int));
+    // Populate CSR arrays using a temporary pointer to track insertions per row
+    int *temp_ptr = (int *)malloc(rows * sizeof(int));
     memcpy(temp_ptr, matrix->row_ptr, rows * sizeof(int));
-    for (int i = 0; i < nnz; i++)
-    {
+    for (int i = 0; i < actual_nnz; i++) {
         int r = coo_rows[i];
         int dest = temp_ptr[r]++;
         matrix->col_idx[dest] = coo_cols[i];
         matrix->values[dest] = coo_vals[i];
     }
 
-    free(coo_rows);
-    free(coo_cols);
-    free(coo_vals);
+    // Free temporary COO buffers and auxiliary pointer
+    free(coo_rows); 
+    free(coo_cols); 
+    free(coo_vals); 
     free(temp_ptr);
 }
-
 /**
- * Loads a Matrix Market file (.mtx) directly into COO format.
+ * Loads a Matrix Market file (.mtx) into COO format.
+ * Handles both 'general' and 'symmetric' types.
  */
 void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix)
 {
     FILE *f = fopen(filename, "r");
     if (!f)
     {
-        fprintf(stderr, "Error opening %s\n", filename);
+        fprintf(stderr, "Error: Could not open file %s\n", filename);
         exit(1);
     }
 
     char line[1024];
-    while (fgets(line, sizeof(line), f) && line[0] == '%')
-        ;
-    sscanf(line, "%d %d %d", &matrix->M, &matrix->N, &matrix->nnz);
+    int is_symmetric = 0;
 
-    matrix->rows = malloc(matrix->nnz * sizeof(int));
-    matrix->cols = malloc(matrix->nnz * sizeof(int));
-    matrix->values = malloc(matrix->nnz * sizeof(float));
-    for (int i = 0; i < matrix->nnz; i++)
-    {
-        double val;
-        fscanf(f, "%d %d %lf", &matrix->rows[i], &matrix->cols[i], &val);
-        matrix->rows[i] -= 1; // 0-based indexing
-        matrix->cols[i] -= 1;
-        matrix->values[i] = (float)val;
+    // 1. Detect symmetry from the first header line
+    // Usa fgets per leggere la riga di testo
+    if (fgets(line, sizeof(line), f)) {
+        if (strstr(line, "symmetric")) {
+            is_symmetric = 1;
+        }
     }
+
+    // 2. Skip comments
+    while (fgets(line, sizeof(line), f) && line[0] == '%');
+
+    // 3. Read dimensions and non-zeros in file
+    int M, N, nnz_in_file;
+    sscanf(line, "%d %d %d", &M, &N, &nnz_in_file);
+
+    // Initial allocation: for symmetric, we might need up to 2*nnz
+    int max_nnz = is_symmetric ? nnz_in_file * 2 : nnz_in_file;
+    matrix->rows = (int *)malloc(max_nnz * sizeof(int));
+    matrix->cols = (int *)malloc(max_nnz * sizeof(int));
+    matrix->values = (float *)malloc(max_nnz * sizeof(float));
+
+    int actual_nnz = 0;
+    for (int i = 0; i < nnz_in_file; i++)
+    {
+        int r, c;
+        float val; // Valore in float
+        
+        // Usa fscanf per leggere i numeri
+        if (fscanf(f, "%d %d %f", &r, &c, &val) != 3) break;
+        
+        r--; c--; // Convert to 0-based indexing
+
+        matrix->rows[actual_nnz] = r;
+        matrix->cols[actual_nnz] = c;
+        matrix->values[actual_nnz] = val; // Nessun cast necessario
+        actual_nnz++;
+
+        // If symmetric and off-diagonal, add the (c, r) pair
+        if (is_symmetric && r != c)
+        {
+            matrix->rows[actual_nnz] = c;
+            matrix->cols[actual_nnz] = r;
+            matrix->values[actual_nnz] = val; // Nessun cast necessario
+            actual_nnz++;
+        }
+    }
+
+    // 4. Update the structure with the final dimensions and actual NNZ
+    matrix->M = M;
+    matrix->N = N;
+    matrix->nnz = actual_nnz;
+
+    // Optional: Reallocate to shrink memory to actual_nnz
+    if (actual_nnz < max_nnz) {
+        matrix->rows = (int *)realloc(matrix->rows, actual_nnz * sizeof(int));
+        matrix->cols = (int *)realloc(matrix->cols, actual_nnz * sizeof(int));
+        matrix->values = (float *)realloc(matrix->values, actual_nnz * sizeof(float));
+    }
+
     fclose(f);
 }
