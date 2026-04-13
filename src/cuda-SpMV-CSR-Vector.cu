@@ -61,15 +61,28 @@ __global__ void spmv_csr_vector_kernel(int M, const int *row_ptr, const int *col
         int row_start = row_ptr[row];
         int row_end = row_ptr[row + 1];
 
+        /**
+         * STRIDED MEMORY ACCESS =
+         * All 32 threads in the warp load values from the row in parallel.
+         * By using lane_id and incrementing by 32, we ensure coalesced global memory access.
+         * __ldg() is used to leverage the Read-Only Data Cache for better bandwidth.
+         */
         for (int i = row_start + lane_id; i < row_end; i += 32)
         {
             sum += __ldg(&vals[i]) * __ldg(&x[col_idx[i]]);
         }
 
+        // Store partial sums in shared memory for the reduction phase
         sdata[threadIdx.x] = sum;
         __syncwarp();
 
-        // Tree-based reduction in shared memory
+        /**
+         * TREE-BASED PARALLEL REDUCTION =
+         * Sum the values computed by the 32 threads of the warp.
+         * Each step halves the number of active threads until lane 0 holds the total sum.
+         * __syncwarp() is essential to avoid race conditions (replaces old __syncthreads() 
+         * for warp-level synchronization).
+         */
         if (lane_id < 16)
             sdata[threadIdx.x] += sdata[threadIdx.x + 16];
         __syncwarp();
