@@ -12,9 +12,11 @@
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
 \begin{document}
 
 \title{Performance Analysis of Sparse Matrix-Vector Multiplication (SpMV)}
+
 \author{\IEEEauthorblockN{Michael Bernasconi}
 \textit{ID Student: 267681}\\
 \textit{michael.bernasconi@studenti.unitn.it} \\
@@ -23,6 +25,7 @@
 \textit{University of Trento}\\
 }
 }
+
 \maketitle
 
 \begin{abstract}
@@ -34,64 +37,84 @@ component, formatting, style, styling, insert
 \end{IEEEkeywords}
 
 \section{Introduction}
-Problem statement, why SpMV matters, and the question your investigation
-addresses
+Problem statement, why SpMV matters, and the question your investigation addresses.
+\begin{itemize}
+    \item \textbf{Introduction:} What SpMV is, why performance is memory-bound, and the scope of the study.
+\end{itemize}
 
 \section{Methodology}
-Formats tested, CPU/GPU implementations, validation method,
-measurement methodology, and hardware/software environment
+Formats tested, CPU/GPU implementations, validation method, measurement methodology, and hardware/software environment.
+\begin{itemize}
+    \item \textbf{Methodology:} 
+    \begin{itemize}
+        \item Describe the formats (CSR-cpu, COO-GPU, CSR-gpu, CSR-vector-gpu, cuSPARSE).
+        \item Explain your kernels: Base COO, Base CSR, and your \textbf{Optimized CSR (explaining how you use shared memory and warps)}.
+        \item Describe the validation method (tolerance on \texttt{float32}).
+    \end{itemize}
+\end{itemize}
+
 \section{Dataset}
-Short characterization of the 10 SuiteSparse matrices and the random
-dense vector input.
+Short characterization of the 10 SuiteSparse matrices and the random dense vector input.
+\begin{itemize}
+    \item \textbf{Dataset:}
+    \begin{itemize}
+        \item Insert a \textbf{Summary Table}. Recommended columns: \texttt{Matrix Name | M (Rows) | N (Cols) | NNZ | Average NNZ per row | Row length variance | Description}.
+    \end{itemize}
+    \item State that the vector is random(42) with a fixed seed for reproducibility.
+    \item \textbf{Rigorous validation of results:}
+    \begin{itemize}
+        \item Write a function \texttt{validate\_results(float *y\_cpu, float *y\_gpu, int M)}. Since you are using floating-point numbers (\texttt{float}), use a \textbf{tolerance} (e.g., $epsilon = 1e-3$). Implement a \texttt{for} loop over the entire vector: if $abs(y\_cpu[i] - y\_gpu[i]) > epsilon$, print "FAIL", otherwise "PASS".
+        \item Explain this criterion in the report: result validation depends on the matrix type and the data representation method.
+    \end{itemize}
+    \item Hardware architecture.
+    \item \textbf{Theoretical Explanation in Validation:} In parallel architectures (GPUs), the order in which threads execute additions (e.g., via \texttt{atomicAdd} or reductions) is non-deterministic. Because floating-point arithmetic is non-associative, different summation orders generate slightly different rounding errors.
+    \item \textbf{Comparison with Peak Bandwidth (Peak Memory Throughput):} In the Bandwidth (BW) plots, add a horizontal line or perform a comparison with the Theoretical Peak Bandwidth of the GPU (e.g., A30 is $\sim$933.1 GB/s).
+\end{itemize}
 
 \section{Experimental Setup}
-- Experiments:
-- Hardware and software / library used / dataset 
-
+\begin{itemize}
+    \item Experiments.
+    \item Hardware and software / library used / dataset.
+\end{itemize}
 
 \section{Results}
-Plots/tables for runtime and FLOPS/GFLOP/s; optional memory/cache
-indicators
+Plots/tables for runtime and FLOPS/GFLOP/s; optional memory/cache indicators.
+\begin{itemize}
+    \item \textbf{Results:}
+    \begin{itemize}
+        \item Create bar charts (e.g., GFLOP/s for each matrix: Base CSR, Base COO, Opt CSR, cuSPARSE) and include the calculation formulas.
+        \item Check and show how to present average time and standard deviation, explaining the methodology as done in the documentation.
+        \item Create BW plots, time-to-solution plots, and charts or tables for cache hit/miss (with relative formulas).
+        \item \textbf{INCLUDE FORMULAS FOR EVERY METRIC}.
+        \item Include data on the measured temporal variability.
+    \end{itemize}
+\end{itemize}
+To mitigate the variability of the shared environment, each benchmark was submitted to the cluster 5 independent times, reporting the results of the best execution (best-of-5 minimum execution time). To ensure numerical consistency between the CSR (write-only) and COO (atomic-accumulate) formats, an output vector reset was included within the benchmark loop.
+
 \section{Discussion}
-Interpret the results in terms of format properties, matrix structure, and
-memory behavior
+Interpret the results in terms of format properties, matrix structure, and memory behavior.
+\begin{itemize}
+    \item \textbf{Discussion:} Explain the \textit{why} behind the results.
+    \item \textit{Load Balancing:} Explain how CSR-Vector outperforms CSR-Base in irregular matrices.
+    \item \textit{Memory Behavior:} Cite \texttt{ncu} data to demonstrate that optimizations reduce cache misses.
+    \item Explain why cuSPARSE is even faster (adaptive techniques).
+\end{itemize}
+
 \section{Conclusion}
-Main lessons learned, limitations, and practical takeaways.
-
-Practical interpretation: the strongest submissions will not simply say “kernel X is faster than kernel
-Y.” They will explain under which matrix characteristics and memory-access conditions that
-statement is true, and when it stops being true. For example, what is the load balancing? Do you
-have too many access in global memory? Your SMs are not fully utilized. Etc… etc.
-
+Main lessons learned, limitations, and practical takeaways. 
+\begin{itemize}
+    \item \textbf{Conclusion:} Main takeaways. Explain under which matrix characteristics and memory access conditions one kernel is preferable over another.
+\end{itemize}
 
 \section*{References}
-Please number citations consecutively within brackets \cite{b1}. The 
-sentence punctuation follows the bracket \cite{b2}. Refer simply to the reference 
-number, as in \cite{b3}---do not use ``Ref. \cite{b3}'' or ``reference \cite{b3}'' except at 
-the beginning of a sentence: ``Reference \cite{b3} was the first $\ldots$''
-
-Number footnotes separately in superscripts. Place the actual footnote at 
-the bottom of the column in which it was cited. Do not put footnotes in the 
-abstract or reference list. Use letters for table footnotes.
-
-Unless there are six authors or more give all authors' names; do not use 
-``et al.''. Papers that have not been published, even if they have been 
-submitted for publication, should be cited as ``unpublished'' \cite{b4}. Papers 
-that have been accepted for publication should be cited as ``in press'' \cite{b5}. 
-Capitalize only the first word in a paper title, except for proper nouns and 
-element symbols.
-
-For papers published in translation journals, please give the English 
-citation first, followed by the original foreign-language citation \cite{b6}.
-
 \begin{thebibliography}{00}
-\bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
-\bibitem{b2} J. Clerk Maxwell, A Treatise on Electricity and Magnetism, 3rd ed., vol. 2. Oxford: Clarendon, 1892, pp.68--73.
-\bibitem{b3} I. S. Jacobs and C. P. Bean, ``Fine particles, thin films and exchange anisotropy,'' in Magnetism, vol. III, G. T. Rado and H. Suhl, Eds. New York: Academic, 1963, pp. 271--350.
-\bibitem{b4} K. Elissa, ``Title of paper if known,'' unpublished.
-\bibitem{b5} R. Nicole, ``Title of paper with only first word capitalized,'' J. Name Stand. Abbrev., in press.
-\bibitem{b6} Y. Yorozu, M. Hirano, K. Oka, and Y. Tagawa, ``Electron spectroscopy studies on magneto-optical media and plastic substrate interface,'' IEEE Transl. J. Magn. Japan, vol. 2, pp. 740--741, August 1987 [Digests 9th Annual Conf. Magnetics Japan, p. 301, 1982].
+\bibitem{b1} Gao, J., Liu, B., Ji, W. and Huang, H., 2024. A systematic literature survey of sparse matrix-vector multiplication. arXiv preprint arXiv:2404.06047.
+\bibitem{b2} Chu, G., He, Y., Dong, L., Ding, Z., Chen, D., Bai, H., Wang, X., and Hu, C. Efficient Algorithm Design of Optimizing SpMV on GPU. In HPDC '23, 2023.
+\bibitem{b3} Bell, N., and Garland, M. Implementing Sparse Matrix-Vector Multiplication on Throughput-Oriented Processors. In SC '09, 2009.
+\bibitem{b4} Greathouse, J. L., and Daga, M. Efficient Sparse Matrix-Vector Multiplication on GPUs Using the CSR Storage Format. In SC14, 2014.
+\bibitem{b5} Liu, W., and Vinter, B. CSR5: An Efficient Storage Format for Cross-Platform Sparse Matrix-Vector Multiplication. In ICS '15, 2015.
+\bibitem{b6} Merrill, D., and Garland, M. Merge-Based Parallel Sparse Matrix-Vector Multiplication. In SC16, 2016.
 \bibitem{b7} M. Young, The Technical Writer's Handbook. Mill Valley, CA: University Science, 1989.
 \end{thebibliography}
-\vspace{12pt}
+
 \end{document}
