@@ -1,12 +1,12 @@
-ID,Matrix Name,Rows,Columns,NNZ,Average NNZ for rows,Dev Std Rows
-1420,ASIC_680ks,682712,682712,1693767,2.48,4.16
-1453,bone010,986703,986703,47851783,48.5,7.62
-1297,boyd2,466316,466316,1500397,3.22,194.91
-2380,FullChip,2987012,2987012,26621983,8.91,1806.8
-1353,Ga41As41H72,268096,268096,18488476,68.96,105.39
-1268,ldoor,952203,952203,42493817,44.63,14.77
-1398,rajat31,4690002,4690002,20316253,4.33,1.11
-1881,Rucci1,1977885,109900,7791168,3.94,0.34
-1362,Si41Ge41H72,185639,185639,15011265,80.86,126.97
-2379,webbase-1M,1000005,1000005,3105536,3.11,25.35
-,
+ID,Matrix Name,Rows,Columns,NNZ,Average NNZ for rows,Dev Std Rows,Description
+1420,ASIC_680ks,682712,682712,1693767,2.48,4.16,Integrated circuit simulation. It is a highly sparse square matrix with a highly irregular and asymmetric data distribution.
+1453,bone010,986703,986703,47851783,48.5,7.62,3D biomechanical finite element model of a bone. The data forms a symmetric matrix with a high concentration of values along specific bands.
+1297,boyd2,466316,466316,1500397,3.22,194.91,"Convex optimization problem. It features extreme irregularity, with a data structure where some rows are almost empty while others are extremely dense."
+2380,FullChip,2987012,2987012,26621983,8.91,1806.8,"Circuit simulation of an entire microchip. Its data exhibits extreme imbalance, with a very high variance in the number of elements per row."
+1353,Ga41As41H72,268096,268096,18488476,68.96,105.39,Quantum chemistry problem (Gallium Arsenide). Structured as a symmetric matrix characterized by highly dense and compact data blocks.
+1268,ldoor,952203,952203,42493817,44.63,14.77,"Finite element model for structural engineering. The data is distributed in a fairly homogeneous and symmetric manner, typical of 3D physical modeling."
+1398,rajat31,4690002,4690002,20316253,4.33,1.11,"Circuit simulation problem. It features an exceptionally balanced data structure, with elements distributed almost perfectly uniformly."
+1881,Rucci1,1977885,109900,7791168,3.94,0.34,"Bad conditioned least squares mathematical problem. It is the only rectangular dataset, with the number of rows disproportionately exceeding the number of columns."
+1362,Si41Ge41H72,185639,185639,15011265,80.86,126.97,"Quantum chemistry for Silicon and Germanium. It possesses the highest average data density per row of the entire set, clustered in a symmetrical structure."
+2379,webbase-1M,1000005,1000005,3105536,3.11,25.35,"Directed graph of web connections. The data follows an irregular 'power-law' distribution, featuring a few hyper-connected hubs and a vast number of nearly isolated nodes."
+,,,,,,,
