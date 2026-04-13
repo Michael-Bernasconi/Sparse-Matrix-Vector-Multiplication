@@ -111,60 +111,71 @@ save_spmv_plot_minimal(df_perf[df_perf['Avg GFLOPS'] >= 0], 'Avg GFLOPS',
 save_spmv_plot_minimal(df_perf[df_perf['Avg TTS (s)'] >= 0], 'Avg TTS (s)', 
                       'Time To Solution (TTS)', '1_del_tts.png', 'Seconds')
 
-
-# --- 5. CACHE MISS RATE PLOT ---
-# Specific plot for CPU Cache analysis using the 'lite' (Cachegrind) data
+# --- 5. CACHE MISS VISUAL TABLE GENERATION (ENGLISH & PLOT STYLE) ---
+# 1. Identify all unique matrices from the original report
 all_matrices = df['Matrix'].unique()
+
+# 2. Extract cache data (lite configuration from Cachegrind)
 df_cache = df[df['Config'] == 'cpu-SpMV-CSR-lite'].copy()
-df_cache['Config'] = 'cpu-SpMV-CSR' # Labeling it for consistency in the legend
-df_cache['D1 Miss %'] = pd.to_numeric(df_cache['D1 Miss %'], errors='coerce').fillna(0)
 
-plt.figure(figsize=(10, 3.5))
-sns.set_style("white", {'axes.grid': True, 'grid.color': '#eeeeee', 'grid.linestyle': '-'})
+# 3. Build the full table including matrices with missing data (Timeouts)
+cache_table_data = pd.DataFrame({'Matrix Name': all_matrices})
+merge_data = df_cache[['Matrix', 'D1 Miss %', 'LL Miss %']].rename(columns={'Matrix': 'Matrix Name'})
+cache_df = pd.merge(cache_table_data, merge_data, on='Matrix Name', how='left')
 
-# Create a single-color bar plot for Cache Miss Rates
-ax = sns.barplot(data=df_cache, x='Matrix', y='D1 Miss %', hue='Config', palette=['#ff4649'], 
-                  edgecolor="#000000", linewidth=0.6, width=0.4, order=all_matrices)
+# 4. English Labeling & Formatting
+def format_cache_val(val):
+    try:
+        if pd.isna(val) or val == 'N/A': return "-"
+        return f"{float(val):.1f}%"
+    except:
+        return "-"
 
-plt.title('CPU L1 Cache Miss Rate', fontsize=12, fontweight='bold', pad=35)
-plt.ylabel('Percentage (%)', fontsize=10)
-plt.xticks(rotation=20, ha='right', fontsize=9)
-plt.yticks(fontsize=9)
+cache_df['L1 Data Miss'] = cache_df['D1 Miss %'].apply(format_cache_val)
+cache_df['LLC Miss'] = cache_df['LL Miss %'].apply(format_cache_val)
 
-# Legend setup for the cache plot
-plt.legend(
-    title='Algorithms', 
-    loc='upper center', 
-    bbox_to_anchor=(0.5, 1.3),
-    frameon=False,
-    fontsize=8,
-    title_fontsize=9
+# Select only the required columns (Algorithm removed)
+final_table_df = cache_df[['Matrix Name', 'L1 Data Miss', 'LLC Miss']]
+
+# --- GRAPHICAL TABLE CREATION (MATPLOTLIB) ---
+fig, ax = plt.subplots(figsize=(8, 5)) # Slightly narrower as we have fewer columns
+ax.axis('tight')
+ax.axis('off')
+
+# Use the first color of your palette for the header
+header_color = vibrant_colors[0] 
+
+# Create the table
+table = ax.table(
+    cellText=final_table_df.values, 
+    colLabels=final_table_df.columns, 
+    cellLoc='center', 
+    loc='center',
+    colColours=[header_color] * 3 # Adjusted for 3 columns
 )
 
-# Adjust Y-axis scale to leave space for percentage text
-ax.set_ylim(0, max(ax.get_ylim()[1], 0.3) * 1.4)
+# Apply Styling
+table.auto_set_font_size(False)
+table.set_fontsize(9)
+table.scale(1.2, 1.8) 
 
-for spine in ax.spines.values():
-    spine.set_visible(True)
-    spine.set_edgecolor('#000000')
-    spine.set_linewidth(0.8)
+for (row, col), cell in table.get_celld().items():
+    cell.set_edgecolor('#333333')
+    cell.set_linewidth(0.6)
+    
+    if row == 0:
+        cell.set_text_props(weight='bold', color='white')
+    else:
+        cell.set_text_props(color='#000000')
+        if cell.get_text().get_text() == "-":
+            cell.set_text_props(color='#999999')
 
-ax.tick_params(axis='both', which='major', direction='out', length=4, width=0.8, color='#000000', left=True, bottom=True)
+# Title positioned closer to the table (pad reduced from 30 to 10)
+plt.title('CPU Cache Metrics Analysis (cpu-SpMV-CSR)', fontsize=12, fontweight='bold')
 
-# Annotate each bar with the specific percentage value
-for p in ax.patches:
-    val = p.get_height()
-    if val > 0:
-        ax.text(
-            p.get_x() + p.get_width() / 2., 
-            val + (ax.get_ylim()[1] * 0.02), 
-            f'{val:.1f}%', 
-            ha='center', va='bottom', fontsize=8, color='#000000'
-        )
-
-# Finalize and save the cache plot
-plt.tight_layout()
-plt.savefig(os.path.join(output_dir, '1_del_cache_cpu_miss.png'), dpi=300, bbox_inches='tight')
+# Save the table as an image
+plt.savefig(os.path.join(output_dir, '1_del_cache_table.png'), dpi=300, bbox_inches='tight')
 plt.close()
 
+print(f"\nCache table image saved in: {output_dir}")
 print(f"\nAnalysis complete. Paper-style plots saved in: {output_dir}")
