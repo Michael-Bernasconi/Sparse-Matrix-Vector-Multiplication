@@ -1,17 +1,13 @@
 Feature,Host (CPU),Device (GPU)
 Model,Intel(R) Xeon(R) Silver 4309Y,NVIDIA A30
 Architecture,Ice Lake (x86_64),Ampere (GA100) - CC 8.0
-Cores / Processing Units,16 Cores / 32 Threads (2 Sockets),56 SMs (3584 CUDA Cores)
-Specialized Units,AVX-512 Vector Units,224 Tensor Cores (3rd Gen)
-Clock Frequency,2.80 GHz Base / 3.60 GHz Max,1.44 GHz (Boost)
-FP32 Performance (Peak),1.5 TFLOPS,10.3 TFLOPS
-Tensor Performance (FP16/BF16),N/A,165 TFLOPS (with Sparsity)
-Memory Capacity,System RAM,24 GB HBM2e
-Memory Bandwidth,102.4 GB/s,933.1 GB/s
-Memory Bus / Clock,8-channel DDR4 / 2667 MHz,3072-bit / 1215 MHz
+Cores / SMs,16 Cores / 32 Threads (2 Sockets),56 SMs (3584 CUDA Cores)
+Clock Frequency,2.80 GHz (Base) / 3.60 GHz (Max),1.44 GHz (Boost)
+FP32 Performance,1.84 TFLOPS,10.3 TFLOPS
+Memory Bandwidth,102.4 GB/s,933.1 GB/s (HBM2)
 L1 Cache,768 KiB Data / 512 KiB Inst. (Total),192 KiB per SM (Unified L1/Shared)
-L2 Cache,20 MiB (Total),24 MiB
-L3 Cache,24 MiB (Total),N/A (L2 serves as LLC)
-Shared / Constant Memory,N/A,Up to 100 KiB (Shared) / 64 KiB (Constant)
-Thread Limits / Hierarchy,2 NUMA nodes (2 Threads/Core),Max 1024 threads/block (Warp: 32)
-Max Registers per Block,N/A,64K (32-bit registers)
+L2 Cache,1.25 MiB per core,24 MiB (Shared LLC)
+L3 Cache,24 MiB (Shared LLC),N/A (L2 serves as LLC)
+Shared Memory,N/A,Up to 99 KiB per block (Configurable)
+Thread Limits,2 Threads/Core (Hyper-threading),1024 th/block (2048 th/SM)
+Registers,AVX-512 Vector Units,64K (32-bit) per SM / Max 255 per thread
