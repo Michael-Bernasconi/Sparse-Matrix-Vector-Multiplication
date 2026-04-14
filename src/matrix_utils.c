@@ -230,7 +230,6 @@ void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix)
     int is_symmetric = 0;
 
     // 1. Detect symmetry from the first header line
-    // Usa fgets per leggere la riga di testo
     if (fgets(line, sizeof(line), f)) {
         if (strstr(line, "symmetric")) {
             is_symmetric = 1;
@@ -254,16 +253,15 @@ void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix)
     for (int i = 0; i < nnz_in_file; i++)
     {
         int r, c;
-        float val; // Valore in float
+        float val; 
         
-        // Usa fscanf per leggere i numeri
         if (fscanf(f, "%d %d %f", &r, &c, &val) != 3) break;
         
         r--; c--; // Convert to 0-based indexing
 
         matrix->rows[actual_nnz] = r;
         matrix->cols[actual_nnz] = c;
-        matrix->values[actual_nnz] = val; // Nessun cast necessario
+        matrix->values[actual_nnz] = val; // No cast
         actual_nnz++;
 
         // If symmetric and off-diagonal, add the (c, r) pair
@@ -271,7 +269,7 @@ void load_matrix_market_to_coo(const char *filename, COOMatrix *matrix)
         {
             matrix->rows[actual_nnz] = c;
             matrix->cols[actual_nnz] = r;
-            matrix->values[actual_nnz] = val; // Nessun cast necessario
+            matrix->values[actual_nnz] = val; // No cast
             actual_nnz++;
         }
     }

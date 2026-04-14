@@ -4,7 +4,7 @@
 MATRIX_DIR="./data"
 BASE_LOG_DIR="./results/single_matrices"
 
-# if you want execute with only 1 file (./submit_all.sh data/mio.mtx),
+# if you want to execute with only 1 file (./submit_all.sh data/my.mtx),
 # otherwise you can execute all
 if [ -n "$1" ]; then
     SELECTED_MATRICES=("$1")
@@ -43,7 +43,6 @@ for run_id in {1..5}; do
     echo " STARTING RUN ${run_id} / 5 "
     echo "======================================================="
 
-    # Iteriamo sull'array definito all'inizio (singolo file o tutti)
     for matrix in "${SELECTED_MATRICES[@]}"; do
         [ -e "$matrix" ] || continue
         m_name=$(basename "$matrix")
