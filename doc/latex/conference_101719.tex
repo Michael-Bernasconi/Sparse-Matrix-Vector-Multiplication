@@ -35,75 +35,83 @@
 \begin{IEEEkeywords}
 component, formatting, style, styling, insert
 \end{IEEEkeywords}
-
 \section{Introduction}
-Problem statement, why SpMV matters, and the question your investigation addresses.
+Problem statement, why SpMV matters, and the question your investigation addresses[cite: 52].
 \begin{itemize}
-    \item \textbf{Introduction:} What SpMV is, why performance is memory-bound, and the scope of the study.
+    \item \textbf{Problem Statement:} What the Sparse Matrix-Vector Multiplication (SpMV) operation is and why it is a fundamental building block in HPC.
+    \item \textbf{The Bottleneck:} Why SpMV performance is typically memory-bound (due to extremely low arithmetic intensity).
+    \item \textbf{Scope and Objective:} The research question your investigation addresses. The goal is to move beyond a COO vs. CSR vs CSR-vector vs cuSPARSE evaluation and produce a comprehensive experimental study on how sparse storage formats and implementation strategies affect SpMV performance on the GPU Ampere architecture[cite: 4, 7].
 \end{itemize}
 
 \section{Methodology}
-Formats tested, CPU/GPU implementations, validation method, measurement methodology, and hardware/software environment.
+Formats tested, CPU/GPU implementations, validation method, measurement methodology, and hardware/software environment[cite: 52].
 \begin{itemize}
-    \item \textbf{Methodology:} 
+    \item \textbf{Hardware \& Software Environment:} 
     \begin{itemize}
-        \item Describe the formats (CSR-cpu, COO-gpu, CSR-gpu, CSR-vector-gpu, cuSPARSE).
-        \item Explain your kernels: Base COO, Base CSR, and your \textbf{Optimized CSR (explaining how you use shared memory and warps)}.
-        \item Describe the validation method (tolerance on \texttt{float32}).
+        \item Specify the target architecture (e.g., NVIDIA A30 GPU, Ampere [cite: 4]), CUDA toolkit version, compiler flags (e.g., \texttt{-O3}, \texttt{-arch=sm\_80}), and OS.
+        \item Mention the use of Nsight Compute (\texttt{ncu}) as the profiling tool to evaluate global-memory and cache miss behavior[cite: 45].
+    \end{itemize}
+    
+    \item \textbf{CPU Baseline \& GPU Kernels:}
+    \begin{itemize}
+        \item \textit{CPU Baseline:} A straightforward sequential or OpenMP implementation, explicitly stating it is used for validation and is not aggressively optimized[cite: 12, 38].
+        \item \textit{GPU Formats:} (PSEUDOCODICE) Briefly describe the tested formats (e.g., COO, CSR, CSR-Vector, cuSPARSE)[cite: 10, 14].
+        \item \textit{Kernels Tested:} Explain your implemented kernels: Base COO, Base CSR, and your \textbf{Optimized CSR}. Detail how you use shared memory to reduce the cost of accessing global memory and how warp-level primitives improve load balancing[cite: 16].
+    \end{itemize}
+
+    \item \textbf{Measurement Methodology:}
+    \begin{itemize}
+        \item \textit{Consistency:} To ensure numerical consistency between write-only formats (CSR) and atomic-accumulate formats (COO), state that an explicit output vector reset was included within the benchmark loop.
+        \item \textit{Variability Mitigation:} Explain that runtime is isolated strictly to kernel execution, ignoring one-time setup costs like file parsing[cite: 44]. To mitigate shared environment noise, each benchmark performs 5 independent runs, reporting the best-of-5 (minimum execution time) as a justified stable statistic[cite: 47].
+    \end{itemize}
+
+    \item \textbf{Performance Metrics (Formulas):}
+    \begin{itemize}
+        \item State the formula for computational throughput (GFLOP/s), defining the standard estimate of 2 floating-point operations per non-zero (NNZ) element[cite: 43].
+        \item Define the formula for Effective Bandwidth (GB/s).
+        \item State the Theoretical Peak Bandwidth of the target GPU (e.g., $\sim$933.1 GB/s for the A30) as the theoretical upper bound.
+        \item Provide formulas for Cache Hit/Miss rates as extracted from the profiler.
+    \end{itemize}
+
+    \item \textbf{Correctness \& Validation:}
+    \begin{itemize}
+        \item Describe the validation function \texttt{validate\_results(float *y\_cpu, float *y\_gpu, int M)}. 
+        \item Since \texttt{Float32} is used [cite: 31], explain the tolerance-based comparison method (e.g., $\epsilon = 1e-3$)[cite: 37]. Implement a \texttt{for} loop over the entire vector: if $|y\_cpu[i] - y\_gpu[i]| > \epsilon$, print ``FAIL'', otherwise ``PASS''.
+        \item \textit{Theoretical Explanation:} Explain why validation depends on the representation method. In parallel architectures (GPUs), the thread execution order for additions (e.g., via \texttt{atomicAdd}) is non-deterministic. Because floating-point arithmetic is non-associative, different summation orders inevitably generate slightly different rounding errors.
     \end{itemize}
 \end{itemize}
 
 \section{Dataset}
-Short characterization of the 10 SuiteSparse matrices and the random dense vector input.
+Short characterization of the 10 SuiteSparse matrices and the random dense vector input[cite: 52].
 \begin{itemize}
-    \item \textbf{Dataset:}
-    \begin{itemize}
-        \item Insert a \textbf{Summary Table}. Recommended columns: \texttt{Matrix Name | M (Rows) | N (Cols) | NNZ | Average NNZ per row | Row length variance | Description}.
-    \end{itemize}
-    \item State that the vector is random(42) with a fixed seed for reproducibility.
-    \item \textbf{Rigorous validation of results:}
-    \begin{itemize}
-        \item Write a function \texttt{validate\_results(float *y\_cpu, float *y\_gpu, int M)}. Since you are using floating-point numbers (\texttt{float}), use a \textbf{tolerance} (e.g., $epsilon = 1e-3$). Implement a \texttt{for} loop over the entire vector: if $abs(y\_cpu[i] - y\_gpu[i]) > epsilon$, print "FAIL", otherwise "PASS".
-        \item Explain this criterion in the report: result validation depends on the matrix type and the data representation method.
-    \end{itemize}
-    \item Hardware architecture.
-    \item \textbf{Theoretical Explanation in Validation:} In parallel architectures (GPUs), the order in which threads execute additions (e.g., via \texttt{atomicAdd} or reductions) is non-deterministic. Because floating-point arithmetic is non-associative, different summation orders generate slightly different rounding errors.
-    \item \textbf{Comparison with Peak Bandwidth (Peak Memory Throughput):} In the Bandwidth (BW) plots, add a horizontal line or perform a comparison with the Theoretical Peak Bandwidth of the GPU (e.g., A30 is $\sim$933.1 GB/s).
-\end{itemize}
-
-\section{Experimental Setup}
-\begin{itemize}
-    \item Experiments.
-    \item Hardware and software / library used / dataset.
+    \item \textbf{SuiteSparse Selection:} Justify your dataset selection. State that the 10 matrices were carefully chosen to cover different regimes in size, sparsity structure, and row-length variability, including both highly structured and clearly unstructured matrices to stress different access patterns[cite: 23, 24, 25, 27].
+    \item \textbf{Summary Table:} Insert a structural summary table[cite: 29]. Recommended format: 
+    \texttt{Matrix Name | M (Rows) | N (Cols) | NNZ | Average NNZ per row | Row length variance | Description}.
+    \item \textbf{Input Vector:} State that for every experiment, a randomly generated dense \texttt{Float32} vector of compatible size is used, keeping the random seed fixed (e.g., \texttt{random(42)}) to ensure reproducibility[cite: 30, 31].
 \end{itemize}
 
 \section{Results}
-Plots/tables for runtime and FLOPS/GFLOP/s; optional memory/cache indicators.
+Plots/tables for runtime and FLOPS/GFLOP/s; optional memory/cache indicators[cite: 52]. \textit{(Note: Visual data presentation only; formulas are established in Methodology).}
 \begin{itemize}
-    \item \textbf{Results:}
-    \begin{itemize}
-        \item Create bar charts (e.g., GFLOP/s for each matrix: Base CSR, Base COO, Opt CSR, cuSPARSE) and include the calculation formulas.
-        \item Check and show how to present average time and standard deviation, explaining the methodology as done in the documentation.
-        \item Create BW plots, time-to-solution plots, and charts or tables for cache hit/miss (with relative formulas).
-        \item \textbf{INCLUDE FORMULAS FOR EVERY METRIC}.
-        \item Include data on the measured temporal variability.
-    \end{itemize}
+    \item \textbf{Throughput \& Runtime:} Include bar charts comparing GFLOP/s across the 10 matrices for Base CSR, Base COO, Opt CSR, and cuSPARSE[cite: 19]. Include time-to-solution plots displaying the measured temporal variability (e.g., standard deviation or min-max bounds).
+    \item \textbf{Bandwidth Plots:} Create Effective Bandwidth (GB/s) charts. Add a horizontal line representing the Theoretical Peak Bandwidth (e.g., $\sim$933.1 GB/s) to visually demonstrate how close the implementations are to being memory-bound[cite: 55].
+    \item \textbf{Memory/Cache Indicators:} Provide charts or tables (using data from \texttt{ncu}) showing cache hit/miss behavior and global memory accesses[cite: 45].
 \end{itemize}
-To mitigate the variability of the shared environment, each benchmark was submitted to the cluster 5 independent times, reporting the results of the best execution (best-of-5 minimum execution time). To ensure numerical consistency between the CSR (write-only) and COO (atomic-accumulate) formats, an output vector reset was included within the benchmark loop.
 
 \section{Discussion}
-Interpret the results in terms of format properties, matrix structure, and memory behavior.
+Interpret the results in terms of format properties, matrix structure, and memory behavior[cite: 52]. Connect the measured behavior to algorithmic techniques and matrix characteristics[cite: 49].
 \begin{itemize}
-    \item \textbf{Discussion:} Explain the \textit{why} behind the results.
-    \item \textit{Load Balancing:} Explain how CSR-Vector outperforms CSR-Base in irregular matrices.
-    \item \textit{Memory Behavior:} Cite \texttt{ncu} data to demonstrate that optimizations reduce cache misses.
-    \item Explain why cuSPARSE is even faster (adaptive techniques).
+    \item \textbf{Load Balancing \& Matrix Structure:} Do not simply state ``kernel X is faster''[cite: 58]. Explain \textit{why}. Discuss how row-length regularity and variance affect performance[cite: 53]. For instance, precisely explain under which structural conditions (e.g., highly irregular matrices) CSR-Vector outperforms CSR-Base by mitigating load imbalance[cite: 50].
+    \item \textbf{Memory Behavior \& SM Utilization:} Address how close the results are to the memory bound and what evidence supports this[cite: 55]. Use the \texttt{ncu} profiling data to demonstrate how your shared-memory optimizations improved memory coalescing and locality, reducing cache misses[cite: 54]. Conversely, analyze situations where too many irregular global memory accesses leave the Streaming Multiprocessors (SMs) starving/underutilized[cite: 60, 61].
+    \item \textbf{The cuSPARSE Advantage:} Analyze the performance gap with cuSPARSE[cite: 14], theorizing its use of adaptive load-balancing techniques, dynamic partitioning, or undocumented heuristics tailored to specific matrix regimes.
 \end{itemize}
 
 \section{Conclusion}
-Main lessons learned, limitations, and practical takeaways. 
+Main lessons learned, limitations, and practical takeaways[cite: 52].
 \begin{itemize}
-    \item \textbf{Conclusion:} Main takeaways. Explain under which matrix characteristics and memory access conditions one kernel is preferable over another.
+    \item \textbf{Main Lessons Learned:} Summarize which observations are intrinsic to the mathematical structure of the matrix itself, and which are artifacts of specific implementation choices[cite: 56].
+    \item \textbf{Practical Takeaways:} Clearly state the optimal use-cases. Explain exactly under which matrix characteristics (e.g., low NNZ/row, high variance) and memory-access conditions a specific kernel or format ceases to be advantageous and another should be preferred[cite: 59].
+    \item \textbf{Limitations:} Briefly mention study limitations (e.g., exclusively testing \texttt{Float32} arithmetic or specific Ampere architecture constraints).
 \end{itemize}
 
 \section*{References}
@@ -116,5 +124,4 @@ Main lessons learned, limitations, and practical takeaways.
 \bibitem{b6} Merrill, D., and Garland, M. Merge-Based Parallel Sparse Matrix-Vector Multiplication. In SC16, 2016.
 \bibitem{b7} M. Young, The Technical Writer's Handbook. Mill Valley, CA: University Science, 1989.
 \end{thebibliography}
-
 \end{document}
