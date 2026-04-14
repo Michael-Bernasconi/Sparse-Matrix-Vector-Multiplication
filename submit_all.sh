@@ -8,10 +8,10 @@ BASE_LOG_DIR="./results/single_matrices"
 # otherwise you can execute all
 if [ -n "$1" ]; then
     SELECTED_MATRICES=("$1")
-    echo "Modo: Esecuzione singola matrice: $1"
+    echo "Mode: Execute only one matrix: $1"
 else
     SELECTED_MATRICES=("$MATRIX_DIR"/*.mtx)
-    echo "Modo: Esecuzione completa (tutte le matrici in $MATRIX_DIR)"
+    echo "Mode: Execute all (all matrix in $MATRIX_DIR)"
 fi
 
 echo "Starting compilation..."
