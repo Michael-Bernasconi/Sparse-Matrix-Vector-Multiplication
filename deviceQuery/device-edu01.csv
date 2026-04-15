@@ -1,13 +1,14 @@
 Feature,Host (CPU),Device (GPU)
 Model,Intel(R) Xeon(R) Silver 4309Y,NVIDIA A30
-Architecture,Ice Lake (x86_64),Ampere (GA100) - CC 8.0
+Architecture,Ice Lake (x86_64),Ampere (Compute Capability 8.0)
 Cores / SMs,16 Cores / 32 Threads (2 Sockets),56 SMs (3584 CUDA Cores)
 Clock Frequency,2.80 GHz (Base) / 3.60 GHz (Max),1.44 GHz (Boost)
 FP32 Performance,1.84 TFLOPS,10.3 TFLOPS
 Memory Bandwidth,102.4 GB/s,933.1 GB/s (HBM2)
+Total Global Memory,N/A,24 GB
 L1 Cache,768 KiB Data / 512 KiB Inst. (Total),192 KiB per SM (Unified L1/Shared)
-L2 Cache,1.25 MiB per core,24 MiB (Shared LLC)
+L2 Cache,"20 MiB (16 instances, 1.25 MiB/core)",24 MiB (Shared LLC)
 L3 Cache,24 MiB (Shared LLC),N/A (L2 serves as LLC)
-Shared Memory,N/A,Up to 99 KiB per block (Configurable)
+Shared Memory,N/A,48 KiB (up to 100 KiB per SM)
 Thread Limits,2 Threads/Core (Hyper-threading),1024 th/block (2048 th/SM)
-Registers,AVX-512 Vector Units,64K (32-bit) per SM / Max 255 per thread
+Warp Size,N/A,32
