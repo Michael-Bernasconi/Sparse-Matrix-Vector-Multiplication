@@ -93,9 +93,10 @@ Short characterization of the 10 SuiteSparse matrices and the random dense vecto
 \section{Results}
 Plots/tables for runtime and FLOPS/GFLOP/s; optional memory/cache indicators. \textit{(Note: Visual data presentation only; formulas are established in Methodology).}
 \begin{itemize}
-    \item \textbf{Throughput \& Runtime:} Include bar charts comparing GFLOP/s across the 10 matrices for Base CSR, Base COO, Opt CSR, and cuSPARSE. Include time-to-solution plots displaying the measured temporal variability (e.g., standard deviation or min-max bounds).
+    \item \textbf{Throughput \& Runtime:} Include bar charts comparing GFLOP/s across the 10 matrices for Base CSR, Base COO, Opt CSR, and cuSPARSE. Include kernel-time plots displaying the measured temporal variability (e.g., standard deviation or min-max bounds).
     \item \textbf{Bandwidth Plots:} Create Effective Bandwidth (GB/s) charts. Add a horizontal line representing the Theoretical Peak Bandwidth (e.g., $\sim$933.1 GB/s) to visually demonstrate how close the implementations are to being memory-bound.
     \item \textbf{Memory/Cache Indicators:} Provide charts or tables (using data from \texttt{valgrind}) showing cache hit/miss behavior and global memory accesses.
+    \item Nonostante le ottimizzazioni del kernel, il TTS rimane dominato dal caricamento I/O per le matrici meno dense
 \end{itemize}
 
 \section{Discussion}

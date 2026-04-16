@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import matplotlib.ticker as ticker
 
 # 1. Path Settings
 csv_path = r'C:\Users\micha\Documents\GitHub\Sparse-Matrix-Vector-Multiplication\results\tables\1_deliverable_analysis_report.csv'
@@ -10,99 +11,79 @@ output_dir = r'C:\Users\micha\Documents\GitHub\Sparse-Matrix-Vector-Multiplicati
 if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-# 2. Data Loading
+# 2. Data Loading and Cleaning
 df = pd.read_csv(csv_path)
+# Remove file extension for cleaner axis labels
+df['Matrix'] = df['Matrix'].str.replace('.mtx', '', regex=False)
 
 # 3. Paper-style Visual Settings
 vibrant_colors = ["#ff4649", "#fffc35", "#76ff36", "#2ea8ff", "#7A2EFF"]
 
-def save_spmv_plot_minimal(data, metric, title, filename, ylabel, log_scale=False, log_lower_limit=1e-4):
+def save_spmv_plot_minimal(data, metric, title, filename, ylabel, log_scale=False, log_lower_limit=0.1, specific_ticks=None, is_ms=False):
     """
-    Final optimized version:
-    - TTS starts at 10^-1
-    - Kernel Time starts at 10^-4
-    - Clean decimal labels (no scientific notation like 'e-04' on bars)
-    - Full chart box with black borders
+    BALANCED VERSION: 
+    Spaced-out matrix names for readability, but tight X-axis title to eliminate excess white space.
     """
-    plt.figure(figsize=(12, 6.0)) 
-    
-    # Light background grid
+    plot_data = data.copy()
+    if is_ms:
+        plot_data[metric] = plot_data[metric] * 1000
+
+    plt.figure(figsize=(12, 6.2)) 
     sns.set_style("whitegrid", {'grid.color': '#f0f0f0'})
     
     ax = sns.barplot(
-        data=data, 
-        x='Matrix', 
-        y=metric, 
-        hue='Config', 
-        palette=vibrant_colors, 
-        edgecolor="#333333", 
-        linewidth=0.7,
-        width=0.8,
-        gap=0.05 
+        data=plot_data, x='Matrix', y=metric, hue='Config', 
+        palette=vibrant_colors, edgecolor="#333333", linewidth=0.7, width=0.8, gap=0.05 
     )
     
-    # TITLE AND AXIS LABELS
-    plt.title(title, fontsize=14, fontweight='bold', color="#000000", pad=55) 
-    plt.xlabel('Sparse Matrix Name', fontsize=11, fontweight='bold', labelpad=10)
+    # TITLES AND LABELS
+    plt.title(title, fontsize=14, fontweight='bold', color="#000000", pad=45) 
     plt.ylabel(ylabel, fontsize=11, fontweight='bold')
     
-    plt.xticks(rotation=25, ha='right', fontsize=10, color="#000000")
-    plt.yticks(fontsize=10, color="#000000")
+    # --- SPACE OPTIMIZATION ---
+    # Low labelpad (15) brings "Sparse Matrix Name" closer to the matrix labels
+    plt.xlabel('Sparse Matrix Name', fontsize=11, fontweight='bold', labelpad=15) 
     
-    # LEGEND AND "ALGORITHMS" TEXT
-    plt.legend(
-        loc='upper center', 
-        bbox_to_anchor=(0.5, 1.14), 
-        ncol=5,
-        frameon=False,
-        fontsize=9,
-        columnspacing=1.5
-    )
+    # Keep pad at 20 to maintain distance between matrix names and the bars
+    plt.xticks(rotation=30, ha='right', va='top', rotation_mode='anchor', fontsize=10, color="#000000")
+    ax.tick_params(axis='x', which='major', length=0, pad=20) 
     
-    # AXIS LIMITS AND LOG SCALE
+    # Maintain the long pointer line (-0.08) for a clean professional look
+    unique_matrices = plot_data['Matrix'].unique()
+    for i in range(len(unique_matrices)):
+        ax.vlines(x=i, ymin=-0.08, ymax=0, transform=ax.get_xaxis_transform(), 
+                  color='black', linewidth=1.5, clip_on=False)
+    # ------------------------------
+
+    # LOG SCALE MANAGEMENT
     if log_scale:
         ax.set_yscale("log")
-        curr_ylim = ax.get_ylim()
-        # Apply specific lower limit (10^-1 for TTS, 10^-4 for Kernel)
-        ax.set_ylim(log_lower_limit, curr_ylim[1] * 8) 
+        if specific_ticks:
+            ax.set_yticks(specific_ticks)
+            ax.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
+            ax.set_ylim(specific_ticks[0], specific_ticks[-1] * 3) 
     else:
-        curr_ylim = ax.get_ylim()
-        ax.set_ylim(0, max(curr_ylim[1], 1) * 1.25)
+        ax.set_ylim(0, plot_data[metric].max() * 1.3)
 
-    # MAINTAIN BORDERS (FULL BOX)
+    # SPINES
     for spine in ax.spines.values():
         spine.set_visible(True)
         spine.set_edgecolor('#333333')
-        spine.set_linewidth(0.8)
+        spine.set_linewidth(1.0)
 
-    # LABELS ABOVE BARS (DECIMAL LOGIC)
+    # VALUE LABELS ON TOP OF BARS
     for p in ax.patches:
         val = p.get_height()
         if val > 0:
-            # Fixed decimal formatting to avoid messy scientific notation on bars
-            if val < 0.001:
-                label = f'{val:.4f}' 
-            elif val < 1:
-                label = f'{val:.3f}'
-            else:
-                label = f'{val:.2f}'
-            
-            if log_scale:
-                # Logarithmic offset to prevent text overlapping the bar
-                y_pos = val * 1.15 
-            else:
-                y_pos = val + (ax.get_ylim()[1] * 0.02)
+            label = f'{val:.4f}' if val < 0.01 else (f'{val:.3f}' if val < 1 else f'{val:.2f}')
+            y_pos = val * 1.12 if log_scale else val + (ax.get_ylim()[1] * 0.02)
+            ax.text(p.get_x() + p.get_width() / 2., y_pos, label,
+                ha='center', va='bottom', fontsize=8, color='#000000', rotation=90)
 
-            ax.text(
-                p.get_x() + p.get_width() / 2., 
-                y_pos, 
-                label,
-                ha='center', va='bottom', fontsize=8, color='#000000', 
-                rotation=90, fontweight='medium'
-            )
-
-    # Final margin adjustments
-    plt.subplots_adjust(top=0.82, bottom=0.18, left=0.08, right=0.98)
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.12), ncol=5, frameon=False, fontsize=9)
+    
+    # Adjust bottom margin to 0.28 to tighten the figure without clipping labels
+    plt.subplots_adjust(top=0.85, bottom=0.28, left=0.08, right=0.98)
     
     plt.savefig(os.path.join(output_dir, filename), dpi=300, bbox_inches='tight')
     plt.close()
@@ -110,22 +91,24 @@ def save_spmv_plot_minimal(data, metric, title, filename, ylabel, log_scale=Fals
 # --- EXECUTION ---
 df_perf = df[df['Config'] != 'cpu-SpMV-CSR-lite'].copy()
 
-# 1. Memory Bandwidth
-save_spmv_plot_minimal(df_perf[df_perf['Avg BW (GB/s)'] >= 0], 'Avg BW (GB/s)', 
-                      'Memory Bandwidth Performance', '1_del_bandwidth.png', 'Bandwidth (GB/s)')
+# 1. Bandwidth Plot
+save_spmv_plot_minimal(df_perf, 'Avg BW (GB/s)', 
+                       'Memory Bandwidth Performance', '1_del_bandwidth.png', 'Bandwidth (GB/s)', 
+                       log_scale=True, specific_ticks=[0.1, 1, 10, 100, 1000])
 
-# 2. Computational Throughput
-save_spmv_plot_minimal(df_perf[df_perf['Avg GFLOPS'] >= 0], 'Avg GFLOPS', 
-                      'Computational Throughput', '1_del_gflops.png', 'Throughput (GFLOPS)')
+# 2. GFLOPS Plot
+save_spmv_plot_minimal(df_perf, 'Avg GFLOPS', 
+                       'Computational Throughput', '1_del_gflops.png', 'Throughput (GFLOPS)', 
+                       log_scale=True, specific_ticks=[0.1, 1, 10, 100])
 
-# 3. Total Time To Solution (Log scale starting from 10^-1 / 0.1)
-save_spmv_plot_minimal(df_perf[df_perf['Avg TTS (s)'] >= 0], 'Avg TTS (s)', 
-                      'Total Time To Solution (TTS)', '1_del_tts.png', 'Time (Seconds)', 
-                      log_scale=True, log_lower_limit=1e-1)
+# 3. TTS Plot
+save_spmv_plot_minimal(df_perf, 'Avg TTS (s)', 
+                       'Total Time To Solution (TTS)', '1_del_tts.png', 'Time (Seconds)', 
+                       log_scale=True, specific_ticks=[0.1, 1, 10, 100])
 
-# 4. Kernel Execution Time (Log scale starting from 10^-4 / 0.0001)
-save_spmv_plot_minimal(df_perf[df_perf['Avg Time (s)'] >= 0], 'Avg Time (s)', 
-                      'Kernel Execution Time (Pure Compute)', '1_del_kernel_time.png', 'Time (Seconds)', 
-                      log_scale=True, log_lower_limit=1e-4)
+# 4. Kernel Time Plot
+save_spmv_plot_minimal(df_perf, 'Avg Time (s)', 
+                       'Kernel Execution Time', '1_del_kernel_time.png', 'Time (ms)', 
+                       log_scale=True, is_ms=True, specific_ticks=[0.01, 0.1, 1, 10, 100, 1000])
 
-print(f"Analysis complete. All plots saved successfully in: {output_dir}")
+print("Done! Plots generated with proper name spacing and minimized bottom white space.")
