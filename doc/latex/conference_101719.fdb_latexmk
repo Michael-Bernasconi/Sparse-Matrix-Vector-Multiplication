@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1776346542.95943 "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/conference_101719.tex" "conference_101719.pdf" "conference_101719" 1776346543.73815 0
+["pdflatex"] 1776353201.23647 "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/conference_101719.tex" "conference_101719.pdf" "conference_101719" 1776353202.03296 0
   "C:/Users/micha/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1774951325 82507 a9eef8696c92627b87e9975edea03b2a ""
   "C:/Users/micha/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1774862659 13333487 95dd5ab4fbdeb78c419fe91d30494741 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -101,10 +101,10 @@
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1729265222 55384 b454dec21c2d9f45ec0b793f0995b992 ""
   "IEEEtran.cls" 1775926328 281957 5b2e4fa15b0f7eabb840ebf67df4c0f7 ""
-  "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/conference_101719.tex" 1776346542 9867 e849e5fcde138675a79e9d55e714d9d5 ""
-  "conference_101719.aux" 1776346543 1048 6b864d296e3203ec06313953b6dbfe95 "pdflatex"
-  "conference_101719.out" 1776346543 637 ca029e50e220928e88310072ad00d3e9 "pdflatex"
-  "conference_101719.tex" 1776346542 9867 e849e5fcde138675a79e9d55e714d9d5 ""
+  "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/conference_101719.tex" 1776353200 10633 4975cb753db8d555d9a20bafaf4eff7b ""
+  "conference_101719.aux" 1776353201 1048 6b864d296e3203ec06313953b6dbfe95 "pdflatex"
+  "conference_101719.out" 1776353201 637 ca029e50e220928e88310072ad00d3e9 "pdflatex"
+  "conference_101719.tex" 1776353200 10633 4975cb753db8d555d9a20bafaf4eff7b ""
   (generated)
   "conference_101719.aux"
   "conference_101719.log"

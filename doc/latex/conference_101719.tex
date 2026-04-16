@@ -36,12 +36,14 @@
 component, formatting, style, styling, insert
 \end{IEEEkeywords}
 \section{Introduction}
-Problem statement, why SpMV matters, and the question your investigation addresses.
-\begin{itemize}
-    \item \textbf{Problem Statement:} What the Sparse Matrix-Vector Multiplication (SpMV) operation is and why it is a fundamental building block in HPC.
-    \item \textbf{The Bottleneck:} Why SpMV performance is typically memory-bound (due to extremely low arithmetic intensity).
-    \item \textbf{Scope and Objective:} The research question your investigation addresses. The goal is to move beyond a COO vs. CSR vs CSR-vector vs cuSPARSE evaluation and produce a comprehensive experimental study on how sparse storage formats and implementation strategies affect SpMV performance on the GPU Ampere architecture.
-\end{itemize}
+The Sparse Matrix-Vector Multiplication (SpMV) operation, defined as $y = Ax$, costitutes a critical computational kernel for High-Performance Computing (HPC) and scientific simulations.
+Due to its low arithmetic intensity, quantifiable as $2 \times nnz$ total operations, SpMV is an inherently memory-bound operation.
+Its effiency is further hindered by the irregulare nature of memory accesses, which are strictly dependent on the matrix sparsity structure.
+This study analyzes the impact of storage formats and parallelization stategies on the NVIDIA Ampere architecture, comparing custom CUDA implementations (COO, CSR, and CSR-Vector) with the highly optimized cuSPARSE library.
+The investigation evaluates performance through key metrics: kernel execution time, throughput (GFLOPS), and effective Bandwidth (BW).
+Beyond a standard comparative evaluation, this work examines the link between data topology and performance, analyzing how parallel computing efficiency is influenced by memory organization and cache hit/miss rates.
+The analysis demonstrates how the structural characteristics of matrices from different application domains-raning from fluid dynamics to socail network graphs-decisively influence the overall operation speed and hardware utilization.
+The objective is to provide a comprehensive experimetnal study that clarifies under which structural conditions specific formats or kernels should be prederred to mitigate the instrinsic bottlenecks of sparse computation.
 
 \section{Methodology}
 Formats tested, CPU/GPU implementations, validation method, measurement methodology, and hardware/software environment.
