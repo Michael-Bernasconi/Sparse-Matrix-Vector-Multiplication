@@ -84,13 +84,40 @@ Formats tested, CPU/GPU implementations, validation method, measurement methodol
 \end{itemize}
 
 \section{Dataset}
-Short characterization of the 10 SuiteSparse matrices and the random dense vector input.
-\begin{itemize}
-    \item \textbf{SuiteSparse Selection:} Justify your dataset selection. State that the 10 matrices were carefully chosen to cover different regimes in size, sparsity structure, and row-length variability, including both highly structured and clearly unstructured matrices to stress different access patterns.
-    \item \textbf{Summary Table:} Insert a structural summary table. Recommended format: 
-    \texttt{Matrix Name | M (Rows) | N (Cols) | NNZ | Average NNZ per row | Row length variance | Description}.
-    \item \textbf{Input Vector:} State that for every experiment, a randomly generated dense \texttt{Float32} vector of compatible size is used, keeping the random seed fixed (e.g., \texttt{random(42)}) to ensure reproducibility.
-\end{itemize}
+The experimental evaluation is conducted on a selection of 10 sparse matrice from \textit{SuiteSparse Matrix Collection}, following the benchmark suite proposed by  Chu et al. \cite{bChu2023}.
+These datasets were specifically chosen to represent a wide variety of applciation domains and structural characteristics.
+
+\begin{table}[htbp]
+\caption{Structural characteristics of the selected SuiteSparse matrices}
+\begin{center}
+\footnotesize
+\setlength{\tabcolsep}{3pt} 
+\begin{tabular}{|l|r|r|r|r|r|}
+\hline
+\textbf{Matrix Name} & \textbf{Rows ($M$)} & \textbf{Cols ($N$)} & \textbf{NNZ} & \textbf{Avg.} & \textbf{Std. Dev.} \\
+& & & & \textbf{NNZ/R} & \textbf{Rows} \\
+\hline
+ASIC\_680ks     & 682,712    & 682,712    & 1,693,767  & 2.48  & 4.16    \\
+bone010         & 986,703    & 986,703    & 47,851,783 & 48.50 & 7.62    \\
+boyd2           & 466,316    & 466,316    & 1,500,397  & 3.22  & 194.91  \\
+FullChip        & 2,987,012  & 2,987,012  & 26,621,983 & 8.91  & 1,806.80 \\
+Ga41As41H72     & 268,096    & 268,096    & 18,488,476 & 68.96 & 105.39  \\
+ldoor           & 952,203    & 952,203    & 42,493,817 & 44.63 & 14.77   \\
+rajat31         & 4,690,002  & 4,690,002  & 20,316,253 & 4.33  & 1.11    \\
+Rucci1          & 1,977,885  & 109,900    & 7,791,168  & 3.94  & 0.34    \\
+Si41Ge41H72     & 185,639    & 185,639    & 15,011,265 & 80.86 & 126.97  \\
+webbase-1M      & 1,000,005  & 1,000,005  & 3,105,536  & 3.11  & 25.35   \\
+\hline
+\end{tabular}
+\label{tab:datasets}
+\end{center}
+\end{table}
+
+\subsection{Input Generation and Precision}
+The test utilize single precision (\texttt{Float32}), whic is the standard for high performance computing on GPUs. The dense vector $x$ ($N \times 1$) is generated using the \texttt{fill\_random\_vector} function, which initializes the pseudo-random generator with a fixed seed (\texttt{srand(42)}).
+Values are normalized within the range $[0, 1]$ using the ratio \texttt{rand()/RAND\_MAX}.
+This approach ensures the reproducibility od results between CPU and GPU, isolating the perfomance analysis solely to the strucutral characteristics of the matrices and the efficiency of the kernels.
+
 
 \section{Results}
 Plots/tables for runtime and FLOPS/GFLOP/s; optional memory/cache indicators. \textit{(Note: Visual data presentation only; formulas are established in Methodology).}
@@ -119,12 +146,6 @@ Main lessons learned, limitations, and practical takeaways.
 
 \section*{References}
 \begin{thebibliography}{00}
-\bibitem{b1} Gao, J., Liu, B., Ji, W. and Huang, H., 2024. A systematic literature survey of sparse matrix-vector multiplication. arXiv preprint arXiv:2404.06047.
-\bibitem{b2} Chu, G., He, Y., Dong, L., Ding, Z., Chen, D., Bai, H., Wang, X., and Hu, C. Efficient Algorithm Design of Optimizing SpMV on GPU. In HPDC '23, 2023.
-\bibitem{b3} Bell, N., and Garland, M. Implementing Sparse Matrix-Vector Multiplication on Throughput-Oriented Processors. In SC '09, 2009.
-\bibitem{b4} Greathouse, J. L., and Daga, M. Efficient Sparse Matrix-Vector Multiplication on GPUs Using the CSR Storage Format. In SC14, 2014.
-\bibitem{b5} Liu, W., and Vinter, B. CSR5: An Efficient Storage Format for Cross-Platform Sparse Matrix-Vector Multiplication. In ICS '15, 2015.
-\bibitem{b6} Merrill, D., and Garland, M. Merge-Based Parallel Sparse Matrix-Vector Multiplication. In SC16, 2016.
-\bibitem{b7} M. Young, The Technical Writer's Handbook. Mill Valley, CA: University Science, 1989.
+\bibitem{bChu2023} G. Chu, Y. He, L. Dong, Z. Ding, D. Chen, H. Bai, X. Wang, and C. Hu, ``Efficient Algorithm Design of Optimizing SpMV on GPU,'' in \textit{Proc. 32nd Int. Symp. High-Perform. Parallel Distrib. Comput. (HPDC '23)}, 2023, pp. 243–256. doi: 10.1145/3588195.3593002.
 \end{thebibliography}
 \end{document}
