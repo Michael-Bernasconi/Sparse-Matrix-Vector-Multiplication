@@ -78,6 +78,7 @@ Warp Size & N/A & 32 \\
 \subsection{CPU Baseline and GPU Implementations}
 CPU Baseline: The reference computation on the CPU was handled through a parallel implementation based on OpenMP. This computational phase is not intended as a performance benchmark, but is used for the validation and correctness check on the results subsequently computed in parallel by the GPU.\\
 In GPU computation, SpMV performance critically depends on the interaction between the memory layout of the sparse matrix and the adopted execution model. In order to analyze this dual aspect (data structure and computational logic), our investigation focuses on the following approaches:\\
+
 1. COO Format and Base Kernel\\
 The Coordinate (COO) format explicitly stores the sparse matrix through three arrays of size equal to the number of non-zero elements (NNZ): row indices, column indices, and values.
 
@@ -91,7 +92,8 @@ The Coordinate (COO) format explicitly stores the sparse matrix through three ar
 \end{algorithmic}
 \end{algorithm}
 
-The Base COO kernel adopts a direct mapping strategy: it launches a single thread for each non-zero element. This approach distributes an excellent load balance among the multiprocessors, being totally insensitive to the distribution of elements in the rows (structural variance). However, since multiple threads can process elements belonging to the same row simultaneously, it forces the massive use of atomic locks (\texttt{atomicAdd}) to resolve \textit{race conditions} when writing to the output vector $y$, limiting overall performance.\\
+The Base COO kernel adopts a direct mapping strategy: it launches a single thread for each non-zero element. This approach distributes an excellent load balance among the multiprocessors, being totally insensitive to the distribution of elements in the rows. However, since multiple threads can process elements belonging to the same row simultaneously, it forces the massive use of atomic locks (\texttt{atomicAdd}) to resolve \textit{race conditions} when writing to the output vector $y$, limiting overall performance.\\
+
 2. CSR Format and Base Kernel (Scalar)\\
 The Compressed Sparse Row (CSR) format optimizes the memory footprint of COO by compressing the row index array into a \texttt{row\_ptr} vector of size $M+1$ (where $M$ is the number of rows), keeping the column and value vectors explicit.
 
@@ -111,10 +113,9 @@ The Compressed Sparse Row (CSR) format optimizes the memory footprint of COO by 
 \end{algorithmic}
 \end{algorithm}
 
-The Base CSR kernel maps a single thread to a single row of the matrix. This allows the sequential accumulation of products on a local register (\texttt{sum}), completely eliminating atomic write operations. Its critical disadvantage emerges with highly irregular matrices: rows of different lengths cause a severe temporal imbalance among the threads of the same warp (\textit{warp divergence}) and generate non-coalesced global memory access patterns.
+The Base CSR kernel maps a single thread to a single row of the matrix. This allows the sequential accumulation of products on a local register (\texttt{sum}), completely eliminating atomic write operations. Its critical disadvantage emerges with highly irregular matrices: rows of different lengths cause a severe temporal imbalance among the threads of the same warp and generate non-coalesced global memory access patterns.\\
 
-\vspace{0.3cm}
-\noindent 3. Optimized CSR-Vector Kerne
+3. Optimized CSR-Vector Kernel\\
 To overcome the inefficiencies of Base CSR without altering the memory format, the CSR-Vector kernel redefines the execution granularity. Instead of assigning one thread per row, it maps an entire \textit{warp} (32 threads) to process a single row. The optimization is divided into three phases:
 \begin{enumerate}
     \item Coalesced Access: The threads within the warp use their internal index (\texttt{lane\_id}) to access the row elements in a strided manner. This guarantees perfectly aligned global memory transactions, maximizing bandwidth utilization.

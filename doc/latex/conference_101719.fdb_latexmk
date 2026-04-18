@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1776523434.34985 "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/conference_101719.tex" "conference_101719.pdf" "conference_101719" 1776523435.18692 0
-  "C:/Users/micha/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1774951325 82507 a9eef8696c92627b87e9975edea03b2a ""
+["pdflatex"] 1776524685.42902 "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/conference_101719.tex" "conference_101719.pdf" "conference_101719" 1776524686.24777 0
+  "C:/Users/micha/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1776523720 82507 a9eef8696c92627b87e9975edea03b2a ""
   "C:/Users/micha/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1774862659 13333487 95dd5ab4fbdeb78c419fe91d30494741 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136765053 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -108,10 +108,10 @@
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/xcolor/xcolor.sty" 1729265222 55384 b454dec21c2d9f45ec0b793f0995b992 ""
   "IEEEtran.cls" 1775926328 281957 5b2e4fa15b0f7eabb840ebf67df4c0f7 ""
-  "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/conference_101719.tex" 1776523432 16329 a70ba7e41d176b92ad3aee144b37fe68 ""
-  "conference_101719.aux" 1776523435 2634 33ebde462add46ba18ba5587361c77bf "pdflatex"
-  "conference_101719.out" 1776523435 1643 2b29cd0160246163d98480414fcd892c "pdflatex"
-  "conference_101719.tex" 1776523432 16329 a70ba7e41d176b92ad3aee144b37fe68 ""
+  "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/conference_101719.tex" 1776524684 16263 0d1e06484f95ecf6715e6c3d27fccbb4 ""
+  "conference_101719.aux" 1776524686 2634 39339b818cddfd2cbb0bf8f6a5b78aaf "pdflatex"
+  "conference_101719.out" 1776524686 1643 2b29cd0160246163d98480414fcd892c "pdflatex"
+  "conference_101719.tex" 1776524684 16263 0d1e06484f95ecf6715e6c3d27fccbb4 ""
   (generated)
   "conference_101719.aux"
   "conference_101719.log"
