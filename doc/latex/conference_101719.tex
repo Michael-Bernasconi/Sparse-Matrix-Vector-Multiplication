@@ -34,58 +34,142 @@
 
 \begin{IEEEkeywords}
 component, formatting, style, styling, insert
-\end{IEEEkeywords}
-\section{Introduction}
-The Sparse Matrix-Vector Multiplication (SpMV) operation, defined as $y = Ax$, costitutes a critical computational kernel for High-Performance Computing (HPC) and scientific simulations.
+\end{IEEEkeywords}\section{Introduction}
+The Sparse Matrix-Vector Multiplication (SpMV) operation, defined as $y = Ax$, constitutes a critical computational kernel for High-Performance Computing.
 Due to its low arithmetic intensity, quantifiable as $2 \times nnz$ total operations, SpMV is an inherently memory-bound operation.
-Its effiency is further hindered by the irregulare nature of memory accesses, which are strictly dependent on the matrix sparsity structure.
-This study analyzes the impact of storage formats and parallelization stategies on the NVIDIA Ampere architecture, comparing custom CUDA implementations (COO, CSR, and CSR-Vector) with the highly optimized cuSPARSE library.
-The investigation evaluates performance through key metrics: kernel execution time, throughput (GFLOPS), and effective Bandwidth (BW).
-Beyond a standard comparative evaluation, this work examines the link between data topology and performance, analyzing how parallel computing efficiency is influenced by memory organization and cache hit/miss rates.
-The analysis demonstrates how the structural characteristics of matrices from different application domains-raning from fluid dynamics to socail network graphs-decisively influence the overall operation speed and hardware utilization.
-The objective is to provide a comprehensive experimetnal study that clarifies under which structural conditions specific formats or kernels should be prederred to mitigate the instrinsic bottlenecks of sparse computation.
+Its efficiency is further hindered by the irregular nature of memory accesses, which strictly depend on the matrix's sparsity structure.
+This study analyzes the impact of storage formats and parallelization strategies on the NVIDIA Ampere architecture, comparing custom CUDA implementations (COO, CSR, and CSR-Vector) with the NVIDIA cuSPARSE library.\\
+The investigation evaluates performance through key metrics: kernel execution time, throughput (GFLOPS), and effective bandwidth (BW).
+This study correlates matrix structural characteristics with hardware performance, offering an experimental guide for selecting the optimal format and kernel to mitigate computational bottlenecks.
 
 \section{Methodology}
-Formats tested, CPU/GPU implementations, validation method, measurement methodology, and hardware/software environment.
+This section illustrates the test environment, the examined matrix formats, the CPU and GPU implementations, the rigorous methodology adopted for performance measurement, and the methods to validate their mathematical correctness.
+
+\subsection{Hardware and Software Environment}
+The experiments were conducted on a compute node, whose main specifications are summarized in Table \ref{tab:hardware}.
+
+\begin{table}[htbp]
+\caption{Hardware Environment Specifications}
+\begin{center}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{|l|p{3.5cm}|p{3.5cm}|}
+\hline
+Feature & Host (CPU) & Device (GPU) \\
+\hline
+Model & Intel Xeon Silver 4309Y & NVIDIA A30 \\
+Architecture & Ice Lake (x86\_64) & Ampere (Compute Cap. 8.0) \\
+Cores / SM & 16 Cores / 32 Threads (2 Sock.) & 56 SM (3584 CUDA Cores) \\
+Clock Frequency & 2.80 GHz (Base) / 3.60 GHz & 1.44 GHz (Boost) \\
+FP32 Performance & 1.84 TFLOPS & 10.3 TFLOPS \\
+Memory Bandwidth & 102.4 GB/s & 933.1 GB/s (HBM2) \\
+Total Global Memory & N/A & 24 GB \\
+L1 Cache & 768 KiB Data / 512 KiB Instr. & 192 KiB per SM (Unified) \\
+L2 Cache & 20 MiB & 24 MiB (Shared LLC) \\
+L3 Cache & 24 MiB (Shared LLC) &  N/A (L2 acts as LLC) \\
+Shared Memory & N/A & 48-100 KiB / SM \\
+Thread Limits & 2 Threads/Core  & 1024 th/block (2048 th/SM) \\
+Warp Size & N/A & 32 \\
+\hline
+\end{tabular}
+\label{tab:hardware}
+\end{center}
+\end{table}
+\subsection{CPU Baseline and GPU Implementations}
+CPU Baseline: The reference computation on the CPU was handled through a parallel implementation based on OpenMP. This computational phase is not intended as a performance benchmark, but is used for the validation and correctness check on the results subsequently computed in parallel by the GPU.\\
+In GPU computation, SpMV performance critically depends on the interaction between the memory layout of the sparse matrix and the adopted execution model. In order to analyze this dual aspect (data structure and computational logic), our investigation focuses on the following approaches:\\
+1. COO Format and Base Kernel\\
+The Coordinate (COO) format explicitly stores the sparse matrix through three arrays of size equal to the number of non-zero elements (NNZ): row indices, column indices, and values.
+
+\begin{algorithm}[h]
+\caption{SpMV Kernel - GPU Base COO}\label{alg:coo}
+\begin{algorithmic}[1]
+\STATE $i \gets \text{blockIdx.x} \times \text{blockDim.x} + \text{threadIdx.x}$
+\IF{$i < \text{nnz}$}
+    \STATE $\text{atomicAdd}(\&y[\text{rows}[i]], \text{vals}[i] \times x[\text{cols}[i]])$
+\ENDIF
+\end{algorithmic}
+\end{algorithm}
+
+The Base COO kernel adopts a direct mapping strategy: it launches a single thread for each non-zero element. This approach distributes an excellent load balance among the multiprocessors, being totally insensitive to the distribution of elements in the rows (structural variance). However, since multiple threads can process elements belonging to the same row simultaneously, it forces the massive use of atomic locks (\texttt{atomicAdd}) to resolve \textit{race conditions} when writing to the output vector $y$, limiting overall performance.\\
+2. CSR Format and Base Kernel (Scalar)\\
+The Compressed Sparse Row (CSR) format optimizes the memory footprint of COO by compressing the row index array into a \texttt{row\_ptr} vector of size $M+1$ (where $M$ is the number of rows), keeping the column and value vectors explicit.
+
+\begin{algorithm}[h]
+\caption{SpMV Kernel - GPU Base CSR}\label{alg:csr}
+\begin{algorithmic}[1]
+\STATE $\text{row} \gets \text{blockIdx.x} \times \text{blockDim.x} + \text{threadIdx.x}$
+\IF{$\text{row} < M$}
+    \STATE $\text{sum} \gets 0.0$
+    \STATE $\text{row\_start} \gets \text{row\_ptr}[\text{row}]$
+    \STATE $\text{row\_end} \gets \text{row\_ptr}[\text{row} + 1]$
+    \FOR{$j \gets \text{row\_start}$ \TO $\text{row\_end} - 1$}
+        \STATE $\text{sum} \gets \text{sum} + \text{vals}[j] \times x[\text{col\_idx}[j]]$
+    \ENDFOR
+    \STATE $y[\text{row}] \gets \text{sum}$
+\ENDIF
+\end{algorithmic}
+\end{algorithm}
+
+The Base CSR kernel maps a single thread to a single row of the matrix. This allows the sequential accumulation of products on a local register (\texttt{sum}), completely eliminating atomic write operations. Its critical disadvantage emerges with highly irregular matrices: rows of different lengths cause a severe temporal imbalance among the threads of the same warp (\textit{warp divergence}) and generate non-coalesced global memory access patterns.
+
+\vspace{0.3cm}
+\noindent 3. Optimized CSR-Vector Kerne
+To overcome the inefficiencies of Base CSR without altering the memory format, the CSR-Vector kernel redefines the execution granularity. Instead of assigning one thread per row, it maps an entire \textit{warp} (32 threads) to process a single row. The optimization is divided into three phases:
+\begin{enumerate}
+    \item Coalesced Access: The threads within the warp use their internal index (\texttt{lane\_id}) to access the row elements in a strided manner. This guarantees perfectly aligned global memory transactions, maximizing bandwidth utilization.
+    \item Fast Accumulation: Partial results are stored in \textit{Shared Memory} to minimize local read/write latency.
+    \item Parallel Reduction: Once the row traversal is complete, the warp threads perform a tree reduction to collapse the sums. The \textit{leader} thread will finally write the accumulated value to the output vector in a unique manner.
+\end{enumerate}
+
+Finally, as an absolute \textit{baseline} to measure the effectiveness of the custom optimizations, all experiments were compared with the performance of the \textbf{cuSPARSE} library from the NVIDIA suite.
+\subsection{Measurement Methodology}
+The accuracy of the benchmark is guaranteed by the following methodological choices:
+
 \begin{itemize}
-    \item \textbf{Hardware \& Software Environment:} 
-    \begin{itemize}
-        \item Specify the target architecture (e.g., NVIDIA A30 GPU, Ampere), CUDA toolkit version, compiler flags (e.g., \texttt{-O3}, \texttt{-arch=sm\_80}), and OS.
-        \item Mention the use of Valgrind --> (only cpu cache, beacuse GPU the tools are blocked until the second deliverable)
-    \end{itemize}
+    \item \textit{Output Consistency:} To prevent accumulations of incorrect values between iterations (a critical phenomenon in the COO format which uses the \texttt{atomicAdd} function), the destination vector is explicitly zeroed out before each kernel launch.
     
-    \item \textbf{CPU Baseline \& GPU Kernels:}
+    \item \textit{Variability Mitigation and Measurement:} The pure computation time (\textit{Kernel Time}) is evaluated, ignoring the initial I/O (parsing) and memory allocation costs. To obtain stable measurements, each test is divided into two phases:
     \begin{itemize}
-        \item \textit{CPU Baseline:} A straightforward sequential or OpenMP implementation, explicitly stating it is used for validation and is not aggressively optimized[- 12, 38].
-        \item \textit{GPU Formats:} (PSEUDOCODICE) Briefly describe the tested formats (e.g., COO, CSR, CSR-Vector, cuSPARSE).
-        \item \textit{Kernels Tested:} Explain your implemented kernels: Base COO, Base CSR, and your \textbf{Optimized CSR}. Detail how you use shared memory to reduce the cost of accessing global memory and how warp-level primitives improve load balancing.
+        \item Warm-up (20 iterations): Necessary to stabilize the hardware and bring the GPU frequencies up to speed.
+        \item Benchmark (500 iterations): Actual performance measurement.
     \end{itemize}
-
-    \item \textbf{Measurement Methodology:}
-    \begin{itemize}
-        \item \textit{Consistency:} To ensure numerical consistency between write-only formats (CSR) and atomic-accumulate formats (COO), state that an explicit output vector reset was included within the benchmark loop.
-        \item \textit{Variability Mitigation:} Explain that runtime is isolated strictly to kernel execution, ignoring one-time setup costs like file parsing. To mitigate shared environment noise, each benchmark performs 5 independent runs, reporting the best-of-5 (minimum execution time) as a justified stable statistic.
-    \end{itemize}
-
-    \item \textbf{Performance Metrics (Formulas):}
-    \begin{itemize}
-        \item State the formula for computational throughput (GFLOP/s), defining the standard estimate of 2 floating-point operations per non-zero (NNZ) element.
-        \item Define the formula for Effective Bandwidth (GB/s).
-        \item State the Theoretical Peak Bandwidth of the target GPU (e.g., $\sim$933.1 GB/s for the A30) as the theoretical upper bound.
-        \item Provide formulas for Cache Hit/Miss rates as extracted from the profiler.
-    \end{itemize}
-
-    \item \textbf{Correctness \& Validation:}
-    \begin{itemize}
-        \item Describe the validation function \texttt{validate\_results(float *y\_cpu, float *y\_gpu, int M)}. 
-        \item Since \texttt{Float32} is used, explain the tolerance-based comparison method (e.g., $\epsilon = 1e-3$). Implement a \texttt{for} loop over the entire vector: if $|y\_cpu[i] - y\_gpu[i]| > \epsilon$, print ``FAIL'', otherwise ``PASS''.
-        \item \textit{Theoretical Explanation:} Explain why validation depends on the representation method. In parallel architectures (GPUs), the thread execution order for additions (e.g., via \texttt{atomicAdd}) is non-deterministic. Because floating-point arithmetic is non-associative, different summation orders inevitably generate slightly different rounding errors.
-    \end{itemize}
+    The entire procedure is repeated for 5 independent \textit{runs}. The average time recorded during the benchmark phases (accompanied by the standard deviation to prove its stability) becomes the base parameter upon which all final performance metrics are calculated: Kernel Time, Throughput (GFLOPS), and Effective Bandwidth (BW).
 \end{itemize}
 
+\subsection{Performance Metrics}
+The implementations are evaluated using the following equations:
+\begin{itemize}
+    \item Kernel Time ($T_{avg}$): Recorded using \texttt{cudaEvents} to sample solely the lifetime time window of the kernel on the VRAM, evading CPU-bound latencies.
+    
+    \item Computational Throughput (GFLOPS): The standard recognizes 2 float operations (FMA: one multiplication and one addition) for each non-zero element:
+    \begin{equation}
+        \text{GFLOPS} = \frac{2 \times \text{NNZ}}{T_{avg} \times 10^9}
+    \end{equation}
+
+    \item Effective Bandwidth (BW) (GB/s): As an intensely \textit{memory bound} operation, the actual bandwidth changes depending on the structural footprint of the analyzed format.
+    For CSR:
+    \begin{equation}
+        \text{BW}_{CSR} = \frac{S_{int} (M + 1 + \text{nnz}) + S_{flt} (\text{nnz} + N + M)}{T_{avg} \times 10^9}
+    \end{equation}
+    For COO, which does not compress row indices, the matrix footprint grows, and so does the expression in bytes:
+    \begin{equation}
+        \text{BW}_{COO} = \frac{S_{int} (2 \times \text{nnz}) + S_{flt} (\text{nnz} + N + M)}{T_{avg} \times 10^9}
+    \end{equation}
+    where $S_{int} = S_{flt} = 4$ bytes. 
+    
+\item Cache Statistics (CPU): The targeted profiling of the hierarchical cache system on the CPU was conducted using the Valgrind tool. Through dedicated formulas, such as 
+\begin{equation}
+\text{D1 Miss (\%)} = \left( \frac{\text{D1 Misses}}{\text{Total D1 Accesses}} \right) \times 100
+\end{equation}  it is possible to quantify access efficiency and visualize the theoretical bandwidth collapse due to memory collisions.
+\end{itemize}
+\subsection{Correctness and Validation}
+Due to the non-deterministic nature of parallel execution and the non-associativity of floating-point arithmetic (\texttt{Float32}, IEEE 754 standard), a simple syntactic check on bytes would fail the functional verification.
+
+The comparison between the results generated by the GPU and the sequential \textit{baseline} on the CPU therefore takes place through a dedicated method (\texttt{validate\_results()}), based on a rigorous numerical tolerance (with absolute and relative thresholds). If the divergence between an element computed by the CPU and that outputted by the GPU exceeds this threshold, the experiment declares a FAIL state. This standard ensures that the different architectural versions applied do not compromise the mathematical integrity of the result.
 \section{Dataset}
-The experimental evaluation is conducted on a selection of 10 sparse matrice from \textit{SuiteSparse Matrix Collection}, following the benchmark suite proposed by  Chu et al. \cite{bChu2023}.
-These datasets were specifically chosen to represent a wide variety of applciation domains and structural characteristics.
+The experimental evaluation is conducted on a selection of 10 sparse matrices taken from the \textit{SuiteSparse Matrix Collection}, following the benchmark suite proposed by Chu et al. \cite{bChu2023}.
+These datasets were chosen to represent a wide variety of application domains and structural characteristics.
 
 \begin{table}[htbp]
 \caption{Structural characteristics of the selected SuiteSparse matrices}
@@ -94,8 +178,8 @@ These datasets were specifically chosen to represent a wide variety of applciati
 \setlength{\tabcolsep}{3pt} 
 \begin{tabular}{|l|r|r|r|r|r|}
 \hline
-\textbf{Matrix Name} & \textbf{Rows ($M$)} & \textbf{Cols ($N$)} & \textbf{NNZ} & \textbf{Avg.} & \textbf{Std. Dev.} \\
-& & & & \textbf{NNZ/R} & \textbf{Rows} \\
+Matrix Name & Rows ($M$) & Columns ($N$) & NNZ & Mean & Std. Dev. \\
+& & & & NNZ/R & Rows \\
 \hline
 ASIC\_680ks     & 682,712    & 682,712    & 1,693,767  & 2.48  & 4.16    \\
 bone010         & 986,703    & 986,703    & 47,851,783 & 48.50 & 7.62    \\
@@ -113,12 +197,6 @@ webbase-1M      & 1,000,005  & 1,000,005  & 3,105,536  & 3.11  & 25.35   \\
 \end{center}
 \end{table}
 
-\subsection{Input Generation and Precision}
-The test utilize single precision (\texttt{Float32}), whic is the standard for high performance computing on GPUs. The dense vector $x$ ($N \times 1$) is generated using the \texttt{fill\_random\_vector} function, which initializes the pseudo-random generator with a fixed seed (\texttt{srand(42)}).
-Values are normalized within the range $[0, 1]$ using the ratio \texttt{rand()/RAND\_MAX}.
-This approach ensures the reproducibility od results between CPU and GPU, isolating the perfomance analysis solely to the strucutral characteristics of the matrices and the efficiency of the kernels.
-
-
 \section{Results}
 Plots/tables for runtime and FLOPS/GFLOP/s; optional memory/cache indicators. \textit{(Note: Visual data presentation only; formulas are established in Methodology).}
 \begin{itemize}
@@ -126,6 +204,7 @@ Plots/tables for runtime and FLOPS/GFLOP/s; optional memory/cache indicators. \t
     \item \textbf{Bandwidth Plots:} Create Effective Bandwidth (GB/s) charts. Add a horizontal line representing the Theoretical Peak Bandwidth (e.g., $\sim$933.1 GB/s) to visually demonstrate how close the implementations are to being memory-bound.
     \item \textbf{Memory/Cache Indicators:} Provide charts or tables (using data from \texttt{valgrind}) showing cache hit/miss behavior and global memory accesses.
     \item Nonostante le ottimizzazioni del kernel, il TTS rimane dominato dal caricamento I/O per le matrici meno dense
+    \item validazione dei risultati con errore etc
 \end{itemize}
 
 \section{Discussion}
