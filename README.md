@@ -64,30 +64,26 @@ The directory is organized to logically separate sources, compilation logic, ben
 ```
 
 ---
-
 ## Reproducing Benchmarks on the Cluster
 
-### Phase 1: Preparation and Access
-1. **Clone the repository (locally):**
-   ```bash
-   git clone https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication.git
-   ```
-2. **VPN Connection:** Make sure you are connected to the University VPN via *Global Protect* (vpn-mfa.icts.unitn.it) if you are not inside the university network.
-3. **Upload the project to the Cluster:** Copy the local files to the node:
-   ```bash
-   scp -r "/local/path/Sparse-Matrix-Vector-Multiplication" username@baldo.disi.unitn.it:~/Cluster/path
-   ```
-
-### Phase 2: Dataset Download and Setup
-1. **Access the cluster:**
+### Phase 1: Access and Preparation
+1. **VPN Connection:** Make sure you are connected to the University VPN via *Global Protect* (vpn-mfa.icts.unitn.it) if you are not inside the university network.
+2. **Access the cluster:**
    ```bash
    ssh username@baldo.disi.unitn.it
    ```
-2. **Create and move to the `data` folder** to run the downloads:
+3. **Clone the repository (directly on the cluster):**
+   ```bash
+   git clone https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication.git
+   ```
+
+### Phase 2: Dataset Download and Setup
+1. **Create and move to the `data` folder** to run the downloads:
    ```bash
    cd ~/Sparse-Matrix-Vector-Multiplication
    mkdir -p data
    cd data
+
    wget https://suitesparse-collection-website.herokuapp.com/MM/Freescale/FullChip.tar.gz
    wget https://suitesparse-collection-website.herokuapp.com/MM/PARSEC/Ga41As41H72.tar.gz
    wget https://suitesparse-collection-website.herokuapp.com/MM/Oberwolfach/bone010.tar.gz
@@ -99,7 +95,7 @@ The directory is organized to logically separate sources, compilation logic, ben
    wget https://suitesparse-collection-website.herokuapp.com/MM/GHS_indef/boyd2.tar.gz
    wget https://suitesparse-collection-website.herokuapp.com/MM/Williams/webbase-1M.tar.gz
    ```
-3. **Extract and clean up the folders:**
+2. **Extract and clean up the folders:**
    ```bash
    for f in *.tar.gz; do tar -xzf "$f"; done
    mv */*.mtx .
