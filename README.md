@@ -74,7 +74,7 @@ The directory is organized to logically separate sources, compilation logic, ben
    ```
 3. **Clone the repository (directly on the cluster):**
    ```bash
-   git clone [https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication.git](https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication.git)
+   git clone https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication.git
    ```
 
 ### Phase 2: Dataset Download and Setup
