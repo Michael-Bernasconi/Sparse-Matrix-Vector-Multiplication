@@ -75,13 +75,13 @@ The directory is organized to logically separate sources, compilation logic, ben
 2. **VPN Connection:** Make sure you are connected to the University VPN via *Global Protect* (vpn-mfa.icts.unitn.it) if you are not inside the university network.
 3. **Upload the project to the Cluster:** Copy the local files to the node:
    ```bash
-   scp -r "/local/path/Sparse-Matrix-Vector-Multiplication" nomeutente@baldo.disi.unitn.it:~/Cluster/path
+   scp -r "/local/path/Sparse-Matrix-Vector-Multiplication" username@baldo.disi.unitn.it:~/Cluster/path
    ```
 
 ### Phase 2: Dataset Download and Setup
 1. **Access the cluster:**
 2. ```bash
-   ssh nomeutente@baldo.disi.unitn.it
+   ssh username@baldo.disi.unitn.it
    ```
 3. **Move to the `data` folder** and run the downloads:
    ```bash
