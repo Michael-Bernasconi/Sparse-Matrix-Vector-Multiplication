@@ -1,6 +1,3 @@
-Ecco la traduzione in inglese del tuo README, mantenendo esattamente la struttura, la formattazione e i contenuti originali come da te richiesto:
-
-```markdown
 # Sparse Matrix-Vector Multiplication (SpMV)
 
 **Course:** GPU-Computing-2026  
