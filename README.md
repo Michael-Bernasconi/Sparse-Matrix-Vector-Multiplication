@@ -75,14 +75,15 @@ The directory is organized to logically separate sources, compilation logic, ben
 2. **VPN Connection:** Make sure you are connected to the University VPN via *Global Protect* (vpn-mfa.icts.unitn.it) if you are not inside the university network.
 3. **Upload the project to the Cluster:** Copy the local files to the node:
    ```bash
-   scp -r "/percorso/locale/Sparse-Matrix-Vector-Multiplication" nomeutente@baldo.disi.unitn.it:~/percorso/cluster
+   scp -r "/local/path/Sparse-Matrix-Vector-Multiplication" nomeutente@baldo.disi.unitn.it:~/Cluster/path
    ```
 
 ### Phase 2: Dataset Download and Setup
-1. **Access the cluster:** ```bash
+1. **Access the cluster:**
+2. ```bash
    ssh nomeutente@baldo.disi.unitn.it
    ```
-2. **Move to the `data` folder** and run the downloads:
+3. **Move to the `data` folder** and run the downloads:
    ```bash
    cd ~/Sparse-Matrix-Vector-Multiplication/data
 
@@ -97,7 +98,7 @@ The directory is organized to logically separate sources, compilation logic, ben
    wget [https://suitesparse-collection-website.herokuapp.com/MM/GHS_indef/boyd2.tar.gz](https://suitesparse-collection-website.herokuapp.com/MM/GHS_indef/boyd2.tar.gz)
    wget [https://suitesparse-collection-website.herokuapp.com/MM/Williams/webbase-1M.tar.gz](https://suitesparse-collection-website.herokuapp.com/MM/Williams/webbase-1M.tar.gz)
    ```
-3. **Extract and clean up the folders:**
+4. **Extract and clean up the folders:**
    ```bash
    for f in *.tar.gz; do tar -xzf "$f"; done
    mv */*.mtx .
