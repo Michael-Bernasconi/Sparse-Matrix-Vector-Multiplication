@@ -14,7 +14,7 @@ The project contains several versions of the SpMV operation:
 - **GPU SpMV CSR-Vector**: CUDA kernel optimized to assign one warp per row, maximizing memory coalescence.
 - **GPU cuSPARSE Baseline**: Reference implementation using the high-performance NVIDIA cuSPARSE library.
 
-## 📏 Measured Metrics
+## Measured Metrics
 The performance analysis recorded during execution using the provided scripts:
 1. **GFLOPS (Giga FLoating-point Operations Per Second)**: Measure of computational throughput.
 2. **Effective Bandwidth (BW, in GB/s)**: Measure of the actually utilized memory bandwidth, crucial given the *memory-bound* nature of the SpMV problem.
