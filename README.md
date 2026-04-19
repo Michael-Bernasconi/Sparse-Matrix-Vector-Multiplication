@@ -71,7 +71,7 @@ The directory is organized to logically separate sources, compilation logic, ben
 1. **Clone the repository (locally):**
    ```bash
    git clone [https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication.git](https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication.git)
-   ```
+   
 2. **VPN Connection:** Make sure you are connected to the University VPN via *Global Protect* (vpn-mfa.icts.unitn.it) if you are not inside the university network.
 3. **Upload the project to the Cluster:** Copy the local files to the node:
    ```bash
