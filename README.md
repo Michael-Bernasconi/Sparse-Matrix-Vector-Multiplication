@@ -140,4 +140,3 @@ python3 analyze-result.py
 python3 gflops-bw-tts-kerneltime-cache.py
 ```
 The generated images will be saved inside `results/plots/` and the tables in `results/tables/`.
-```
