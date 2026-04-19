@@ -16,7 +16,7 @@ echo "--- PERFORMANCE TESTING: $MATRIX_NAME ---"
 echo "Start time: $(date)" > "$LOG_FILE"
 
 # List of executables to test
-executables=("cpu-SpMV-CSR" "cuda-SpMV-CSR" "cuda-SpMV-COO" "cuda-SpMV-CSR-Vector" "cuda-SpMV-cuSPARSE")
+executables=("cpu-SpMV-CSR" "cuda-SpMV-CSR" "cuda-SpMV-COO" "cuda-SpMV-CSR-Vector" "cuda-SpMV-cuSparse")
 
 for exe in "${executables[@]}"; do
     if [ -f "$BIN_DIR/$exe" ]; then

@@ -23,7 +23,7 @@ TARGETS = $(BIN_FOLDER)/cpu-SpMV-CSR \
           $(BIN_FOLDER)/cuda-SpMV-COO \
           $(BIN_FOLDER)/cuda-SpMV-CSR \
           $(BIN_FOLDER)/cuda-SpMV-CSR-Vector \
-          $(BIN_FOLDER)/cuda-SpMV-cuSPARSE \
+          $(BIN_FOLDER)/cuda-SpMV-cuSparse \
           $(BIN_FOLDER)/deviceQuery
 
 # Default target
@@ -54,7 +54,7 @@ $(BIN_FOLDER)/cuda-SpMV-CSR-Vector: $(SRC_FOLDER)/cuda-SpMV-CSR-Vector.cu $(OBJ_
 	@mkdir -p $(BIN_FOLDER)
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(INCLUDES) $(LIBS)
 
-$(BIN_FOLDER)/cuda-SpMV-cuSPARSE: $(SRC_FOLDER)/cuda-SpMV-cuSPARSE.cu $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
+$(BIN_FOLDER)/cuda-SpMV-cuSparse: $(SRC_FOLDER)/cuda-SpMV-cuSparse.cu $(OBJ_FOLDER)/my_time_lib.o $(OBJ_FOLDER)/matrix_utils.o
 	@mkdir -p $(BIN_FOLDER)
 	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(INCLUDES) $(LIBS) $(CUSPARSE_LIBS)
 
