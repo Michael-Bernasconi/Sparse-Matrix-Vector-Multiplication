@@ -83,10 +83,11 @@ The directory is organized to logically separate sources, compilation logic, ben
    ```bash
    ssh username@baldo.disi.unitn.it
    ```
-2. **Move to the `data` folder** and run the downloads:
+2. **Create and move to the `data` folder** to run the downloads:
    ```bash
-   cd ~/Sparse-Matrix-Vector-Multiplication/data
-
+   cd ~/Sparse-Matrix-Vector-Multiplication
+   mkdir -p data
+   cd data
    wget https://suitesparse-collection-website.herokuapp.com/MM/Freescale/FullChip.tar.gz
    wget https://suitesparse-collection-website.herokuapp.com/MM/PARSEC/Ga41As41H72.tar.gz
    wget https://suitesparse-collection-website.herokuapp.com/MM/Oberwolfach/bone010.tar.gz
