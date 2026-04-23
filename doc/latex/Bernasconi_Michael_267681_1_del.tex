@@ -146,22 +146,19 @@ The Coordinate (COO) format explicitly stores the sparse matrix through three ar
 
 
 \begin{algorithm}[ht]
-
-
-\caption{SpMV Kernel - GPU Base COO}\label{alg:coo}
-
+    \footnotesize
+\caption{SpMV Kernel: COO Base (Atomic-based)}\label{alg:coo_new}
 \begin{algorithmic}[1]
-
-\STATE $i \gets \text{blockIdx.x} \times \text{blockDim.x} + \text{threadIdx.x}$
-
-\IF{$i < \text{nnz}$}
-
-    \STATE $\text{atomicAdd}(\&y[\text{rows}[i]], \text{vals}[i] \times x[\text{cols}[i]])$
-
+\REQUIRE $val, row\_ind, col\_ind$ (arrays of size $nnz$), $x$ (dense vector)
+\ENSURE $y$ (output vector)
+\STATE $i \gets$ Global thread index
+\IF{$i < nnz$}
+\STATE $v \gets val[i]$
+\STATE $r \gets row\_ind[i]$
+\STATE $c \gets col\_ind[i]$
+\STATE $\text{AtomicAdd}(y[r], v \times x[c])$ \COMMENT{Handle race conditions on $y$}
 \ENDIF
-
 \end{algorithmic}
-
 \end{algorithm}
 
 
@@ -172,36 +169,22 @@ The Base COO kernel adopts a direct mapping strategy: it launches a single threa
 
 The Compressed Sparse Row (CSR) format optimizes memory footprint by compressing row indices into a \texttt{row\_ptr} vector of size $M+1$, following the logic of Algorithm \ref{alg:csr}.
 
-
 \begin{algorithm}[h]
-
-
-\caption{SpMV Kernel - GPU Base CSR}\label{alg:csr}
-
+    \footnotesize
+\caption{SpMV Kernel: CSR Scalar}\label{alg:csr_new}
 \begin{algorithmic}[1]
-
-\STATE $\text{row} \gets \text{blockIdx.x} \times \text{blockDim.x} + \text{threadIdx.x}$
-
-\IF{$\text{row} < M$}
-
-    \STATE $\text{sum} \gets 0.0$
-
-    \STATE $\text{row\_start} \gets \text{row\_ptr}[\text{row}]$
-
-    \STATE $\text{row\_end} \gets \text{row\_ptr}[\text{row} + 1]$
-
-    \FOR{$j \gets \text{row\_start}$ \TO $\text{row\_end} - 1$}
-
-        \STATE $\text{sum} \gets \text{sum} + \text{vals}[j] \times x[\text{col\_idx}[j]]$
-
-    \ENDFOR
-
-    \STATE $y[\text{row}] \gets \text{sum}$
-
+\REQUIRE $row\_ptr$ (size $M+1$), $col\_idx, val$ (size $nnz$), $x$ (dense vector)
+\STATE $r \gets$ Assigned row index per thread
+\IF{$r < M$}
+\STATE $sum \gets 0$
+\STATE $row\_start \gets row\_ptr[r]$
+\STATE $row\_end \gets row\_ptr[r+1]$
+\FOR{$j$ from $row\_start$ to $row\_end - 1$}
+\STATE $sum \gets sum + val[j] \times x[col\_idx[j]]$
+\ENDFOR
+\STATE $y[r] \gets sum$
 \ENDIF
-
 \end{algorithmic}
-
 \end{algorithm}
 
 
@@ -212,60 +195,35 @@ The Base CSR kernel maps one thread per row. This eliminates atomic operations b
 
 To overcome inefficiencies of scalar CSR, the CSR-Vector kernel (Algorithm \ref{alg:csr_vector}) redefines execution granularity by assigning an entire warp (32 threads) to process a single row. This enables coalesced memory access and uses shared memory for parallel reduction.
 
-
 \begin{algorithm}[h]
-
-
-\caption{SpMV Kernel - GPU CSR-Vector}\label{alg:csr_vector}
-
+    \footnotesize
+\caption{SpMV Kernel: CSR-Vector (Warp-level Parallelism)}\label{alg:csr_vector_new}
 \begin{algorithmic}[1]
-
-\STATE $\text{lane\_id} \gets \text{threadIdx.x} \pmod{32}$
-
-\STATE $\text{row} \gets (\text{blockIdx.x} \times \text{blockDim.x} + \text{threadIdx.x}) / 32$
-
-\IF{$\text{row} < M$}
-
-    \STATE $\text{sum} \gets 0.0$
-
-    \STATE $\text{start} \gets \text{row\_ptr}[\text{row}], \text{end} \gets \text{row\_ptr}[\text{row} + 1]$
-
-    \FOR{$j \gets \text{start} + \text{lane\_id}$ \TO $\text{end} - 1$ \textbf{step} 32}
-
-        \STATE $\text{sum} \gets \text{sum} + \text{vals}[j] \times x[\text{col\_idx}[j]]$
-
-    \ENDFOR
-
-    \STATE $\text{sdata}[\text{threadIdx.x}] \gets \text{sum}$
-
-    \STATE \texttt{\_\_syncwarp()}
-
-    \textit{// Parallel tree reduction within the warp}
-
-    \FOR{$\text{offset} \in \{16, 8, 4, 2, 1\}$}
-
-        \IF{$\text{lane\_id} < \text{offset}$}
-
-            \STATE $\text{sdata}[tid] \gets \text{sdata}[tid] + \text{sdata}[tid + \text{offset}]$
-
-        \ENDIF
-
-        \STATE \texttt{\_\_syncwarp()}
-
-    \ENDFOR
-
-    \IF{$\text{lane\_id} = 0$}
-
-        \STATE $y[\text{row}] \gets \text{sdata}[\text{threadIdx.x}]$
-
-    \ENDIF
-
+\REQUIRE $row\_ptr, col\_idx, val, x$
+\STATE $lane \gets$ Thread index within the Warp ($0 \dots 31$)
+\STATE $row \gets$ Assigned row index per Warp
+\IF{$row < M$}
+\STATE $sum \gets 0$
+\STATE $start \gets row\_ptr[row]$
+\STATE $end \gets row\_ptr[row+1]$
+\FOR{$j = start + lane$ \TO $end-1$ \textbf{step} 32}
+\STATE $sum \gets sum + val[j] \times x[col\_idx[j]]$ \COMMENT{Coalesced access}
+\ENDFOR
+\STATE $shared\_data[threadID] \gets sum$
+\STATE $\text{WarpSync}()$
+\STATE \COMMENT{Parallel Tree Reduction}
+\FOR{$offset \in \{16, 8, 4, 2, 1\}$}
+\IF{$lane < offset$}
+\STATE $shared\_data[tid] \gets shared\_data[tid] + shared\_data[tid + offset]$
 \ENDIF
-
+\STATE $\text{WarpSync}()$
+\ENDFOR
+\IF{$lane = 0$}
+\STATE $y[row] \gets shared\_data[threadID]$
+\ENDIF
+\ENDIF
 \end{algorithmic}
-
 \end{algorithm}
-
 
 Finally, all custom implementations were compared with the cuSPARSE library, which serves as a production-level baseline for NVIDIA Ampere architecture.
 
