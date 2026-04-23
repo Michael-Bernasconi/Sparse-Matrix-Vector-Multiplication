@@ -23,7 +23,7 @@ The performance analysis recorded during execution using the provided scripts:
 
 ## Target Hardware (UniTN Cluster)
 
-The execution and analysis of the benchmarks were designed for the University Cluster (*edu01* node), with the following specifications:
+The execution and analysis of the benchmarks were designed for the University Cluster (*edu01* node | *edu-short* partition), with the following specifications:
 
 | Feature | Host (CPU) | Device (GPU) |
 | :--- | :--- | :--- |

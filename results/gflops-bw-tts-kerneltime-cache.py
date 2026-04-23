@@ -36,17 +36,18 @@ def save_spmv_plot_minimal(data, metric, title, filename, ylabel, log_scale=Fals
         palette=vibrant_colors, edgecolor="#333333", linewidth=0.7, width=0.8, gap=0.05 
     )
     
-    # TITLES AND LABELS
-    plt.title(title, fontsize=14, fontweight='bold', color="#000000", pad=45) 
-    plt.ylabel(ylabel, fontsize=11, fontweight='bold')
+    # TITLES AND LABELS - (Font size aumentati)
+    plt.title(title, fontsize=18, fontweight='bold', color="#000000", pad=45) 
+    plt.ylabel(ylabel, fontsize=14, fontweight='bold')
     
     # --- SPACE OPTIMIZATION ---
     # Low labelpad (15) brings "Sparse Matrix Name" closer to the matrix labels
-    plt.xlabel('Sparse Matrix Name', fontsize=11, fontweight='bold', labelpad=15) 
+    plt.xlabel('Sparse Matrix Name', fontsize=14, fontweight='bold', labelpad=15) 
     
     # Keep pad at 20 to maintain distance between matrix names and the bars
-    plt.xticks(rotation=30, ha='right', va='top', rotation_mode='anchor', fontsize=10, color="#000000")
+    plt.xticks(rotation=30, ha='right', va='top', rotation_mode='anchor', fontsize=13, color="#000000")
     ax.tick_params(axis='x', which='major', length=0, pad=20) 
+    ax.tick_params(axis='y', which='major', labelsize=13) # Aggiunto per ingrandire i numeri sull'asse Y
     
     # Maintain the long pointer line (-0.08) for a clean professional look
     unique_matrices = plot_data['Matrix'].unique()
@@ -71,16 +72,17 @@ def save_spmv_plot_minimal(data, metric, title, filename, ylabel, log_scale=Fals
         spine.set_edgecolor('#333333')
         spine.set_linewidth(1.0)
 
-    # VALUE LABELS ON TOP OF BARS
+    # VALUE LABELS ON TOP OF BARS - (Font size aumentato da 8 a 11)
     for p in ax.patches:
         val = p.get_height()
         if val > 0:
             label = f'{val:.4f}' if val < 0.01 else (f'{val:.3f}' if val < 1 else f'{val:.2f}')
             y_pos = val * 1.12 if log_scale else val + (ax.get_ylim()[1] * 0.02)
             ax.text(p.get_x() + p.get_width() / 2., y_pos, label,
-                ha='center', va='bottom', fontsize=8, color='#000000', rotation=90)
+                ha='center', va='bottom', fontsize=11, color='#000000', rotation=90)
 
-    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.12), ncol=5, frameon=False, fontsize=9)
+    # LEGEND - (Font size aumentato da 9 a 12)
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.12), ncol=5, frameon=False, fontsize=12)
     
     # Adjust bottom margin to 0.28 to tighten the figure without clipping labels
     plt.subplots_adjust(top=0.85, bottom=0.28, left=0.08, right=0.98)
@@ -93,22 +95,22 @@ df_perf = df[df['Config'] != 'cpu-SpMV-CSR-lite'].copy()
 
 # 1. Bandwidth Plot
 save_spmv_plot_minimal(df_perf, 'Avg BW (GB/s)', 
-                       'Memory Bandwidth Performance', '1_del_bandwidth.png', 'Bandwidth (GB/s)', 
+                       'Memory Bandwidth Performance', '1_del_bandwidth.pdf', 'Bandwidth (GB/s)', 
                        log_scale=True, specific_ticks=[0.1, 1, 10, 100, 1000])
 
 # 2. GFLOPS Plot
 save_spmv_plot_minimal(df_perf, 'Avg GFLOPS', 
-                       'Computational Throughput', '1_del_gflops.png', 'Throughput (GFLOPS)', 
+                       'Computational Throughput', '1_del_gflops.pdf', 'Throughput (GFLOPS)', 
                        log_scale=True, specific_ticks=[0.1, 1, 10, 100])
 
 # 3. TTS Plot
 save_spmv_plot_minimal(df_perf, 'Avg TTS (s)', 
-                       'Total Time To Solution (TTS)', '1_del_tts.png', 'Time (Seconds)', 
+                       'Total Time To Solution (TTS)', '1_del_tts.pdf', 'Time (Seconds)', 
                        log_scale=True, specific_ticks=[0.1, 1, 10, 100])
 
 # 4. Kernel Time Plot
 save_spmv_plot_minimal(df_perf, 'Avg Time (s)', 
-                       'Kernel Execution Time', '1_del_kernel_time.png', 'Time (ms)', 
+                       'Kernel Execution Time', '1_del_kernel_time.pdf', 'Time (ms)', 
                        log_scale=True, is_ms=True, specific_ticks=[0.01, 0.1, 1, 10, 100, 1000])
 
 print("Done! Plots generated with proper name spacing and minimized bottom white space.")
