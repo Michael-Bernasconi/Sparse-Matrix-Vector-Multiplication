@@ -277,31 +277,30 @@ Validation is performed by comparing GPU results with the CPU baseline using a r
 \section{Dataset}
 
 The experimental evaluation is conducted on a selection of 10 sparse matrices from the \textit{\href{https://sparse.tamu.edu/}{SuiteSparse Matrix Collection}}, whose details are reported in Table \ref{tab:datasets}.
-These datasets were chosen to represent a wide variety of application domains and structural characteristics.
+These datasets were chosen to represent a wide variety of application domains and structural characteristics, ranging from perfectly balanced circuit simulations to extremely irregular power-law graphs. Notably, this selection aligns with recent high-performance computing literature, as these matrices are extensively utilized for benchmarking in the work of Chu et al. \cite{bChu2023}.
 
 \begin{table}[htbp]
 \caption{Structural characteristics of selected SuiteSparse matrices}
 \label{tab:datasets}
 \begin{center}
 \footnotesize
-\setlength{\tabcolsep}{4pt} % Leggermente aumentato per leggibilità
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{|l|r|r|r|l|}
 \hline
 \textbf{Matrix Name} & \textbf{NNZ} & \textbf{Avg NNZ/R} & \textbf{Std. Dev.} & \textbf{Structure} \\ \hline
-ASIC\_680ks     & 1,693,767  & 2.48  & 4.16    & Regular \\
-bone010         & 47,851,783 & 48.50 & 7.62    & Dense\\
-boyd2           & 1,500,397  & 3.22  & 194.91  & Irregular \\
-FullChip        & 26,621,983 & 8.91  & 1,806.80& Extreme Imbalance\\
-Ga41As41H72     & 18,488,476 & 68.96 & 105.39  & Dense, Symmetric\\
-ldoor           & 42,493,817 & 44.63 & 14.77   & Structured \\
-rajat31         & 20,316,253 & 4.33  & 1.11    & Very Regular \\
-Rucci1          & 7,791,168  & 3.94  & 0.34    & Rectangular \\
-Si41Ge41H72     & 15,011,265 & 80.86 & 126.97  & Dense\\
+ASIC\_680ks     & 1,693,767  & 2.48  & 4.16    & Regular \\ \hline
+bone010         & 47,851,783 & 48.50 & 7.62    & Dense, Symmetric \\ \hline
+boyd2           & 1,500,397  & 3.22  & 194.91  & Irregular \\ \hline
+FullChip        & 26,621,983 & 8.91  & 1,806.80& Extreme Imbalance \\ \hline
+Ga41As41H72     & 18,488,476 & 68.96 & 105.39  & Dense, Symmetric \\ \hline
+ldoor           & 42,493,817 & 44.63 & 14.77   & Structured \\ \hline
+rajat31         & 20,316,253 & 4.33  & 1.11    & Very Regular \\ \hline
+Rucci1          & 7,791,168  & 3.94  & 0.34    & Rectangular \\ \hline
+Si41Ge41H72     & 15,011,265 & 80.86 & 126.97  & Dense \\ \hline
 webbase-1M      & 3,105,536  & 3.11  & 25.35   & Power-law \\ \hline
 \end{tabular}
 \end{center}
 \end{table}
-
 \section{Results}
 
 This section presents experimental data obtained from evaluation of SpMV implementations. 
