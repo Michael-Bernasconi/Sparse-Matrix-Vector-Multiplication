@@ -1,9 +1,9 @@
 # Fdb version 4
-["pdflatex"] 1776961551.49381 "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" "Bernasconi_Michael_267681_1_del.pdf" "Bernasconi_Michael_267681_1_del" 1776961552.43444 0
-  "Bernasconi_Michael_267681_1_del.aux" 1776961552 5518 396b60d5ab9c2c9b9c53fcd208a66e4a "pdflatex"
-  "Bernasconi_Michael_267681_1_del.out" 1776961552 3489 1151c7bb739d7b9e7ab0e7db43aa7971 "pdflatex"
-  "Bernasconi_Michael_267681_1_del.tex" 1776961550 21860 9f26316038f3c27f56ca610827271464 ""
-  "C:/Users/micha/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1776523720 82507 a9eef8696c92627b87e9975edea03b2a ""
+["pdflatex"] 1777104554.70506 "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" "Bernasconi_Michael_267681_1_del.pdf" "Bernasconi_Michael_267681_1_del" 1777104555.75643 0
+  "Bernasconi_Michael_267681_1_del.aux" 1777104555 5667 a35038446aeda2d2885a0d250b106b5f "pdflatex"
+  "Bernasconi_Michael_267681_1_del.out" 1777104555 3490 97302dfffb463bbd489fd479ca6784d7 "pdflatex"
+  "Bernasconi_Michael_267681_1_del.tex" 1777104554 22386 9db9cafc3ffc8b80760f700a16339076 ""
+  "C:/Users/micha/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1777103762 82507 a9eef8696c92627b87e9975edea03b2a ""
   "C:/Users/micha/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1774862659 13333487 95dd5ab4fbdeb78c419fe91d30494741 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136765053 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -45,6 +45,7 @@
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb" 1247596667 32762 7fee39e011c23b3589931effd97b9702 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb" 1247596667 32726 39f0f9e62e84beb801509898a605dbd5 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb" 1247596667 32569 5e5ddc8df908dea60932f3c484a54c0d ""
+  "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy5.pfb" 1247596666 32915 7bf7720c61a5b3a7ff25b0964421c9b6 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy7.pfb" 1247596666 32716 08e384dc442464e7285e891af9f45947 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy8.pfb" 1247596667 32626 5abc8bb2f28aa647d4c70f8ea38cc0d3 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb" 1136846148 45758 19968a0990191524e34e1994d4a31cb6 ""
@@ -85,6 +86,8 @@
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/amsmath/amstext.sty" 1762695272 2444 9983e1d0683f102e3b190c64a49313aa ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/base/ifthen.sty" 1761900684 5525 1593ca62a2554dd7423fc8a4e5a82125 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/base/textcomp.sty" 1761900684 2846 e26604d3d895e65d874c07f30c291f3f ""
+  "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/caption/caption.sty" 1696169587 56128 c2ccf1a29d78c33bc553880402e4fb9a ""
+  "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/caption/caption3.sty" 1696169587 72619 ee90b6612147680fd73c3b1406a74245 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/cite/cite.sty" 1425353482 26218 19edeff8cdc2bcb704e8051dc55eb5a7 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/epstopdf-pkg/epstopdf-base.sty" 1623003186 13886 d1306dcf79a944f6988e688c1785f9ce ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/etoolbox/etoolbox.sty" 1759409308 46885 8953c67ffba03252c6090aa19568b8ba ""
@@ -120,7 +123,7 @@
   "C:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/plots/1_del_kernel_time.pdf" 1776602927 30753 7e4b091ee5af32f379ef569fe1805488 ""
   "C:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/plots/1_del_tts.pdf" 1776602927 30617 8ef1af42f7192f5e3f9140b51a9b874c ""
   "IEEEtran.cls" 1775926328 281957 5b2e4fa15b0f7eabb840ebf67df4c0f7 ""
-  "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" 1776961550 21860 9f26316038f3c27f56ca610827271464 ""
+  "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" 1777104554 22386 9db9cafc3ffc8b80760f700a16339076 ""
   (generated)
   "Bernasconi_Michael_267681_1_del.aux"
   "Bernasconi_Michael_267681_1_del.log"
