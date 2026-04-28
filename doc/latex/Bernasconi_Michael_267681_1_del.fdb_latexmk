@@ -1,8 +1,8 @@
 # Fdb version 4
-["pdflatex"] 1777104554.70506 "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" "Bernasconi_Michael_267681_1_del.pdf" "Bernasconi_Michael_267681_1_del" 1777104555.75643 0
-  "Bernasconi_Michael_267681_1_del.aux" 1777104555 5667 a35038446aeda2d2885a0d250b106b5f "pdflatex"
-  "Bernasconi_Michael_267681_1_del.out" 1777104555 3490 97302dfffb463bbd489fd479ca6784d7 "pdflatex"
-  "Bernasconi_Michael_267681_1_del.tex" 1777104554 22386 9db9cafc3ffc8b80760f700a16339076 ""
+["pdflatex"] 1777385539.01395 "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" "Bernasconi_Michael_267681_1_del.pdf" "Bernasconi_Michael_267681_1_del" 1777385539.88508 0
+  "Bernasconi_Michael_267681_1_del.aux" 1777385539 5667 b08526b3a1057a366ea1218a1bd91f9d "pdflatex"
+  "Bernasconi_Michael_267681_1_del.out" 1777385539 3490 97302dfffb463bbd489fd479ca6784d7 "pdflatex"
+  "Bernasconi_Michael_267681_1_del.tex" 1777385537 22638 541d2f63e9217af5f183a77253847d54 ""
   "C:/Users/micha/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1777103762 82507 a9eef8696c92627b87e9975edea03b2a ""
   "C:/Users/micha/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1774862659 13333487 95dd5ab4fbdeb78c419fe91d30494741 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -109,7 +109,6 @@
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/kvoptions/kvoptions.sty" 1656236481 22555 6d8e155cfef6d82c3d5c742fea7c992e ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/kvsetkeys/kvsetkeys.sty" 1665066333 13815 760b0c02f691ea230f5359c4e1de23a7 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/l3backend/l3backend-pdftex.def" 1761202581 30662 bfd6e864f4ffc5018b0e2b6260c3181c ""
-  "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/psnfss/omsptm.fd" 1585253778 595 95c2c0baea9c719a4be29a3d4122498b ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/psnfss/ot1pcr.fd" 1585253778 1025 1ed784d7bfe47179f3550d2303b073f8 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/psnfss/ot1ptm.fd" 1585253778 1007 15056f4a61917ceed3a44e4ac11fcc52 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/tex/latex/refcount/refcount.sty" 1576433952 9878 9e94e8fa600d95f9c7731bb21dfb67a4 ""
@@ -123,7 +122,7 @@
   "C:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/plots/1_del_kernel_time.pdf" 1776602927 30753 7e4b091ee5af32f379ef569fe1805488 ""
   "C:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/plots/1_del_tts.pdf" 1776602927 30617 8ef1af42f7192f5e3f9140b51a9b874c ""
   "IEEEtran.cls" 1775926328 281957 5b2e4fa15b0f7eabb840ebf67df4c0f7 ""
-  "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" 1777104554 22386 9db9cafc3ffc8b80760f700a16339076 ""
+  "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" 1777385537 22638 541d2f63e9217af5f183a77253847d54 ""
   (generated)
   "Bernasconi_Michael_267681_1_del.aux"
   "Bernasconi_Michael_267681_1_del.log"

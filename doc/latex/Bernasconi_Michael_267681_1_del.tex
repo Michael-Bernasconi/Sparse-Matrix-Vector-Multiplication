@@ -57,7 +57,7 @@ Sparse Matrix-Vector multiplication (SpMV) is a fundamental cornerstone of numer
 
 \begin{IEEEkeywords}
 
-SpMV, CUDA, Sparse Matrix Vector Multiplication, Load Balancing, NVIDIA Ampere, Memory Bandwidth, Time To Solution (TTS), Performance Evaluation.
+SpMV, CUDA, Sparse Matrix Vector Multiplication, Load Balancing, NVIDIA Ampere, Memory Bandwidth, Time To Solution (TTS), Throughput, Performance Evaluation.
 
 \end{IEEEkeywords}
 
@@ -162,7 +162,7 @@ The Coordinate (COO) format explicitly stores the sparse matrix through three ar
 \STATE $v \gets val[i]$
 \STATE $r \gets row\_ind[i]$
 \STATE $c \gets col\_ind[i]$
-\STATE $\text{AtomicAdd}(y[r], v \times x[c])$ \COMMENT{Handle race conditions on $y$}
+\STATE $\text{AtomicAdd}(y[r], v \times x[c])$  //Handle race conditions on $y$
 \ENDIF
 \end{algorithmic}
 \end{algorithm}
@@ -174,6 +174,7 @@ The Base COO kernel adopts a direct mapping strategy: it launches a single threa
 \subsubsection{CSR Format and Base Kernel (Scalar)}
 
 The Compressed Sparse Row (CSR) format optimizes memory footprint by compressing row indices into a \texttt{row\_ptr} vector of size $M+1$, following the logic of Algorithm \ref{alg:csr}.
+Let $M$ and $N$ denote the number of rows and columns of the sparse matrix $A$, and $nnz$ the number of its non-zero elements.
 
 \begin{algorithm}[h]
     \footnotesize
@@ -199,34 +200,33 @@ The Base CSR kernel maps one thread per row. This eliminates atomic operations b
 
 \subsubsection{Optimized CSR-Vector Kernel}
 
-To overcome inefficiencies of Base CSR, the CSR-Vector kernel (Algorithm \ref{alg:csr_vector}) redefines execution granularity by assigning an entire warp (32 threads) to process a single row. This enables coalesced memory access and uses shared memory for parallel reduction.
-
+To overcome inefficiencies of Base CSR, the CSR-Vector kernel (Algorithm \ref{alg:csr_vector}) redefines execution granularity by assigning an entire warp (32 threads) to process a single row. This enables coalesced memory access and uses shared memory for parallel reduction. 
 \begin{algorithm}[h]
     \footnotesize
 \caption{SpMV Kernel: CSR-Vector (Warp-level Parallelism)}\label{alg:csr_vector}
 \begin{algorithmic}[1]
 \REQUIRE $row\_ptr, col\_idx, val, x$
-\STATE $lane \gets$ Thread index within the Warp ($0 \dots 31$)
-\STATE $row \gets$ Assigned row index per Warp
+\STATE $tid \gets \text{threadIdx.x}$ //Local index in block
+\STATE $lane \gets tid \pmod{32}$ //Index within the Warp
+\STATE $row \gets (\text{blockIdx.x} \times \text{blockDim.x} + tid) / 32$
 \IF{$row < M$}
-\STATE $sum \gets 0$
-\STATE $start \gets row\_ptr[row]$
-\STATE $end \gets row\_ptr[row+1]$
-\FOR{$j = start + lane$ \TO $end-1$ \textbf{step} 32}
-\STATE $sum \gets sum + val[j] \times x[col\_idx[j]]$ \COMMENT{Coalesced access}
-\ENDFOR
-\STATE $shared\_data[threadID] \gets sum$
-\STATE $\text{WarpSync}()$
-\STATE \COMMENT{Parallel Tree Reduction}
-\FOR{$offset \in \{16, 8, 4, 2, 1\}$}
-\IF{$lane < offset$}
-\STATE $shared\_data[tid] \gets shared\_data[tid] + shared\_data[tid + offset]$
-\ENDIF
-\STATE $\text{WarpSync}()$
-\ENDFOR
-\IF{$lane = 0$}
-\STATE $y[row] \gets shared\_data[threadID]$
-\ENDIF
+    \STATE $sum \gets 0$
+    \STATE $start \gets row\_ptr[row]$
+    \STATE $end \gets row\_ptr[row+1]$
+    \FOR{$j = start + lane$ \TO $end-1$ \textbf{step} 32}
+        \STATE $sum \gets sum + val[j] \times x[col\_idx[j]]$ //Coalesced access
+    \ENDFOR
+    \STATE $shared\_data[tid] \gets sum$
+    \STATE $\text{WarpSync}()$
+    \FOR{$offset \in \{16, 8, 4, 2, 1\}$}
+        \IF{$lane < offset$}
+            \STATE $shared\_data[tid] \gets shared\_data[tid] + shared\_data[tid + offset]$
+        \ENDIF
+        \STATE $\text{WarpSync}()$
+    \ENDFOR
+    \IF{$lane = 0$}
+        \STATE $y[row] \gets shared\_data[tid]$
+    \ENDIF
 \ENDIF
 \end{algorithmic}
 \end{algorithm}
