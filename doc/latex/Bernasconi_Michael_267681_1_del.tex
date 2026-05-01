@@ -310,7 +310,7 @@ This section presents experimental data obtained from evaluation of SpMV impleme
 
 \subsection{Computational Throughput (GFLOPS)}
 
-Maximum throughput (Figure \ref{fig:gflops}) was recorded by the \texttt{CSR-Vector} kernel on matrix \texttt{bone010} with 95.73 GFLOPS. While this value is significantly lower than the theoretical peak of the NVIDIA A30 (10.3 TFLOPS), it is consistent with the \textit{memory-bound} nature of the SpMV kernel. Given the low arithmetic intensity of the operation the performance is strictly capped by the HBM2 bandwidth rather than computing power. Reaching $\sim$96 GFLOPS on a device with 933 GB/s theoretical bandwidth implies an efficiency of over 60\% of the achievable peak for this specific intensity, which represents a high level of hardware utilization for sparse kernels.
+Maximum throughput (Figure \ref{fig:gflops}) was recorded by the \texttt{CSR-Vector} kernel on matrix \texttt{bone010} with 95.73 GFLOPS. While this value is significantly lower than the theoretical peak of the NVIDIA A30 (10.3 TFLOPS), it is consistent with the \textit{memory-bound} nature of the SpMV kernel. Given the low arithmetic intensity of the operation, performance is strictly capped by the HBM2 bandwidth rather than raw computing power. Reaching $\sim$96 GFLOPS on a device with 933 GB/s theoretical bandwidth represents a high level of hardware utilization for sparse kernels, indicating that the implementation effectively saturates the available memory bus despite the overhead typical of irregular access patterns.
 \begin{figure}[htbp]
 
 \centerline{\includegraphics[width=\linewidth]{C:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/plots/1_del_gflops.pdf}}
