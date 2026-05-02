@@ -1,8 +1,8 @@
 # Fdb version 4
-["pdflatex"] 1777720134.29866 "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" "Bernasconi_Michael_267681_1_del.pdf" "Bernasconi_Michael_267681_1_del" 1777720135.20502 0
-  "Bernasconi_Michael_267681_1_del.aux" 1777720135 5641 d70da27cfaa9aef8375192fcab183b89 "pdflatex"
-  "Bernasconi_Michael_267681_1_del.out" 1777720135 3490 97302dfffb463bbd489fd479ca6784d7 "pdflatex"
-  "Bernasconi_Michael_267681_1_del.tex" 1777720133 22298 b4fdaa8b9bb0e13ea51a238aa2082f20 ""
+["pdflatex"] 1777730550.50488 "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" "Bernasconi_Michael_267681_1_del.pdf" "Bernasconi_Michael_267681_1_del" 1777730551.68559 0
+  "Bernasconi_Michael_267681_1_del.aux" 1777730551 5641 d70da27cfaa9aef8375192fcab183b89 "pdflatex"
+  "Bernasconi_Michael_267681_1_del.out" 1777730551 3490 97302dfffb463bbd489fd479ca6784d7 "pdflatex"
+  "Bernasconi_Michael_267681_1_del.tex" 1777730549 22299 3bf24fe54b637f553e6e3e9cab26d3dd ""
   "C:/Users/micha/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1777103762 82507 a9eef8696c92627b87e9975edea03b2a ""
   "C:/Users/micha/AppData/Local/MiKTeX/miktex/data/le/pdftex/pdflatex.fmt" 1774862659 13333487 95dd5ab4fbdeb78c419fe91d30494741 ""
   "C:/Users/micha/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc" 1458473887 4993 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -122,7 +122,7 @@
   "C:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/plots/1_del_kernel_time.pdf" 1776602927 30753 7e4b091ee5af32f379ef569fe1805488 ""
   "C:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/plots/1_del_tts.pdf" 1776602927 30617 8ef1af42f7192f5e3f9140b51a9b874c ""
   "IEEEtran.cls" 1775926328 281957 5b2e4fa15b0f7eabb840ebf67df4c0f7 ""
-  "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" 1777720133 22298 b4fdaa8b9bb0e13ea51a238aa2082f20 ""
+  "c:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" 1777730549 22299 3bf24fe54b637f553e6e3e9cab26d3dd ""
   (generated)
   "Bernasconi_Michael_267681_1_del.aux"
   "Bernasconi_Michael_267681_1_del.log"

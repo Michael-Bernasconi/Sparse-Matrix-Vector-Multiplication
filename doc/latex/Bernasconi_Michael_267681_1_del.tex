@@ -275,7 +275,7 @@ For COO: $BW_{COO} = \frac{4 (2 \times \text{nnz}) + 4 (\text{nnz} + N + M)}{T_{
 \end{itemize}
 
 
-\subsection{Correctness and Validation}Validation compares $y_{gpu}$ against the CPU baseline. To handle floating-point non-associativity, a \texttt{FAIL} is triggered only if both thresholds are violated:\begin{itemize} \itemsep0em\item Hybrid Error: $(|y_{gpu} - y_{cpu}| > 10^{-4}) \land \left( \frac{|y_{gpu} - y_{cpu}|}{|y_{cpu}| + 10^{-7}} > 10^{-3} \right)$\end{itemize}This dual-guard model ensures robustness for values near zero while maintaining a $0.1\%$ relative tolerance, quantifying the numerical drift for every failure
+\subsection{Correctness and Validation}Validation compares $y_{gpu}$ against the CPU baseline. To handle floating-point non-associativity, a \texttt{FAIL} is triggered only if both thresholds are violated:\begin{itemize} \itemsep0em\item Hybrid Error: $(|y_{gpu} - y_{cpu}| > 10^{-4}) \land \left( \frac{|y_{gpu} - y_{cpu}|}{|y_{cpu}| + 10^{-7}} > 10^{-3} \right)$\end{itemize}This dual-guard model ensures robustness for values near zero while maintaining a $0.1\%$ relative tolerance, quantifying the numerical drift for every failure.
 
 \section{Dataset}
 The experimental evaluation is conducted on a selection of 10 sparse matrices from the \textit{\href{https://sparse.tamu.edu/}{SuiteSparse Matrix Collection}}, whose details are reported in Table \ref{tab:datasets}.
