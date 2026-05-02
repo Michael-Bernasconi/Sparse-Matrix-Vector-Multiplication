@@ -290,7 +290,7 @@ These datasets were chosen to represent a wide variety of application domains an
 \begin{tabular}{|l|r|r|r|l|}
 \hline
 \textbf{Matrix Name} & \textbf{NNZ} & \textbf{Avg NNZ/R} & \textbf{Std. Dev.} & \textbf{Structure} \\ \hline
-ASIC\_680ks     & 1,693,767  & 2.48  & 4.16    & Regular \\ \hline
+ASIC\_680ks     & 1,693,767  & 2.48  & 4.16    & Irregular \\ \hline
 bone010         & 47,851,783 & 48.50 & 7.62    & Dense, Symmetric \\ \hline
 boyd2           & 1,500,397  & 3.22  & 194.91  & Irregular \\ \hline
 FullChip        & 26,621,983 & 8.91  & 1,806.80& Extreme Imbalance \\ \hline
@@ -340,7 +340,7 @@ Average times (Figure \ref{fig:kernel_time}) confirm throughput dynamics. For ma
 
 \subsection{Time To Solution (TTS)}
 
-Figure \ref{fig:tts} illustrates Total Time To Solution (TTS) of the application. The logarithmic scale graph highlights how inclusion of all preparatory phases tends to level performance differences previously measured on individual kernels. On matrix \texttt{ASIC\_680ks}, for example, CPU implementation takes about 40.38 s, while the four GPU variants (COO, CSR, CSR-Vector, and cuSPARSE) all converge almost identically between 8.41 s and 8.59 s.
+Figure \ref{fig:tts} illustrates Total Time To Solution (TTS) of the application. The logarithmic scale graph highlights how inclusion of all preparatory phases tends to level performance differences previously measured on individual kernels. On matrix \texttt{bone010}, for example, CPU implementation takes about 40.38 s, while the four GPU variants (COO, CSR, CSR-Vector, and cuSPARSE) all converge almost identically between 8.41 s and 8.59 s.
 
 
 \begin{figure}[htbp]
