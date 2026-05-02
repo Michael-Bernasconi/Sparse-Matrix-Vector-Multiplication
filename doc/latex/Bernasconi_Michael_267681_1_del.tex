@@ -143,7 +143,7 @@ SpMV is a critical bottleneck in HPC due to bandwidth saturation and irregular m
 CPU Baseline: The reference computation on the CPU was handled through a parallel implementation based on OpenMP. This computational phase is not intended as a performance benchmark, but is used for validation and correctness checking of results subsequently computed in parallel on the GPU.
 
 
-In GPU computation, SpMV performance critically depends on the interaction between the sparse matrix memory layout and the adopted execution model. To analyze this dual aspect (data structure and computational logic), our investigation focuses on the following approaches:
+In GPU computation, SpMV performance critically depends on the interaction between the sparse matrix memory layout and the adopted execution model. To analyze this dual aspect (data structure and computational logic), the investigation focuses on the following approaches:
 
 
 \subsubsection{COO Format and Base Kernel}
