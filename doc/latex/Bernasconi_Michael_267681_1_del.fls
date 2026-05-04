@@ -215,11 +215,6 @@ INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\public\amsfonts\sym
 INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\public\amsfonts\symbols\msam7.tfm
 INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\public\amsfonts\symbols\msbm10.tfm
 INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\public\amsfonts\symbols\msbm7.tfm
-INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr7t.tfm
-INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
-INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
-INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
-INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\courier\pcrr7t.tfm
 INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
 INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
 INPUT C:\Users\micha\AppData\Local\MiKTeX\fonts\map\pdftex\pdftex.map
@@ -239,6 +234,11 @@ INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.
 INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr8r.tfm
 INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
 INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmr7t.vf
+INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmr7t.tfm
+INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
+INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
+INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\tex\latex\psnfss\ot1pcr.fd
+INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\courier\pcrr7t.tfm
 INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmb7t.vf
 INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\tfm\adobe\times\ptmb8r.tfm
 INPUT C:\Users\micha\AppData\Local\Programs\MiKTeX\fonts\vf\adobe\times\ptmb7t.vf

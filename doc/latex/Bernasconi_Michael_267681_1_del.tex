@@ -50,8 +50,7 @@
 
 \begin{abstract}
 
-Sparse Matrix-Vector multiplication (SpMV) is a fundamental cornerstone of numerical computing; its efficiency on GPUs is historically limited by irregular memory accesses and load imbalance. This study analyzes the performance of custom implementations (COO, CSR, CSR-Vector) by comparing them with the cuSPARSE library on NVIDIA Ampere architecture (A30). A novel evaluation is proposed that correlates matrix topology with hardware efficiency: the results demonstrate that the CSR-Vector approach, through warp-level parallel reduction, mitigates computational divergence of irregular matrices, achieving a peak of 95.73 GFLOPS and saturating up to 390.83 GB/s of effective bandwidth. A distinctive contribution of this work is the analysis of Time To Solution (TTS), which reveals that I/O parsing costs and PCIe transfers dominate the program lifecycle.
-
+Sparse Matrix-Vector multiplication (SpMV) is a fundamental cornerstone of numerical computing; its efficiency on GPUs is historically limited by irregular memory accesses and load imbalance. This study analyzes the performance of custom implementations (COO, CSR, CSR-Vector) by comparing them with the cuSPARSE library on NVIDIA Ampere architecture (A30). A novel evaluation is proposed that correlates matrix topology with hardware efficiency: the results demonstrate that the CSR-Vector approach, through warp-level parallel reduction, mitigates computational divergence of irregular matrices, achieving a peak of 95.73 GFLOPS and demonstrating high hardware utilization with up to 390.83 GB/s of effective bandwidth for the vector-based implementation. A distinctive contribution of this work is the analysis of Time To Solution (TTS), which reveals that I/O parsing costs and PCIe transfers dominate the program lifecycle.
 \end{abstract}
 
 
@@ -324,7 +323,7 @@ Maximum throughput (Figure \ref{fig:gflops}) was recorded by the \texttt{CSR-Vec
 
 \subsection{Kernel Execution Time}
 
-Average times (Figure \ref{fig:kernel_time}) confirm throughput dynamics. For matrix \texttt{FullChip}, execution decreases from 269 ms (\texttt{Base CSR}) to 14.1 ms (\texttt{CSR-Vector}). The \texttt{cuSPARSE} library proves fastest in complex scenarios, recording 3.4 ms on the same matrix.
+Average times (Figure \ref{fig:kernel_time}) confirm throughput dynamics. For matrix \texttt{FullChip}, execution decreases from 269 ms (\texttt{Base CSR}) to 14.35 ms (\texttt{CSR-Vector}). The \texttt{cuSPARSE} library proves fastest in complex scenarios, recording 3.4 ms on the same matrix.
 
 
 \begin{figure}[htbp]
@@ -356,7 +355,7 @@ Figure \ref{fig:tts} illustrates Total Time To Solution (TTS) of the application
 
 \subsection{Effective Memory Bandwidth}
 
-Peak measured value (Figure \ref{fig:bandwidth}) is 390.83 GB/s (\texttt{CSR-Vector} on \texttt{bone010}), highlighting a practical limit compared to theoretical bandwidth of NVIDIA A30 (933.1 GB/s). CPU implementations reach a maximum of 13.99 GB/s (\texttt{boyd2}).
+Peak measured value (Figure \ref{fig:bandwidth}) is 480.64 GB/s (\texttt{CSR-Base} on \texttt{rajat31}), highlighting a practical limit compared to theoretical bandwidth of NVIDIA A30 (933.1 GB/s). CPU implementations reach a maximum of 13.99 GB/s (\texttt{boyd2}).
 
 
 \begin{figure}[htbp]
@@ -372,7 +371,7 @@ Peak measured value (Figure \ref{fig:bandwidth}) is 390.83 GB/s (\texttt{CSR-Vec
 
 \subsection{Cache Profiling}
 
-Analysis via Valgrind detected an extremely low D1 Miss Rate ($<0.3\%$) for profilable datasets (\textit{ASIC\_680ks, boyd2, Rucci1, webbase-1M}), indicating good local data reuse on vectors. Conversely, for large matrices (\textit{bone010, FullChip, ldoor, rajat31}), simulation exceeded the 5-minute limit imposed by the cluster scheduler. This timeout is attributable to high computational overhead of Valgrind when tracing indirect memory accesses typical of SpMV. On datasets with millions of non-zero elements, simulation latency of sparse accesses saturates available time before kernel completion, preventing exhaustive measurement of memory hierarchy.
+Analysis via Valgrind detected an extremely low D1 Miss Rate ($\leq 0.3\%$) for profilable datasets (\textit{ASIC\_680ks, boyd2, Rucci1, webbase-1M}), indicating good local data reuse on vectors. Conversely, for large matrices (\textit{bone010, FullChip, ldoor, rajat31}), simulation exceeded the 5-minute limit imposed by the cluster scheduler. This timeout is attributable to high computational overhead of Valgrind when tracing indirect memory accesses typical of SpMV. On datasets with millions of non-zero elements, simulation latency of sparse accesses saturates available time before kernel completion, preventing exhaustive measurement of memory hierarchy.
 
 
 \subsection{Numerical Validation}
