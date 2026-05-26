@@ -4,7 +4,8 @@
 #SBATCH --ntasks=2                  
 #SBATCH --cpus-per-task=1           
 #SBATCH --gres=gpu:2           
-#SBATCH --partition=edu-short       
+#SBATCH --partition=edu-short     
+#SBATCH -w edu01
 #SBATCH --account=gpu.computing26   
 #SBATCH --time=00:05:00               # Aumentato a 10 min per sicurezza
 #SBATCH --output=multi_gpu_res.out
