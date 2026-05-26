@@ -312,7 +312,7 @@ This section presents experimental data obtained from evaluation of SpMV impleme
 Maximum throughput (Figure \ref{fig:gflops}) was recorded by the \texttt{CSR-Vector} kernel on matrix \texttt{bone010} with 95.73 GFLOPS. While this value is significantly lower than the theoretical peak of the NVIDIA A30 (10.3 TFLOPS), it is consistent with the \textit{memory-bound} nature of the SpMV kernel. Given the low arithmetic intensity of the operation, performance is strictly capped by the HBM2 bandwidth rather than raw computing power. Reaching $\sim$96 GFLOPS on a device with 933 GB/s theoretical bandwidth represents a high level of hardware utilization for sparse kernels, indicating that the implementation effectively saturates the available memory bus despite the overhead typical of irregular access patterns.
 \begin{figure}[htbp]
 
-\centerline{\includegraphics[width=\linewidth]{C:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/plots/1_del_gflops.pdf}}
+\centerline{\includegraphics[width=\linewidth]{../../results/plots/1_del_gflops.pdf}}
 
 \caption{Computational Throughput (GFLOPS) for tested implementations.}
 
@@ -328,7 +328,7 @@ Average times (Figure \ref{fig:kernel_time}) confirm throughput dynamics. For ma
 
 \begin{figure}[htbp]
 
-\centerline{\includegraphics[width=\linewidth]{C:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/plots/1_del_kernel_time.pdf}}
+\centerline{\includegraphics[width=\linewidth]{../../results/plots/1_del_kernel_time.pdf}}
 
 \caption{Average kernel time in seconds with standard deviation.}
 
@@ -344,7 +344,7 @@ Figure \ref{fig:tts} illustrates Total Time To Solution (TTS) of the application
 
 \begin{figure}[htbp]
 
-\centerline{\includegraphics[width=\linewidth]{C:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/plots/1_del_tts.pdf}}
+\centerline{\includegraphics[width=\linewidth]{../../results/plots/1_del_tts.pdf}}
 
 \caption{Total Time To Solution (TTS) in seconds measured on logarithmic scale for different implementations.}
 
@@ -360,7 +360,7 @@ Peak measured value (Figure \ref{fig:bandwidth}) is 480.64 GB/s (\texttt{CSR-Bas
 
 \begin{figure}[htbp]
 
-\centerline{\includegraphics[width=\linewidth]{C:/Users/micha/Documents/GitHub/Sparse-Matrix-Vector-Multiplication/results/plots/1_del_bandwidth.pdf}}
+\centerline{\includegraphics[width=\linewidth]{../../results/plots/1_del_bandwidth.pdf}}
 
 \caption{Effective Memory Bandwidth (GB/s). Theoretical peak of A30 is 933.1 GB/s.}
 
