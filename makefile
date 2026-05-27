@@ -7,9 +7,11 @@ NVCCFLAGS=-O3 -arch=sm_80 -ccbin=$(MPICC) -Xcompiler -fopenmp
 INCLUDES=-I./include
 LIBS=-lm
 
-TARGET=bin/cuda-SpMV-multi-gpu
+# Nome dell'eseguibile aggiornato per chiarezza
+TARGET=bin/cuda-SpMV-CSR-Vector-multi
 
-SRCS=src/cuda-SpMV-CSR-multi.cu src/matrix_utils.c src/my_time_lib.c
+# Cambiato il sorgente principale qui
+SRCS=src/cuda-SpMV-CSR-Vector-multi.cu src/matrix_utils.c src/my_time_lib.c
 OBJS=obj/matrix_utils.o obj/my_time_lib.o
 
 all: $(TARGET)
