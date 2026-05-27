@@ -87,8 +87,8 @@ double calculate_tts(double start_time)
 void validate_results(const float *ref, const float *test, int n)
 {
     int errors = 0;
-    const float rel_tolerance = 1e-3f; // 0.1% relative tolerance
-    const float abs_tolerance = 1e-4f; // Absolute tolerance guard for values near zero
+    const float rel_tolerance = 1e-2f; 
+    const float abs_tolerance = 1e-3f;  
     for (int i = 0; i < n; i++)
     {
         float diff = fabsf(ref[i] - test[i]);

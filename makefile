@@ -2,25 +2,23 @@ CC=gcc
 NVCC=nvcc
 MPICC=mpicxx
 
-# Flags for A100/A30 cluster
 NVCCFLAGS=-O3 -arch=sm_80 -ccbin=$(MPICC) -Xcompiler -fopenmp
 INCLUDES=-I./include
-# For custom COO, we only need the math library. 
-# Add -lcusparse if you plan to mix with cuSPARSE calls.
-LIBS=-lm 
+LIBS=-lm -lcusparse
 
-# Target name for COO
-TARGET=bin/cuda-SpMV-coo-multi
+BIN_FOLDER := bin
+SRC_FOLDER := src
 
-# Source files for COO
-SRCS=src/cuda-SpMV-COO-multi.cu src/matrix_utils.c src/my_time_lib.c
-OBJS=obj/matrix_utils.o obj/my_time_lib.o
+TARGETS = $(BIN_FOLDER)/cuda-SpMV-CSR-multi \
+          $(BIN_FOLDER)/cuda-SpMV-COO-multi \
+          $(BIN_FOLDER)/cuda-SpMV-CSR-Vector-multi \
+          $(BIN_FOLDER)/cuda-SpMV-cuSparse-multi
 
-all: $(TARGET)
+all: $(TARGETS)
 
-$(TARGET): $(SRCS)
-	@mkdir -p bin
-	$(NVCC) $(NVCCFLAGS) $(SRCS) -o $(TARGET) $(INCLUDES) $(LIBS)
+$(BIN_FOLDER)/%-multi: $(SRC_FOLDER)/%-multi.cu $(SRC_FOLDER)/matrix_utils.c $(SRC_FOLDER)/my_time_lib.c
+	@mkdir -p $(BIN_FOLDER)
+	$(NVCC) $(NVCCFLAGS) $^ -o $@ $(INCLUDES) $(LIBS)
 
 clean:
-	rm -rf bin obj
+	rm -rf $(BIN_FOLDER) obj
