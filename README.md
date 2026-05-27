@@ -74,7 +74,7 @@ The directory is organized to logically separate sources, compilation logic, ben
    ```
 3. **Clone the repository (directly on the cluster):**
    ```bash
-   git clone https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication.git
+   git clone -b Deliverable2 https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication.git
    ```
 
 ### Phase 2: Dataset Download and Setup
@@ -110,20 +110,22 @@ Move to the project root (`~/Sparse-Matrix-Vector-Multiplication`), load the req
 cd ~/Sparse-Matrix-Vector-Multiplication
 
 # 1. Load the correct CUDA module
-module load CUDA/11.8.0
+module purge
+module load CUDA/12.3.2
+module load OpenMpi/4.1.5-CUDA-12.3.2
 
 # 2. Assign execution permissions to the Bash scripts
-chmod +x run_performance.sh run_cache.sh submit_all.sh
+chmod +x run_performance_multi.sh submit_all_multi.sh
 
 # 3. Compile the project
 make
 
 # 4. Run the benchmark (submission via SLURM partitions)
 # A) To execute ALL matrix files (.mtx) for the 5 scheduled runs:
-./submit_all.sh 
+./submit_all_multi.sh 
 
 # B) Alternatively, to test only 1 specific file:
-./submit_all.sh data/ASIC_680ks.mtx
+./submit_all_multi.sh data/ASIC_680ks.mtx
 ```
 
 ### Graphs and Tables Generation
