@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=spmv_cusparse_multi
+#SBATCH --job-name=spmv_coo_multi
 #SBATCH --nodes=1
 #SBATCH --ntasks=2                  
 #SBATCH --cpus-per-task=1           
@@ -8,17 +8,18 @@
 #SBATCH -w edu01
 #SBATCH --account=gpu.computing26   
 #SBATCH --time=00:05:00               
-#SBATCH --output=cusparse_multi_gpu_res.out
+#SBATCH --output=coo_multi_gpu_res.out
 
 # Load required modules
 module purge
 module load CUDA/12.3.2
 module load OpenMpi/4.1.5-CUDA-12.3.2
 
-echo "--- Compilazione cuSPARSE Multi-GPU ---"
+echo "--- Compilazione COO Multi-GPU ---"
+# Assicurati di aver salvato il codice come src/cuda-SpMV-coo-multi.cu
 make clean
 make
 
 echo -e "\n--- Esecuzione su 2 GPU (Nodo edu01) ---"
-# Run the cuSPARSE Multi-GPU executable
-mpirun -np 2 ./bin/cuda-SpMV-cusparse-multi ./data/ASIC_680ks.mtx
+# Lancio del binario COO distribuito su 2 GPU
+mpirun -np 2 ./bin/cuda-SpMV-coo-multi ./data/ASIC_680ks.mtx
