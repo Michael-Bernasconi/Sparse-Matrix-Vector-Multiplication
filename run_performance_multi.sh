@@ -18,6 +18,6 @@ for exe in "${executables[@]}"; do
         echo "Running $exe on $NUM_GPUS GPUs..."
         echo -e "\n[$exe - $NUM_GPUS GPUs]" >> "$LOG_FILE"
         
-        mpirun -np $NUM_GPUS ./$BIN_DIR/$exe "$MATRIX_PATH" >> "$LOG_FILE" 2>&1
+        mpirun --oversubscribe -np $NUM_GPUS ./$BIN_DIR/$exe "$MATRIX_PATH" >> "$LOG_FILE" 2>&1
     fi
 done
