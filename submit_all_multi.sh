@@ -22,7 +22,7 @@ for run_id in {1..5}; do
             echo "Submitting: $m_name on $gpus GPUs"
 
             
-            srun --nodes=1 --ntasks=1 --cpus-per-task=1 --gres=gpu:$gpus \
+            srun --nodes=1 --ntasks=1 --cpus-per-task=$gpus --gres=gpu:$gpus \
                  --partition=edu-short -w edu01 --account=gpu.computing26 \
                  --time=00:05:00 \
                  ./run_performance_multi.sh "$matrix" "$RUN_FOLDER" "$gpus"
