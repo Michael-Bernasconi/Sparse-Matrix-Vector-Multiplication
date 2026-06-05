@@ -69,7 +69,6 @@ int main(int argc, char **argv) {
     MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // Allocazione locale di h_x, inizializzato a 0
     float *h_x = (float*)calloc(N, sizeof(float));
     float *h_x_full = NULL;
     float *h_y_ref = NULL;
@@ -107,7 +106,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    // --- DAY 2: Modulo 1D Partitioning Setup ---
     int local_M = M / size + (rank < M % size ? 1 : 0);
     int local_nnz = 0;
 
@@ -196,16 +194,13 @@ int main(int argc, char **argv) {
     MPI_Scatterv(flat_values, send_counts_nnz, displs_nnz, MPI_FLOAT, local_values, local_nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Scatterv(flat_col_idx, send_counts_nnz, displs_nnz, MPI_INT, local_col_idx, local_nnz, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // =========================================================================
     // --- DAY 4 & 5: GHOST ENTRIES IDENTIFICATION E SCAMBIO VALORI ---
-    // =========================================================================
     int *ghost_cols = (int*)malloc(local_nnz * sizeof(int));
     int local_ghost_count = 0;
     
     int *send_to_rank_counts = (int*)calloc(size, sizeof(int));
     int *recv_from_rank_counts = (int*)calloc(size, sizeof(int));
 
-    // Identificazione
     for (int i = 0; i < local_nnz; i++) {
         int col = local_col_idx[i];
         int owner_rank = col % size; 
@@ -226,7 +221,6 @@ int main(int argc, char **argv) {
 
     MPI_Alltoall(recv_from_rank_counts, 1, MPI_INT, send_to_rank_counts, 1, MPI_INT, MPI_COMM_WORLD);
 
-    // Preparazione Array Indici
     int **recv_indices = (int**)malloc(size * sizeof(int*));
     int *recv_idx_pos = (int*)calloc(size, sizeof(int));
     for (int r = 0; r < size; r++) recv_indices[r] = (int*)malloc(recv_from_rank_counts[r] * sizeof(int));
@@ -244,7 +238,6 @@ int main(int argc, char **argv) {
     MPI_Request *reqs = (MPI_Request*)malloc(2 * size * sizeof(MPI_Request));
     int req_count = 0;
 
-    // Scambio Indici
     for (int r = 0; r < size; r++) {
         if (r != rank) {
             if (recv_from_rank_counts[r] > 0) MPI_Isend(recv_indices[r], recv_from_rank_counts[r], MPI_INT, r, 100, MPI_COMM_WORLD, &reqs[req_count++]);
@@ -253,7 +246,6 @@ int main(int argc, char **argv) {
     }
     MPI_Waitall(req_count, reqs, MPI_STATUSES_IGNORE);
 
-    // Scambio Valori
     float **send_values = (float**)malloc(size * sizeof(float*));
     float **recv_values = (float**)malloc(size * sizeof(float*));
     for (int r = 0; r < size; r++) {
@@ -277,7 +269,6 @@ int main(int argc, char **argv) {
     }
     MPI_Waitall(req_count, reqs, MPI_STATUSES_IGNORE);
 
-    // Integrazione
     for (int r = 0; r < size; r++) {
         if (r != rank && recv_from_rank_counts[r] > 0) {
             for (int k = 0; k < recv_from_rank_counts[r]; k++) {
@@ -298,8 +289,8 @@ int main(int argc, char **argv) {
     }
     free(recv_indices); free(send_indices); free(send_values); free(recv_values); free(reqs);
     free(send_to_rank_counts); free(recv_from_rank_counts); free(ghost_cols);
-    // =========================================================================
 
+    // --- SETUP DEVICE ---
     int device_count;
     CUDA_CHECK(cudaGetDeviceCount(&device_count));
     CUDA_CHECK(cudaSetDevice(rank % device_count));
@@ -316,7 +307,7 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaMemcpy(d_row_ptr, local_row_ptr, (local_M + 1) * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_col_idx, local_col_idx, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_values, local_values, local_nnz * sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice)); // X ha ora sia own che ghost
+    CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice));
 
     int num_iterations = 100;
     double start_time = omp_get_wtime();
@@ -336,11 +327,14 @@ int main(int argc, char **argv) {
     double max_avg_time_s;
     MPI_Reduce(&avg_time_s, &max_avg_time_s, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    float *h_local_y = (float*)malloc(local_M * sizeof(float));
-    CUDA_CHECK(cudaMemcpy(h_local_y, d_y, local_M * sizeof(float), cudaMemcpyDeviceToHost));
-
+    // =========================================================================
+    // --- DAY 6: REFACTORING GPU-AWARE MPI ---
+    // Eliminiamo h_local_y e passiamo direttamente il puntatore device d_y.
+    // Per una comunicazione interamente GPU-Aware, allochiamo anche il buffer di raccolta su GPU.
+    // =========================================================================
     int *recv_counts = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     int *recv_displs = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
+    float *d_gather_buf = NULL;
     float *gather_buf = (rank == 0) ? (float*)malloc(M * sizeof(float)) : NULL;
     float *h_global_y_gpu = (rank == 0) ? (float*)malloc(M * sizeof(float)) : NULL;
 
@@ -349,11 +343,16 @@ int main(int argc, char **argv) {
             recv_counts[i] = M / size + (i < M % size ? 1 : 0);
             recv_displs[i] = (i == 0) ? 0 : recv_displs[i - 1] + recv_counts[i - 1];
         }
+        CUDA_CHECK(cudaMalloc(&d_gather_buf, M * sizeof(float)));
     }
 
-    MPI_Gatherv(h_local_y, local_M, MPI_FLOAT, gather_buf, recv_counts, recv_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    // Passiamo direttamente i puntatori Device d_y e d_gather_buf a MPI_Gatherv
+    MPI_Gatherv(d_y, local_M, MPI_FLOAT, d_gather_buf, recv_counts, recv_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
+        // Copiamo il risultato globale raccolto su GPU verso l'Host per riordinarlo e validarlo
+        CUDA_CHECK(cudaMemcpy(gather_buf, d_gather_buf, M * sizeof(float), cudaMemcpyDeviceToHost));
+
         int *rank_offset = (int*)calloc(size, sizeof(int));
         for (int i = 0; i < M; i++) {
             int r = i % size;
@@ -365,7 +364,7 @@ int main(int argc, char **argv) {
         spmv_csr_sequential(&A, h_x_full, h_y_ref);
         validate_results(h_y_ref, h_global_y_gpu, M);
 
-        printf("\n--- MULTI-GPU CSR SCALAR ( %d GPUs - Modulo 1D ) ---\n", size);
+        printf("\n--- MULTI-GPU CSR SCALAR ( %d GPUs - Modulo 1D - GPU-Aware ) ---\n", size);
         printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], M, N, nnz);
         printf("Avg Time: %e s\n", max_avg_time_s);
         printf("GFLOPS  : %.4f\n", calculate_gflops(nnz, max_avg_time_s));
@@ -376,11 +375,12 @@ int main(int argc, char **argv) {
         free(recv_counts); free(recv_displs);
         free(flat_row_ptr); free(flat_values); free(flat_col_idx); free(rank_nnz);
         free(send_counts_rows); free(displs_rows); free(send_counts_nnz); free(displs_nnz);
+        CUDA_CHECK(cudaFree(d_gather_buf));
     }
 
     CUDA_CHECK(cudaFree(d_row_ptr)); CUDA_CHECK(cudaFree(d_col_idx));
     CUDA_CHECK(cudaFree(d_values)); CUDA_CHECK(cudaFree(d_x)); CUDA_CHECK(cudaFree(d_y));
-    free(local_row_ptr); free(local_values); free(local_col_idx); free(h_local_y); free(h_x);
+    free(local_row_ptr); free(local_values); free(local_col_idx); h_x);
 
     MPI_Finalize();
     return 0;

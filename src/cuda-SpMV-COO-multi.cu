@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaMemcpy(d_rows, local_rows, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_cols, local_cols, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_values, local_values, local_nnz * sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice)); // X ha ora sia own che ghost
+    CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice));
 
     int num_iterations = 100;
     double start_time = omp_get_wtime();
@@ -309,19 +309,30 @@ int main(int argc, char **argv) {
     double max_avg_time_s;
     MPI_Reduce(&avg_time_s, &max_avg_time_s, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    float *h_local_y = (float*)malloc(M * sizeof(float));
-    CUDA_CHECK(cudaMemcpy(h_local_y, d_y, M * sizeof(float), cudaMemcpyDeviceToHost));
+    // =========================================================================
+    // --- GIORNO 6: REFACTORING IN MPI "GPU-AWARE" ---
+    // Eliminiamo h_local_y e passiamo direttamente i puntatori device d_y e d_global_y_gpu.
+    // =========================================================================
+    float *d_global_y_gpu = NULL;
+    if (rank == 0) {
+        CUDA_CHECK(cudaMalloc(&d_global_y_gpu, M * sizeof(float)));
+    }
+    
+    // Eseguiamo la riduzione direttamente sulla GPU sfruttando CUDA-Aware MPI
+    MPI_Reduce(d_y, d_global_y_gpu, M, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     float *h_global_y_gpu = (rank == 0) ? (float*)malloc(M * sizeof(float)) : NULL;
-
-    MPI_Reduce(h_local_y, h_global_y_gpu, M, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
+    if (rank == 0) {
+        CUDA_CHECK(cudaMemcpy(h_global_y_gpu, d_global_y_gpu, M * sizeof(float), cudaMemcpyDeviceToHost));
+    }
+    // =========================================================================
 
     if (rank == 0) {
         memset(h_y_ref, 0, M * sizeof(float));
-        spmv_coo_sequential(&mat, h_x_full, h_y_ref); // Usa h_x_full per CPU
+        spmv_coo_sequential(&mat, h_x_full, h_y_ref);
         validate_results(h_y_ref, h_global_y_gpu, M);
 
-        printf("\n--- MULTI-GPU COO ( %d GPUs - Modulo 1D ) ---\n", size);
+        printf("\n--- MULTI-GPU COO ( %d GPUs - Modulo 1D - GPU-Aware ) ---\n", size);
         printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], M, N, global_nnz);
         printf("Avg Time: %e s\n", max_avg_time_s);
         printf("GFLOPS  : %.4f\n", calculate_gflops(global_nnz, max_avg_time_s));
@@ -331,11 +342,12 @@ int main(int argc, char **argv) {
         free(h_global_y_gpu); free(h_y_ref); free(h_x_full);
         free(flat_rows); free(flat_cols); free(flat_values); free(rank_nnz);
         free(send_counts_nnz); free(displs_nnz);
+        CUDA_CHECK(cudaFree(d_global_y_gpu));
     }
 
     CUDA_CHECK(cudaFree(d_rows)); CUDA_CHECK(cudaFree(d_cols));
     CUDA_CHECK(cudaFree(d_values)); CUDA_CHECK(cudaFree(d_x)); CUDA_CHECK(cudaFree(d_y));
-    free(local_rows); free(local_cols); free(local_values); free(h_local_y); free(h_x);
+    free(local_rows); free(local_cols); free(local_values); free(h_x);
 
     MPI_Finalize();
     return 0;
