@@ -65,7 +65,6 @@ int main(int argc, char **argv) {
     if (rank == 0) {
         load_matrix_market_to_csr(argv[1], &A);
         M = A.M; N = A.N; nnz = A.nnz;
-        
         h_x = (float*)malloc(N * sizeof(float));
         h_y_ref = (float*)calloc(M, sizeof(float));
         fill_random_vector(h_x, N);
@@ -75,9 +74,7 @@ int main(int argc, char **argv) {
     MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    if (rank != 0) {
-        h_x = (float*)malloc(N * sizeof(float));
-    }
+    if (rank != 0) h_x = (float*)malloc(N * sizeof(float));
     MPI_Bcast(h_x, N, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     // --- DAY 2: Modulo 1D Partitioning Setup ---
@@ -153,7 +150,6 @@ int main(int argc, char **argv) {
             memcpy(flat_row_ptr + displs_rows[r], rank_row_ptr_bufs[r], (rank_M[r] + 1) * sizeof(int));
             memcpy(flat_values + displs_nnz[r], rank_values_bufs[r], rank_nnz[r] * sizeof(float));
             memcpy(flat_col_idx + displs_nnz[r], rank_col_idx_bufs[r], rank_nnz[r] * sizeof(int));
-
             free(rank_row_ptr_bufs[r]); free(rank_values_bufs[r]); free(rank_col_idx_bufs[r]);
         }
         free(rank_M); free(rank_row_ptr_bufs); free(rank_values_bufs); free(rank_col_idx_bufs);
@@ -204,7 +200,7 @@ int main(int argc, char **argv) {
         printf("Rank 0 deve RICHIEDERE (Ghost Entries) un totale di %d elementi.\n", local_ghost_count);
         for(int r = 0; r < size; r++) {
             if(r != rank) {
-                printf("  -> Da Rank %d: deve ricevere %d elementi, deve inviare %d elementi.\n", 
+                printf("  -> Da Rank %d: riceve %d elementi, invia %d elementi.\n", 
                        r, recv_from_rank_counts[r], send_to_rank_counts[r]);
             }
         }

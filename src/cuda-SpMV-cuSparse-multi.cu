@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
         printf("Rank 0 deve RICHIEDERE (Ghost Entries) un totale di %d elementi.\n", local_ghost_count);
         for(int r = 0; r < size; r++) {
             if(r != rank) {
-                printf("  -> Da Rank %d: deve ricevere %d elementi, deve inviare %d elementi.\n", 
+                printf("  -> Da Rank %d: riceve %d elementi, invia %d elementi.\n", 
                        r, recv_from_rank_counts[r], send_to_rank_counts[r]);
             }
         }

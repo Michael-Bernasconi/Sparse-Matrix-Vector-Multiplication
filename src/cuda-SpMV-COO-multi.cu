@@ -145,12 +145,10 @@ int main(int argc, char **argv) {
     int *send_to_rank_counts = (int*)calloc(size, sizeof(int));
     int *recv_from_rank_counts = (int*)calloc(size, sizeof(int));
 
-    // Identifica le colonne esterne di cui questo rank ha bisogno (Ghost Elements)
     for (int i = 0; i < local_nnz; i++) {
         int col = local_cols[i];
-        int owner_rank = col % size; // Modulo 1D applicato agli indici di colonna
+        int owner_rank = col % size; 
         if (owner_rank != rank) {
-            // Evita duplicati locali per conteggiare i ghost unici da richiedere a quel rank
             int gia_presente = 0;
             for (int j = 0; j < local_ghost_count; j++) {
                 if (ghost_cols[j] == col) {
@@ -160,21 +158,19 @@ int main(int argc, char **argv) {
             }
             if (!gia_presente) {
                 ghost_cols[local_ghost_count++] = col;
-                recv_from_rank_counts[owner_rank]++; // Devo ricevere questo elemento da owner_rank
+                recv_from_rank_counts[owner_rank]++; 
             }
         }
     }
 
-    // Scambia i conteggi per sapere quanti elementi inviare agli altri rank
     MPI_Alltoall(recv_from_rank_counts, 1, MPI_INT, send_to_rank_counts, 1, MPI_INT, MPI_COMM_WORLD);
 
-    // Stampa diagnostica sul Rank 0 per validazione
     if (rank == 0) {
         printf("\n=== [DAY 4 DIAGNOSTIC - COO] ===\n");
         printf("Rank 0 deve RICHIEDERE (Ghost Entries) un totale di %d elementi.\n", local_ghost_count);
         for(int r = 0; r < size; r++) {
             if(r != rank) {
-                printf("  -> Da Rank %d: deve ricevere %d elementi, deve inviare %d elementi.\n", 
+                printf("  -> Da Rank %d: riceve %d elementi, invia %d elementi.\n", 
                        r, recv_from_rank_counts[r], send_to_rank_counts[r]);
             }
         }
@@ -197,7 +193,7 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaMalloc(&d_y, M * sizeof(float))); 
 
     CUDA_CHECK(cudaMemcpy(d_rows, local_rows, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaFree(0)); // Context init
+    CUDA_CHECK(cudaFree(0)); 
     CUDA_CHECK(cudaMemcpy(d_cols, local_cols, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_values, local_values, local_nnz * sizeof(float), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice));
@@ -222,6 +218,8 @@ int main(int argc, char **argv) {
 
     float *h_local_y = (float*)malloc(M * sizeof(float));
     CUDA_CHECK(cudaMemcpy(h_local_y, d_y, M * sizeof(float), cudaMemcpyDeviceToHost));
+
+    float *h_global_y_gpu = (rank == 0) ? (float*)malloc(M * sizeof(float)) : NULL;
 
     MPI_Reduce(h_local_y, h_global_y_gpu, M, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
 
