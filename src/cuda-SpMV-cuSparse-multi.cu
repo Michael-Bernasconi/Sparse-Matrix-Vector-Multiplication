@@ -196,7 +196,7 @@ int main(int argc, char **argv) {
     size_t bufferSize = 0;
     void *d_buffer = NULL;
 
-    CUSPARSE_CHECK(cusparseSpMV_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matA, vecX, &beta, vecY, CUDA_R_32F, CUSPARSE_SPMV_DEFAULT, &bufferSize));
+    CUSPARSE_CHECK(cusparseSpMV_bufferSize(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matA, vecX, &beta, vecY, CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT, &bufferSize));
     CUDA_CHECK(cudaMalloc(&d_buffer, bufferSize));
 
     int num_iterations = 100;
@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
 
     for (int iter = 0; iter < num_iterations; iter++) {
         CUDA_CHECK(cudaMemset(d_y, 0, local_M * sizeof(float)));
-        CUSPARSE_CHECK(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matA, vecX, &beta, vecY, CUDA_R_32F, CUSPARSE_SPMV_DEFAULT, d_buffer));
+        CUSPARSE_CHECK(cusparseSpMV(handle, CUSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matA, vecX, &beta, vecY, CUDA_R_32F, CUSPARSE_SPMV_ALG_DEFAULT, d_buffer));
         CUDA_CHECK(cudaDeviceSynchronize());
     }
 
