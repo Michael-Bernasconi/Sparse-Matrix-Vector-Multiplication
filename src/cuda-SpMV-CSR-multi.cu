@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
     float *h_x = NULL;
     float *h_y_ref = NULL;
 
-    double global_start = get_time();
+    double global_start = omp_get_time();
 
     if (rank == 0) {
         load_mtx_csr(argv[1], &A); 
@@ -193,7 +193,7 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice));
 
     int num_iterations = 100;
-    double start_time = get_time();
+    double start_time = omp_get_time();
 
     int block_size = 256;
     int grid_size = (local_M + block_size - 1) / block_size;
@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
         CUDA_CHECK(cudaDeviceSynchronize());
     }
 
-    double end_time = get_time();
+    double end_time = omp_get_time();
     double avg_time_s = (end_time - start_time) / num_iterations;
 
     double max_avg_time_s;
