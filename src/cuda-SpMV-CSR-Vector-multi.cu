@@ -29,26 +29,16 @@ void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
     }
 }
 
-// CSR-Vector Kernel: A 32-thread warp processes a single row
-__global__ void spmv_csr_vector_kernel(int M, const int *row_ptr, const int *col_idx, const float *vals, const float *x, float *y) {
-    int row = (blockIdx.x * blockDim.x + threadIdx.x) / 32;
-    if (row < M) {
-        int lane = threadIdx.x & 31;
-        int start = row_ptr[row];
-        int end = row_ptr[row + 1];
+__global__ void spmv_csr_kernel(int num_rows, const int* d_row_ptr, const int* d_col_ind, const float* d_values, const float* d_x, float* d_y) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < num_rows) {
         float sum = 0.0f;
-        
-        for (int j = start + lane; j < end; j += 32) {
-            sum += vals[j] * x[col_idx[j]];
+        int row_start = d_row_ptr[i];
+        int row_end = d_row_ptr[i+1];
+        for (int j = row_start; j < row_end; j++) {
+            sum += d_values[j] * d_x[d_col_ind[j]];
         }
-        
-        for (int offset = 16; offset > 0; offset /= 2) {
-            sum += __shfl_down_sync(0xffffffff, sum, offset);
-        }
-        
-        if (lane == 0) {
-            y[row] = sum;
-        }
+        d_y[i] = sum;
     }
 }
 
@@ -67,25 +57,55 @@ int main(int argc, char **argv) {
 
     int M, N, nnz;
     CSRMatrix A;
-    float *h_x = NULL;
-    float *h_y_ref = NULL;
 
     double global_start = omp_get_wtime();
 
     if (rank == 0) {
         load_matrix_market_to_csr(argv[1], &A);
         M = A.M; N = A.N; nnz = A.nnz;
-        h_x = (float*)malloc(N * sizeof(float));
-        h_y_ref = (float*)calloc(M, sizeof(float));
-        fill_random_vector(h_x, N);
     }
 
     MPI_Bcast(&M, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    if (rank != 0) h_x = (float*)malloc(N * sizeof(float));
-    MPI_Bcast(h_x, N, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    // Allocazione locale di h_x, inizializzato a 0
+    float *h_x = (float*)calloc(N, sizeof(float));
+    float *h_x_full = NULL;
+    float *h_y_ref = NULL;
+
+    if (rank == 0) {
+        h_x_full = (float*)malloc(N * sizeof(float));
+        h_y_ref = (float*)calloc(M, sizeof(float));
+        fill_random_vector(h_x_full, N);
+
+        for (int r = 1; r < size; r++) {
+            int count_r = N / size + (r < N % size ? 1 : 0);
+            if (count_r > 0) {
+                float *buf = (float*)malloc(count_r * sizeof(float));
+                int idx = 0;
+                for (int i = 0; i < N; i++) {
+                    if (i % size == r) buf[idx++] = h_x_full[i];
+                }
+                MPI_Send(buf, count_r, MPI_FLOAT, r, 0, MPI_COMM_WORLD);
+                free(buf);
+            }
+        }
+        for (int i = 0; i < N; i++) {
+            if (i % size == 0) h_x[i] = h_x_full[i];
+        }
+    } else {
+        int count_my = N / size + (rank < N % size ? 1 : 0);
+        if (count_my > 0) {
+            float *buf = (float*)malloc(count_my * sizeof(float));
+            MPI_Recv(buf, count_my, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            int idx = 0;
+            for (int i = 0; i < N; i++) {
+                if (i % size == rank) h_x[i] = buf[idx++];
+            }
+            free(buf);
+        }
+    }
 
     // --- DAY 2: Modulo 1D Partitioning Setup ---
     int local_M = M / size + (rank < M % size ? 1 : 0);
@@ -177,7 +197,7 @@ int main(int argc, char **argv) {
     MPI_Scatterv(flat_col_idx, send_counts_nnz, displs_nnz, MPI_INT, local_col_idx, local_nnz, MPI_INT, 0, MPI_COMM_WORLD);
 
     // =========================================================================
-    // --- DAY 4: GHOST ENTRIES IDENTIFICATION LOGIC ---
+    // --- DAY 4 & 5: GHOST ENTRIES IDENTIFICATION E SCAMBIO VALORI ---
     // =========================================================================
     int *ghost_cols = (int*)malloc(local_nnz * sizeof(int));
     int local_ghost_count = 0;
@@ -185,6 +205,7 @@ int main(int argc, char **argv) {
     int *send_to_rank_counts = (int*)calloc(size, sizeof(int));
     int *recv_from_rank_counts = (int*)calloc(size, sizeof(int));
 
+    // Identificazione
     for (int i = 0; i < local_nnz; i++) {
         int col = local_col_idx[i];
         int owner_rank = col % size; 
@@ -205,17 +226,77 @@ int main(int argc, char **argv) {
 
     MPI_Alltoall(recv_from_rank_counts, 1, MPI_INT, send_to_rank_counts, 1, MPI_INT, MPI_COMM_WORLD);
 
-    if (rank == 0) {
-        printf("\n=== [DAY 4 DIAGNOSTIC - CSR VECTOR] ===\n");
-        printf("Rank 0 deve RICHIEDERE (Ghost Entries) un totale di %d elementi.\n", local_ghost_count);
-        for(int r = 0; r < size; r++) {
-            if(r != rank) {
-                printf("  -> Da Rank %d: riceve %d elementi, invia %d elementi.\n", 
-                       r, recv_from_rank_counts[r], send_to_rank_counts[r]);
+    // Preparazione Array Indici
+    int **recv_indices = (int**)malloc(size * sizeof(int*));
+    int *recv_idx_pos = (int*)calloc(size, sizeof(int));
+    for (int r = 0; r < size; r++) recv_indices[r] = (int*)malloc(recv_from_rank_counts[r] * sizeof(int));
+    
+    for (int i = 0; i < local_ghost_count; i++) {
+        int col = ghost_cols[i];
+        int owner_rank = col % size;
+        recv_indices[owner_rank][recv_idx_pos[owner_rank]++] = col;
+    }
+    free(recv_idx_pos);
+
+    int **send_indices = (int**)malloc(size * sizeof(int*));
+    for (int r = 0; r < size; r++) send_indices[r] = (int*)malloc(send_to_rank_counts[r] * sizeof(int));
+
+    MPI_Request *reqs = (MPI_Request*)malloc(2 * size * sizeof(MPI_Request));
+    int req_count = 0;
+
+    // Scambio Indici
+    for (int r = 0; r < size; r++) {
+        if (r != rank) {
+            if (recv_from_rank_counts[r] > 0) MPI_Isend(recv_indices[r], recv_from_rank_counts[r], MPI_INT, r, 100, MPI_COMM_WORLD, &reqs[req_count++]);
+            if (send_to_rank_counts[r] > 0) MPI_Irecv(send_indices[r], send_to_rank_counts[r], MPI_INT, r, 100, MPI_COMM_WORLD, &reqs[req_count++]);
+        }
+    }
+    MPI_Waitall(req_count, reqs, MPI_STATUSES_IGNORE);
+
+    // Scambio Valori
+    float **send_values = (float**)malloc(size * sizeof(float*));
+    float **recv_values = (float**)malloc(size * sizeof(float*));
+    for (int r = 0; r < size; r++) {
+        send_values[r] = (float*)malloc(send_to_rank_counts[r] * sizeof(float));
+        recv_values[r] = (float*)malloc(recv_from_rank_counts[r] * sizeof(float));
+    }
+
+    req_count = 0;
+    for (int r = 0; r < size; r++) {
+        if (r != rank) {
+            if (send_to_rank_counts[r] > 0) {
+                for (int k = 0; k < send_to_rank_counts[r]; k++) {
+                    send_values[r][k] = h_x[send_indices[r][k]];
+                }
+                MPI_Isend(send_values[r], send_to_rank_counts[r], MPI_FLOAT, r, 200, MPI_COMM_WORLD, &reqs[req_count++]);
+            }
+            if (recv_from_rank_counts[r] > 0) {
+                MPI_Irecv(recv_values[r], recv_from_rank_counts[r], MPI_FLOAT, r, 200, MPI_COMM_WORLD, &reqs[req_count++]);
             }
         }
+    }
+    MPI_Waitall(req_count, reqs, MPI_STATUSES_IGNORE);
+
+    // Integrazione
+    for (int r = 0; r < size; r++) {
+        if (r != rank && recv_from_rank_counts[r] > 0) {
+            for (int k = 0; k < recv_from_rank_counts[r]; k++) {
+                h_x[recv_indices[r][k]] = recv_values[r][k];
+            }
+        }
+    }
+
+    if (rank == 0) {
+        printf("\n=== [DAY 5 DIAGNOSTIC - CSR SCALAR] ===\n");
+        printf("I valori Ghost di X sono stati scambiati con successo tramite p2p.\n");
         printf("=======================================\n\n");
     }
+
+    for (int r = 0; r < size; r++) {
+        free(recv_indices[r]); free(send_indices[r]);
+        free(send_values[r]); free(recv_values[r]);
+    }
+    free(recv_indices); free(send_indices); free(send_values); free(recv_values); free(reqs);
     free(send_to_rank_counts); free(recv_from_rank_counts); free(ghost_cols);
     // =========================================================================
 
@@ -235,17 +316,17 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaMemcpy(d_row_ptr, local_row_ptr, (local_M + 1) * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_col_idx, local_col_idx, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_values, local_values, local_nnz * sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice)); // X ha ora sia own che ghost
 
     int num_iterations = 100;
     double start_time = omp_get_wtime();
 
     int block_size = 256;
-    int grid_size = (local_M * 32 + block_size - 1) / block_size;
+    int grid_size = (local_M + block_size - 1) / block_size;
 
     for (int iter = 0; iter < num_iterations; iter++) {
         CUDA_CHECK(cudaMemset(d_y, 0, local_M * sizeof(float)));
-        spmv_csr_vector_kernel<<<grid_size, block_size>>>(local_M, d_row_ptr, d_col_idx, d_values, d_x, d_y);
+        spmv_csr_kernel<<<grid_size, block_size>>>(local_M, d_row_ptr, d_col_idx, d_values, d_x, d_y);
         CUDA_CHECK(cudaDeviceSynchronize());
     }
 
@@ -281,17 +362,17 @@ int main(int argc, char **argv) {
         }
         free(rank_offset);
 
-        spmv_csr_sequential(&A, h_x, h_y_ref);
+        spmv_csr_sequential(&A, h_x_full, h_y_ref);
         validate_results(h_y_ref, h_global_y_gpu, M);
 
-        printf("\n--- MULTI-GPU CSR-VECTOR ( %d GPUs - Modulo 1D ) ---\n", size);
+        printf("\n--- MULTI-GPU CSR SCALAR ( %d GPUs - Modulo 1D ) ---\n", size);
         printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], M, N, nnz);
         printf("Avg Time: %e s\n", max_avg_time_s);
         printf("GFLOPS  : %.4f\n", calculate_gflops(nnz, max_avg_time_s));
-        printf("BW      : %.4f GB/s\n", calculate_bandwidth(M, N, nnz, max_avg_time_s, "CSR-Vector"));
+        printf("BW      : %.4f GB/s\n", calculate_bandwidth(M, N, nnz, max_avg_time_s, "CSR"));
         printf("TTS     : %.4f s\n", calculate_tts(global_start));
 
-        free(h_global_y_gpu); free(h_y_ref); free(gather_buf);
+        free(h_global_y_gpu); free(h_y_ref); free(gather_buf); free(h_x_full);
         free(recv_counts); free(recv_displs);
         free(flat_row_ptr); free(flat_values); free(flat_col_idx); free(rank_nnz);
         free(send_counts_rows); free(displs_rows); free(send_counts_nnz); free(displs_nnz);
