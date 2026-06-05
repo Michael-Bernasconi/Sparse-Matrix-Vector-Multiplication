@@ -57,10 +57,10 @@ int main(int argc, char **argv) {
     float *h_x = NULL;
     float *h_y_ref = NULL;
 
-    double global_start = omp_get_time();
+    double global_start = omp_get_wtime();
 
     if (rank == 0) {
-        load_mtx_csr(argv[1], &A);
+        load_matrix_market_to_csr(argv[1], &A);
         M = A.M; N = A.N; nnz = A.nnz;
         h_x = (float*)malloc(N * sizeof(float));
         h_y_ref = (float*)calloc(M, sizeof(float));
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaMalloc(&d_buffer, bufferSize));
 
     int num_iterations = 100;
-    double start_time = omp_get_time();
+    double start_time = omp_get_wtime();
 
     for (int iter = 0; iter < num_iterations; iter++) {
         CUDA_CHECK(cudaMemset(d_y, 0, local_M * sizeof(float)));
@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
         CUDA_CHECK(cudaDeviceSynchronize());
     }
 
-    double end_time = omp_get_time();
+    double end_time = omp_get_wtime();
     double avg_time_s = (end_time - start_time) / num_iterations;
 
     double max_avg_time_s;
