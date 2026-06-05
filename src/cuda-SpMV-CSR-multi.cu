@@ -19,7 +19,7 @@ extern "C" {
         } \
     } while (0)
 
-// Standard Sequential SpMV for validation (CPU Gold Standard)
+// Reference CPU function for validation
 void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
     for (int i = 0; i < mat->M; i++) {
         float sum = 0.0f;
@@ -30,180 +30,247 @@ void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
     }
 }
 
-// CUDA Kernel with Read-Only Cache hint (__ldg)
+// Standard CSR Scalar Kernel
 __global__ void spmv_csr_kernel(int num_rows, const int* d_row_ptr, const int* d_col_ind, const float* d_values, const float* d_x, float* d_y) {
-    int row = blockIdx.x * blockDim.x + threadIdx.x;
-    if (row < num_rows) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < num_rows) {
         float sum = 0.0f;
-        int row_start = d_row_ptr[row];
-        int row_end   = d_row_ptr[row + 1];
-        for (int i = row_start; i < row_end; i++) {
-            sum += __ldg(&d_values[i]) * __ldg(&d_x[d_col_ind[i]]);
+        int row_start = d_row_ptr[i];
+        int row_end = d_row_ptr[i+1];
+        for (int j = row_start; j < row_end; j++) {
+            sum += d_values[j] * d_x[d_col_ind[j]];
         }
-        d_y[row] = sum;
+        d_y[i] = sum;
     }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
+
     int rank, size;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    double global_start = omp_get_wtime(); // Measure TTS
-
     if (argc < 2) {
         if (rank == 0) printf("Usage: %s <matrix.mtx>\n", argv[0]);
-        MPI_Finalize(); return 1;
+        MPI_Finalize();
+        return 1;
     }
 
-    // 1. GPU Binding
-    int dev_count;
-    CUDA_CHECK(cudaGetDeviceCount(&dev_count));
-    CUDA_CHECK(cudaSetDevice(rank % dev_count));
-
-    CSRMatrix A;
     int M, N, nnz;
+    CSRMatrix A;
     float *h_x = NULL;
     float *h_y_ref = NULL;
 
-    // 2. Load and Data Distribution
+    double global_start = get_time();
+
     if (rank == 0) {
-        load_matrix_market_to_csr(argv[1], &A);
+        // Load global matrix on Rank 0 (Assumed from spmv_formats)
+        load_mtx_csr(argv[1], &A); 
         M = A.M; N = A.N; nnz = A.nnz;
-        h_y_ref = (float *)malloc(M * sizeof(float));
+        
+        h_x = (float*)malloc(N * sizeof(float));
+        h_y_ref = (float*)calloc(M, sizeof(float));
+        fill_random_vector(h_x, N);
     }
+
+    // Broadcast dimensions to all ranks
     MPI_Bcast(&M, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    h_x = (float*)malloc(N * sizeof(float));
-    if (rank == 0) fill_random_vector(h_x, N);
+    if (rank != 0) {
+        h_x = (float*)malloc(N * sizeof(float));
+    }
     MPI_Bcast(h_x, N, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-    // Domain Decomposition
-    int local_M = M / size;
-    int r_start = rank * local_M;
-    if (rank == size - 1) local_M = M - r_start;
+    // --- DAY 2: Modulo 1D Partitioning Logic ---
+    // Task 3: Compute local_M using the interleaved/modulo assignment rule
+    int local_M = M / size + (rank < M % size ? 1 : 0);
+    int local_nnz = 0;
 
-    int local_nnz;
+    // Buffers for MPI_Scatterv
+    int *send_counts_rows = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
+    int *displs_rows = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     int *send_counts_nnz = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     int *displs_nnz = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
 
+    float *flat_values = NULL;
+    int *flat_col_idx = NULL;
+    int *flat_row_ptr = NULL;
+    int *rank_nnz = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
+
     if (rank == 0) {
-        for(int i=0; i<size; i++) {
-            int start = i * (M/size);
-            int end = (i == size-1) ? M : (i+1)*(M/size);
-            send_counts_nnz[i] = A.row_ptr[end] - A.row_ptr[start];
-            displs_nnz[i] = A.row_ptr[start];
+        int *rank_M = (int*)malloc(size * sizeof(int));
+        int **rank_row_ptr_bufs = (int**)malloc(size * sizeof(int*));
+        float **rank_values_bufs = (float**)malloc(size * sizeof(float*));
+        int **rank_col_idx_bufs = (int**)malloc(size * sizeof(int*));
+
+        for (int r = 0; r < size; r++) {
+            rank_M[r] = M / size + (r < M % size ? 1 : 0);
+            rank_row_ptr_bufs[r] = (int*)malloc((rank_M[r] + 1) * sizeof(int));
+            rank_row_ptr_bufs[r][0] = 0;
+            rank_nnz[r] = 0;
         }
-    }
-    MPI_Scatter(send_counts_nnz, 1, MPI_INT, &local_nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    float *h_local_val = (float*)malloc(local_nnz * sizeof(float));
-    int *h_local_col = (int*)malloc(local_nnz * sizeof(int));
-    int *h_local_ptr = (int*)malloc((local_M + 1) * sizeof(int));
-
-    MPI_Scatterv(rank == 0 ? A.values : NULL, send_counts_nnz, displs_nnz, MPI_FLOAT, h_local_val, local_nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    MPI_Scatterv(rank == 0 ? A.col_idx : NULL, send_counts_nnz, displs_nnz, MPI_INT, h_local_col, local_nnz, MPI_INT, 0, MPI_COMM_WORLD);
-
-    // Row Pointer Normalization
-    if (rank == 0) {
-        for(int i=1; i<size; i++) {
-            int start = i * (M/size);
-            int count = (i == size-1) ? M - start : M/size;
-            int offset = A.row_ptr[start];
-            int *tmp = (int*)malloc((count+1)*sizeof(int));
-            for(int j=0; j<=count; j++) tmp[j] = A.row_ptr[start+j] - offset;
-            MPI_Send(tmp, count+1, MPI_INT, i, 0, MPI_COMM_WORLD);
-            free(tmp);
+        // Task 1 & 2: Loop over all rows and assign based on owner(i) = i % size
+        for (int i = 0; i < M; i++) {
+            int target_rank = i % size;
+            rank_nnz[target_rank] += (A.row_ptr[i + 1] - A.row_ptr[i]);
         }
-        for(int j=0; j<=local_M; j++) h_local_ptr[j] = A.row_ptr[j];
-    } else {
-        MPI_Recv(h_local_ptr, local_M + 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        for (int r = 0; r < size; r++) {
+            rank_values_bufs[r] = (float*)malloc(rank_nnz[r] * sizeof(float));
+            rank_col_idx_bufs[r] = (int*)malloc(rank_nnz[r] * sizeof(int));
+        }
+
+        int *rank_curr_row = (int*)calloc(size, sizeof(int));
+        int *rank_curr_nnz = (int*)calloc(size, sizeof(int));
+
+        for (int i = 0; i < M; i++) {
+            int r = i % size;
+            int start = A.row_ptr[i];
+            int end = A.row_ptr[i + 1];
+            
+            for (int j = start; j < end; j++) {
+                int idx = rank_curr_nnz[r]++;
+                rank_values_bufs[r][idx] = A.values[j];
+                rank_col_idx_bufs[r][idx] = A.col_idx[j];
+            }
+            int row_idx = ++rank_curr_row[r];
+            rank_row_ptr_bufs[r][row_idx] = rank_curr_nnz[r];
+        }
+
+        // Flatten data structures for classic MPI_Scatterv
+        int total_rows_alloc = 0;
+        int total_nnz_alloc = 0;
+        for (int r = 0; r < size; r++) {
+            send_counts_rows[r] = rank_M[r] + 1;
+            displs_rows[r] = (r == 0) ? 0 : displs_rows[r - 1] + send_counts_rows[r - 1];
+            send_counts_nnz[r] = rank_nnz[r];
+            displs_nnz[r] = (r == 0) ? 0 : displs_nnz[r - 1] + send_counts_nnz[r - 1];
+            total_rows_alloc += send_counts_rows[r];
+            total_nnz_alloc += send_counts_nnz[r];
+        }
+
+        flat_row_ptr = (int*)malloc(total_rows_alloc * sizeof(int));
+        flat_values = (float*)malloc(total_nnz_alloc * sizeof(float));
+        flat_col_idx = (int*)malloc(total_nnz_alloc * sizeof(int));
+
+        for (int r = 0; r < size; r++) {
+            memcpy(flat_row_ptr + displs_rows[r], rank_row_ptr_bufs[r], (rank_M[r] + 1) * sizeof(int));
+            memcpy(flat_values + displs_nnz[r], rank_values_bufs[r], rank_nnz[r] * sizeof(float));
+            memcpy(flat_col_idx + displs_nnz[r], rank_col_idx_bufs[r], rank_nnz[r] * sizeof(int));
+
+            free(rank_row_ptr_bufs[r]); free(rank_values_bufs[r]); free(rank_col_idx_bufs[r]);
+        }
+        free(rank_M); free(rank_row_ptr_bufs); free(rank_values_bufs); free(rank_col_idx_bufs);
+        free(rank_curr_row); free(rank_curr_nnz);
     }
 
-    // 3. GPU Setup
-    int *d_ptr, *d_col; float *d_val, *d_x, *d_y;
-    CUDA_CHECK(cudaMalloc(&d_ptr, (local_M + 1) * sizeof(int)));
-    CUDA_CHECK(cudaMalloc(&d_col, local_nnz * sizeof(int)));
-    CUDA_CHECK(cudaMalloc(&d_val, local_nnz * sizeof(float)));
+    // Scatter the local nnz count to all ranks
+    MPI_Scatter(rank_nnz, 1, MPI_INT, &local_nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Allocate local CSR storage
+    int *local_row_ptr = (int*)malloc((local_M + 1) * sizeof(int));
+    float *local_values = (float*)malloc(local_nnz * sizeof(float));
+    int *local_col_idx = (int*)malloc(local_nnz * sizeof(int));
+
+    // Scatter structured arrays to all ranks
+    MPI_Scatterv(flat_row_ptr, send_counts_rows, displs_rows, MPI_INT, local_row_ptr, local_M + 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(flat_values, send_counts_nnz, displs_nnz, MPI_FLOAT, local_values, local_nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(flat_col_idx, send_counts_nnz, displs_nnz, MPI_INT, local_col_idx, local_nnz, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Select GPU according to local MPI rank
+    int device_count;
+    CUDA_CHECK(cudaGetDeviceCount(&device_count));
+    CUDA_CHECK(cudaSetDevice(rank % device_count));
+
+    // Device allocations
+    int *d_row_ptr, *d_col_idx;
+    float *d_values, *d_x, *d_y;
+
+    CUDA_CHECK(cudaMalloc(&d_row_ptr, (local_M + 1) * sizeof(int)));
+    CUDA_CHECK(cudaMalloc(&d_col_idx, local_nnz * sizeof(int)));
+    CUDA_CHECK(cudaMalloc(&d_values, local_nnz * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_x, N * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_y, local_M * sizeof(float)));
 
-    CUDA_CHECK(cudaMemcpy(d_ptr, h_local_ptr, (local_M + 1) * sizeof(int), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_col, h_local_col, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_val, h_local_val, local_nnz * sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_row_ptr, local_row_ptr, (local_M + 1) * sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_col_idx, local_col_idx, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(d_values, local_values, local_nnz * sizeof(float), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice));
 
-    int threads = 256;
-    int blocks = (local_M + threads - 1) / threads;
-    cudaEvent_t start, stop;
-    CUDA_CHECK(cudaEventCreate(&start));
-    CUDA_CHECK(cudaEventCreate(&stop));
+    // Benchmark loop
+    int num_iterations = 100;
+    double start_time = get_time();
 
-    // --- WARMUP ---
-    for(int i=0; i<WARMUP_ITERATIONS; i++) {
-        spmv_csr_kernel<<<blocks, threads>>>(local_M, d_ptr, d_col, d_val, d_x, d_y);
-    }
-    CUDA_CHECK(cudaDeviceSynchronize());
-    MPI_Barrier(MPI_COMM_WORLD);
+    int block_size = 256;
+    int grid_size = (local_M + block_size - 1) / block_size;
 
-    // --- BENCHMARK ---
-    double *iter_times = (double *)malloc(BENCHMARK_ITERATIONS * sizeof(double));
-    for(int i=0; i<BENCHMARK_ITERATIONS; i++) {
-        CUDA_CHECK(cudaEventRecord(start));
-        spmv_csr_kernel<<<blocks, threads>>>(local_M, d_ptr, d_col, d_val, d_x, d_y);
-        CUDA_CHECK(cudaEventRecord(stop));
-        CUDA_CHECK(cudaEventSynchronize(stop));
-        float ms = 0;
-        CUDA_CHECK(cudaEventElapsedTime(&ms, start, stop));
-        iter_times[i] = (double)ms / 1000.0;
+    for (int iter = 0; iter < num_iterations; iter++) {
+        CUDA_CHECK(cudaMemset(d_y, 0, local_M * sizeof(float)));
+        spmv_csr_kernel<<<grid_size, block_size>>>(local_M, d_row_ptr, d_col_idx, d_values, d_x, d_y);
+        CUDA_CHECK(cudaDeviceSynchronize());
     }
 
-    double avg_time_s = arithmetic_mean(iter_times, BENCHMARK_ITERATIONS);
-    double std_dev_s = sigma_fn_sol(iter_times, avg_time_s, BENCHMARK_ITERATIONS);
+    double end_time = get_time();
+    double avg_time_s = (end_time - start_time) / num_iterations;
 
-    // 4. Gather and Validation
+    // Sync timing across ranks
+    double max_avg_time_s;
+    MPI_Reduce(&avg_time_s, &max_avg_time_s, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
     float *h_local_y = (float*)malloc(local_M * sizeof(float));
     CUDA_CHECK(cudaMemcpy(h_local_y, d_y, local_M * sizeof(float), cudaMemcpyDeviceToHost));
 
-    float *h_global_y_gpu = (rank == 0) ? (float*)malloc(M * sizeof(float)) : NULL;
+    // Recompiling gathered data using Gatherv
     int *recv_counts = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     int *recv_displs = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
+    float *gather_buf = (rank == 0) ? (float*)malloc(M * sizeof(float)) : NULL;
+    float *h_global_y_gpu = (rank == 0) ? (float*)malloc(M * sizeof(float)) : NULL;
 
     if (rank == 0) {
-        for(int i=0; i<size; i++) {
-            recv_counts[i] = (i == size-1) ? M - i*(M/size) : M/size;
-            recv_displs[i] = i*(M/size);
+        for (int i = 0; i < size; i++) {
+            recv_counts[i] = M / size + (i < M % size ? 1 : 0);
+            recv_displs[i] = (i == 0) ? 0 : recv_displs[i - 1] + recv_counts[i - 1];
         }
     }
-    MPI_Gatherv(h_local_y, local_M, MPI_FLOAT, h_global_y_gpu, recv_counts, recv_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+    MPI_Gatherv(h_local_y, local_M, MPI_FLOAT, gather_buf, recv_counts, recv_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
-        // Validation logic
+        // Unshuffle the interleaved rows back into their correct linear indices
+        int *rank_offset = (int*)calloc(size, sizeof(int));
+        for (int i = 0; i < M; i++) {
+            int r = i % size;
+            int buf_pos = recv_displs[r] + rank_offset[r]++;
+            h_global_y_gpu[i] = gather_buf[buf_pos];
+        }
+        free(rank_offset);
+
+        // Validation against gold sequential CPU
         spmv_csr_sequential(&A, h_x, h_y_ref);
         validate_results(h_y_ref, h_global_y_gpu, M);
 
-        double gflops = calculate_gflops(nnz, avg_time_s);
-        double bw = calculate_bandwidth(M, N, nnz, avg_time_s, "CSR");
-        double tts = calculate_tts(global_start);
-
-        printf("\n--- MULTI-GPU CSR Benchmark (%d GPUs) ---\n", size);
+        printf("\n--- MULTI-GPU CSR SCALAR ( %d GPUs - Modulo 1D ) ---\n", size);
         printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], M, N, nnz);
-        printf("Avg Time: %e s (± %e s)\n", avg_time_s, std_dev_s);
-        printf("GFLOPS  : %.4f\n", gflops);
-        printf("BW      : %.4f GB/s\n", bw);
-        printf("TTS     : %.4f s\n", tts);
-        
-        free(h_global_y_gpu); free(h_y_ref); free(recv_counts); free(recv_displs);
+        printf("Avg Time: %e s\n", max_avg_time_s);
+        printf("GFLOPS  : %.4f\n", calculate_gflops(nnz, max_avg_time_s));
+        printf("BW      : %.4f GB/s\n", calculate_bandwidth(M, N, nnz, max_avg_time_s, "CSR"));
+        printf("TTS     : %.4f s\n", calculate_tts(global_start));
+
+        free(h_global_y_gpu); free(h_y_ref); free(gather_buf);
+        free(recv_counts); free(recv_displs);
+        free(flat_row_ptr); free(flat_values); free(flat_col_idx); free(rank_nnz);
+        free(send_counts_rows); free(displs_rows); free(send_counts_nnz); free(displs_nnz);
     }
 
     // Cleanup
-    CUDA_CHECK(cudaEventDestroy(start)); CUDA_CHECK(cudaEventDestroy(stop));
-    cudaFree(d_ptr); cudaFree(d_col); cudaFree(d_val); cudaFree(d_x); cudaFree(d_y);
-    free(h_local_val); free(h_local_col); free(h_local_ptr); free(h_x); free(h_local_y); free(iter_times);
-    if (rank == 0) { free(A.row_ptr); free(A.col_idx); free(A.values); }
+    CUDA_CHECK(cudaFree(d_row_ptr)); CUDA_CHECK(cudaFree(d_col_idx));
+    CUDA_CHECK(cudaFree(d_values)); CUDA_CHECK(cudaFree(d_x)); CUDA_CHECK(cudaFree(d_y));
+    free(local_row_ptr); free(local_values); free(local_col_idx); free(h_local_y); free(h_x);
+
     MPI_Finalize();
     return 0;
 }
