@@ -19,7 +19,6 @@ extern "C" {
         } \
     } while (0)
 
-// Reference CPU function for validation
 void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
     for (int i = 0; i < mat->M; i++) {
         float sum = 0.0f;
@@ -30,7 +29,6 @@ void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
     }
 }
 
-// Standard CSR Scalar Kernel
 __global__ void spmv_csr_kernel(int num_rows, const int* d_row_ptr, const int* d_col_ind, const float* d_values, const float* d_x, float* d_y) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < num_rows) {
@@ -109,7 +107,6 @@ int main(int argc, char **argv) {
             rank_nnz[r] = 0;
         }
 
-        // Loop rows with Modulo logic
         for (int i = 0; i < M; i++) {
             int target_rank = i % size;
             rank_nnz[target_rank] += (A.row_ptr[i + 1] - A.row_ptr[i]);
@@ -123,7 +120,6 @@ int main(int argc, char **argv) {
         int *rank_curr_row = (int*)calloc(size, sizeof(int));
         int *rank_curr_nnz = (int*)calloc(size, sizeof(int));
 
-        // Packing local interleaved data
         for (int i = 0; i < M; i++) {
             int r = i % size;
             int start = A.row_ptr[i];
@@ -174,6 +170,49 @@ int main(int argc, char **argv) {
     MPI_Scatterv(flat_values, send_counts_nnz, displs_nnz, MPI_FLOAT, local_values, local_nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Scatterv(flat_col_idx, send_counts_nnz, displs_nnz, MPI_INT, local_col_idx, local_nnz, MPI_INT, 0, MPI_COMM_WORLD);
 
+    // =========================================================================
+    // --- DAY 4: GHOST ENTRIES IDENTIFICATION LOGIC ---
+    // =========================================================================
+    int *ghost_cols = (int*)malloc(local_nnz * sizeof(int));
+    int local_ghost_count = 0;
+    
+    int *send_to_rank_counts = (int*)calloc(size, sizeof(int));
+    int *recv_from_rank_counts = (int*)calloc(size, sizeof(int));
+
+    for (int i = 0; i < local_nnz; i++) {
+        int col = local_col_idx[i];
+        int owner_rank = col % size; 
+        if (owner_rank != rank) {
+            int gia_presente = 0;
+            for (int j = 0; j < local_ghost_count; j++) {
+                if (ghost_cols[j] == col) {
+                    gia_presente = 1;
+                    break;
+                }
+            }
+            if (!gia_presente) {
+                ghost_cols[local_ghost_count++] = col;
+                recv_from_rank_counts[owner_rank]++;
+            }
+        }
+    }
+
+    MPI_Alltoall(recv_from_rank_counts, 1, MPI_INT, send_to_rank_counts, 1, MPI_INT, MPI_COMM_WORLD);
+
+    if (rank == 0) {
+        printf("\n=== [DAY 4 DIAGNOSTIC - CSR SCALAR] ===\n");
+        printf("Rank 0 deve RICHIEDERE (Ghost Entries) un totale di %d elementi.\n", local_ghost_count);
+        for(int r = 0; r < size; r++) {
+            if(r != rank) {
+                printf("  -> Da Rank %d: deve ricevere %d elementi, deve inviare %d elementi.\n", 
+                       r, recv_from_rank_counts[r], send_to_rank_counts[r]);
+            }
+        }
+        printf("=======================================\n\n");
+    }
+    free(send_to_rank_counts); free(recv_from_rank_counts); free(ghost_cols);
+    // =========================================================================
+
     int device_count;
     CUDA_CHECK(cudaGetDeviceCount(&device_count));
     CUDA_CHECK(cudaSetDevice(rank % device_count));
@@ -213,10 +252,6 @@ int main(int argc, char **argv) {
     float *h_local_y = (float*)malloc(local_M * sizeof(float));
     CUDA_CHECK(cudaMemcpy(h_local_y, d_y, local_M * sizeof(float), cudaMemcpyDeviceToHost));
 
-    // =========================================================================
-    // --- DAY 3: GATHER & UN-SHUFFLING THE INTERLEAVED RESULT ---
-    // Task 1: Reconstruct the global vector from the modulo partitioning
-    // =========================================================================
     int *recv_counts = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     int *recv_displs = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     float *gather_buf = (rank == 0) ? (float*)malloc(M * sizeof(float)) : NULL;
@@ -229,11 +264,9 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Step 1: Gather the dense local arrays into one big intermediate buffer
     MPI_Gatherv(h_local_y, local_M, MPI_FLOAT, gather_buf, recv_counts, recv_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
-        // Step 2: Un-shuffle the gather_buf by distributing back to i % size positions
         int *rank_offset = (int*)calloc(size, sizeof(int));
         for (int i = 0; i < M; i++) {
             int r = i % size;
@@ -242,7 +275,6 @@ int main(int argc, char **argv) {
         }
         free(rank_offset);
 
-        // Task 2: Validation Testing
         spmv_csr_sequential(&A, h_x, h_y_ref);
         validate_results(h_y_ref, h_global_y_gpu, M);
 
