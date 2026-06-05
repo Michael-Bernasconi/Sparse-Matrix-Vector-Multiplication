@@ -6,7 +6,7 @@ make clean
 make
 
 SELECTED_MATRICES=("$MATRIX_DIR"/*.mtx)
-GPU_CONFIGS=(2 4)
+GPU_CONFIGS=(1 2 4)
 
 for run_id in {1..5}; do
     for gpus in "${GPU_CONFIGS[@]}"; do
