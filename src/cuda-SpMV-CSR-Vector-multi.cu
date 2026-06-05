@@ -42,7 +42,6 @@ __global__ void spmv_csr_vector_kernel(int M, const int *row_ptr, const int *col
             sum += vals[j] * x[col_idx[j]];
         }
         
-        // Parallel warp reduction using shfl_down
         for (int offset = 16; offset > 0; offset /= 2) {
             sum += __shfl_down_sync(0xffffffff, sum, offset);
         }
@@ -88,7 +87,7 @@ int main(int argc, char **argv) {
     if (rank != 0) h_x = (float*)malloc(N * sizeof(float));
     MPI_Bcast(h_x, N, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-    // --- DAY 2: Modulo 1D Partitioning Logic ---
+    // --- DAY 2: Modulo 1D Partitioning Setup ---
     int local_M = M / size + (rank < M % size ? 1 : 0);
     int local_nnz = 0;
 
@@ -198,7 +197,6 @@ int main(int argc, char **argv) {
     int num_iterations = 100;
     double start_time = get_time();
 
-    // 32 threads per row means 8 rows per block for block_size = 256
     int block_size = 256;
     int grid_size = (local_M * 32 + block_size - 1) / block_size;
 
@@ -217,6 +215,10 @@ int main(int argc, char **argv) {
     float *h_local_y = (float*)malloc(local_M * sizeof(float));
     CUDA_CHECK(cudaMemcpy(h_local_y, d_y, local_M * sizeof(float), cudaMemcpyDeviceToHost));
 
+    // =========================================================================
+    // --- DAY 3: GATHER & UN-SHUFFLING THE INTERLEAVED RESULT ---
+    // Task 1: Reconstruct the global vector from the modulo partitioning
+    // =========================================================================
     int *recv_counts = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     int *recv_displs = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     float *gather_buf = (rank == 0) ? (float*)malloc(M * sizeof(float)) : NULL;
@@ -232,6 +234,7 @@ int main(int argc, char **argv) {
     MPI_Gatherv(h_local_y, local_M, MPI_FLOAT, gather_buf, recv_counts, recv_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
+        // Unshuffle using i % size mapping
         int *rank_offset = (int*)calloc(size, sizeof(int));
         for (int i = 0; i < M; i++) {
             int r = i % size;
@@ -240,6 +243,7 @@ int main(int argc, char **argv) {
         }
         free(rank_offset);
 
+        // Task 2: Testing Phase
         spmv_csr_sequential(&A, h_x, h_y_ref);
         validate_results(h_y_ref, h_global_y_gpu, M);
 

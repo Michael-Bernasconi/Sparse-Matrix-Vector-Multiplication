@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     if (rank != 0) h_x = (float*)malloc(N * sizeof(float));
     MPI_Bcast(h_x, N, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-    // --- DAY 2: Modulo 1D Partitioning Logic (Filtered on row index) ---
+    // --- DAY 2: Modulo 1D Partitioning Setup (Filtered on row index) ---
     int local_M = M / size + (rank < M % size ? 1 : 0);
     int local_nnz = 0;
 
@@ -81,7 +81,6 @@ int main(int argc, char **argv) {
     int *rank_nnz = (rank == 0) ? (int*)calloc(size, sizeof(int)) : NULL;
 
     if (rank == 0) {
-        // Task 1 & 2: Loop non-zeros and filter them into destination rank structures using row % size
         for (int i = 0; i < global_nnz; i++) {
             int target_rank = mat.rows[i] % size;
             rank_nnz[target_rank]++;
@@ -102,7 +101,7 @@ int main(int argc, char **argv) {
             int r = mat.rows[i] % size;
             int idx = rank_curr_nnz[r]++;
             rank_values_bufs[r][idx] = mat.values[i];
-            rank_rows_bufs[r][idx] = mat.rows[i]; // Keeping global row indices for atomic device calculations
+            rank_rows_bufs[r][idx] = mat.rows[i]; 
             rank_cols_bufs[r][idx] = mat.cols[i];
         }
 
@@ -148,10 +147,11 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaMalloc(&d_cols, local_nnz * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d_values, local_nnz * sizeof(float)));
     CUDA_CHECK(cudaMalloc(&d_x, N * sizeof(float)));
-    CUDA_CHECK(cudaMalloc(&d_y, M * sizeof(float))); // Array sized M since rows are distributed non-contiguously
+    // IMPORTANT: COO output array is sized M because scattered NNZs can land on any row
+    CUDA_CHECK(cudaMalloc(&d_y, M * sizeof(float))); 
 
     CUDA_CHECK(cudaMemcpy(d_rows, local_rows, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaFree(0)); // Warm up context
+    CUDA_CHECK(cudaFree(0)); // Context init
     CUDA_CHECK(cudaMemcpy(d_cols, local_cols, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_values, local_values, local_nnz * sizeof(float), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice));
@@ -179,10 +179,16 @@ int main(int argc, char **argv) {
 
     float *h_global_y_gpu = (rank == 0) ? (float*)malloc(M * sizeof(float)) : NULL;
     
-    // Sum up scattered partial entries into final locations across full global row space
+    // =========================================================================
+    // --- DAY 3: GATHER FOR COO (Special Case) ---
+    // Note: Since COO kernel writes directly to the correct global row index using
+    // atomicAdd, the local result is already "un-shuffled" but sparse. 
+    // We simply sum the overlapping partial sparse vectors with MPI_Reduce.
+    // =========================================================================
     MPI_Reduce(h_local_y, h_global_y_gpu, M, MPI_FLOAT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
+        // Task 2: Testing Phase
         memset(h_y_ref, 0, M * sizeof(float));
         spmv_coo_sequential(&mat, h_x, h_y_ref);
         validate_results(h_y_ref, h_global_y_gpu, M);

@@ -65,7 +65,6 @@ int main(int argc, char **argv) {
     double global_start = get_time();
 
     if (rank == 0) {
-        // Load global matrix on Rank 0 (Assumed from spmv_formats)
         load_mtx_csr(argv[1], &A); 
         M = A.M; N = A.N; nnz = A.nnz;
         
@@ -74,7 +73,6 @@ int main(int argc, char **argv) {
         fill_random_vector(h_x, N);
     }
 
-    // Broadcast dimensions to all ranks
     MPI_Bcast(&M, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -84,12 +82,10 @@ int main(int argc, char **argv) {
     }
     MPI_Bcast(h_x, N, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
-    // --- DAY 2: Modulo 1D Partitioning Logic ---
-    // Task 3: Compute local_M using the interleaved/modulo assignment rule
+    // --- DAY 2: Modulo 1D Partitioning Setup ---
     int local_M = M / size + (rank < M % size ? 1 : 0);
     int local_nnz = 0;
 
-    // Buffers for MPI_Scatterv
     int *send_counts_rows = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     int *displs_rows = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     int *send_counts_nnz = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
@@ -113,7 +109,7 @@ int main(int argc, char **argv) {
             rank_nnz[r] = 0;
         }
 
-        // Task 1 & 2: Loop over all rows and assign based on owner(i) = i % size
+        // Loop rows with Modulo logic
         for (int i = 0; i < M; i++) {
             int target_rank = i % size;
             rank_nnz[target_rank] += (A.row_ptr[i + 1] - A.row_ptr[i]);
@@ -127,6 +123,7 @@ int main(int argc, char **argv) {
         int *rank_curr_row = (int*)calloc(size, sizeof(int));
         int *rank_curr_nnz = (int*)calloc(size, sizeof(int));
 
+        // Packing local interleaved data
         for (int i = 0; i < M; i++) {
             int r = i % size;
             int start = A.row_ptr[i];
@@ -141,7 +138,6 @@ int main(int argc, char **argv) {
             rank_row_ptr_bufs[r][row_idx] = rank_curr_nnz[r];
         }
 
-        // Flatten data structures for classic MPI_Scatterv
         int total_rows_alloc = 0;
         int total_nnz_alloc = 0;
         for (int r = 0; r < size; r++) {
@@ -168,25 +164,20 @@ int main(int argc, char **argv) {
         free(rank_curr_row); free(rank_curr_nnz);
     }
 
-    // Scatter the local nnz count to all ranks
     MPI_Scatter(rank_nnz, 1, MPI_INT, &local_nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // Allocate local CSR storage
     int *local_row_ptr = (int*)malloc((local_M + 1) * sizeof(int));
     float *local_values = (float*)malloc(local_nnz * sizeof(float));
     int *local_col_idx = (int*)malloc(local_nnz * sizeof(int));
 
-    // Scatter structured arrays to all ranks
     MPI_Scatterv(flat_row_ptr, send_counts_rows, displs_rows, MPI_INT, local_row_ptr, local_M + 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatterv(flat_values, send_counts_nnz, displs_nnz, MPI_FLOAT, local_values, local_nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Scatterv(flat_col_idx, send_counts_nnz, displs_nnz, MPI_INT, local_col_idx, local_nnz, MPI_INT, 0, MPI_COMM_WORLD);
 
-    // Select GPU according to local MPI rank
     int device_count;
     CUDA_CHECK(cudaGetDeviceCount(&device_count));
     CUDA_CHECK(cudaSetDevice(rank % device_count));
 
-    // Device allocations
     int *d_row_ptr, *d_col_idx;
     float *d_values, *d_x, *d_y;
 
@@ -201,7 +192,6 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaMemcpy(d_values, local_values, local_nnz * sizeof(float), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice));
 
-    // Benchmark loop
     int num_iterations = 100;
     double start_time = get_time();
 
@@ -217,14 +207,16 @@ int main(int argc, char **argv) {
     double end_time = get_time();
     double avg_time_s = (end_time - start_time) / num_iterations;
 
-    // Sync timing across ranks
     double max_avg_time_s;
     MPI_Reduce(&avg_time_s, &max_avg_time_s, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     float *h_local_y = (float*)malloc(local_M * sizeof(float));
     CUDA_CHECK(cudaMemcpy(h_local_y, d_y, local_M * sizeof(float), cudaMemcpyDeviceToHost));
 
-    // Recompiling gathered data using Gatherv
+    // =========================================================================
+    // --- DAY 3: GATHER & UN-SHUFFLING THE INTERLEAVED RESULT ---
+    // Task 1: Reconstruct the global vector from the modulo partitioning
+    // =========================================================================
     int *recv_counts = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     int *recv_displs = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     float *gather_buf = (rank == 0) ? (float*)malloc(M * sizeof(float)) : NULL;
@@ -237,10 +229,11 @@ int main(int argc, char **argv) {
         }
     }
 
+    // Step 1: Gather the dense local arrays into one big intermediate buffer
     MPI_Gatherv(h_local_y, local_M, MPI_FLOAT, gather_buf, recv_counts, recv_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
-        // Unshuffle the interleaved rows back into their correct linear indices
+        // Step 2: Un-shuffle the gather_buf by distributing back to i % size positions
         int *rank_offset = (int*)calloc(size, sizeof(int));
         for (int i = 0; i < M; i++) {
             int r = i % size;
@@ -249,7 +242,7 @@ int main(int argc, char **argv) {
         }
         free(rank_offset);
 
-        // Validation against gold sequential CPU
+        // Task 2: Validation Testing
         spmv_csr_sequential(&A, h_x, h_y_ref);
         validate_results(h_y_ref, h_global_y_gpu, M);
 
@@ -266,7 +259,6 @@ int main(int argc, char **argv) {
         free(send_counts_rows); free(displs_rows); free(send_counts_nnz); free(displs_nnz);
     }
 
-    // Cleanup
     CUDA_CHECK(cudaFree(d_row_ptr)); CUDA_CHECK(cudaFree(d_col_idx));
     CUDA_CHECK(cudaFree(d_values)); CUDA_CHECK(cudaFree(d_x)); CUDA_CHECK(cudaFree(d_y));
     free(local_row_ptr); free(local_values); free(local_col_idx); free(h_local_y); free(h_x);
