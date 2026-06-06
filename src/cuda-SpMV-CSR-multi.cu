@@ -380,7 +380,7 @@ int main(int argc, char **argv) {
 
     CUDA_CHECK(cudaFree(d_row_ptr)); CUDA_CHECK(cudaFree(d_col_idx));
     CUDA_CHECK(cudaFree(d_values)); CUDA_CHECK(cudaFree(d_x)); CUDA_CHECK(cudaFree(d_y));
-    free(local_row_ptr); free(local_values); free(local_col_idx); h_x);
+    free(local_row_ptr); free(local_values); free(local_col_idx); free(h_x);
 
     MPI_Finalize();
     return 0;
