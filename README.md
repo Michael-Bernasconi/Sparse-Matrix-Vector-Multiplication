@@ -1,142 +1,353 @@
+Certo. Ecco il README completo già formattato in Markdown, pronto da copiare e incollare nel tuo `README.md`.
+
 # Sparse Matrix-Vector Multiplication (SpMV)
 
-**Course:** GPU-Computing-2026  
-**Author:** Michael Bernasconi (michael.bernasconi@studenti.unitn.it) - Student ID: 267681
+**Course:** GPU-Computing-2026
 
-## Description 
+**Author:** Michael Bernasconi ([michael.bernasconi@studenti.unitn.it](mailto:michael.bernasconi@studenti.unitn.it)) - Student ID: 267681
+
+---
+
+## Description
+
 This project implements and analyzes the performance of algorithms for Sparse Matrix-Vector Multiplication (SpMV) in a heterogeneous environment (CPU and GPU). The main goal is to study the impact of different sparse matrix storage formats (such as CSR and COO) on architectural performance, evaluating the efficiency of custom-developed CUDA kernels compared to standard libraries.
 
+---
+
 ## Provided Implementations
+
 The project contains several versions of the SpMV operation:
-- **CPU SpMV CSR**: Parallel implementation on the host using OpenMP.
-- **GPU SpMV COO**: CUDA kernel utilizing the "Coordinate Format".
-- **GPU SpMV CSR**: Native CUDA kernel based on "Compressed Sparse Row".
-- **GPU SpMV CSR-Vector**: CUDA kernel optimized to assign one warp per row, maximizing memory coalescence.
-- **GPU cuSPARSE Baseline**: Reference implementation using the high-performance NVIDIA cuSPARSE library.
+
+* **CPU SpMV CSR**: Parallel implementation on the host using OpenMP.
+* **GPU SpMV COO**: Multi-GPU CUDA kernel utilizing the Coordinate Format.
+* **GPU SpMV CSR**: Multi-GPU Native CUDA kernel based on Compressed Sparse Row.
+* **GPU SpMV CSR-Vector**: Multi-GPU CUDA kernel optimized to assign one warp per row, maximizing memory coalescence.
+* **GPU cuSPARSE Baseline**: Multi-GPU reference implementation using the NVIDIA cuSPARSE library.
+
+---
 
 ## Measured Metrics
-The performance analysis recorded during execution using the provided scripts:
-1. **GFLOPS (Giga FLoating-point Operations Per Second)**: Measure of computational throughput.
-2. **Effective Bandwidth (BW, in GB/s)**: Measure of the actually utilized memory bandwidth, crucial given the *memory-bound* nature of the SpMV problem.
-3. **Kernel-Time**: Actual time spent resolving the mathematical operation.
-4. **Cache Metrics**: Detailed statistics of *cache hits* and *misses* (D1, LL) simulated via Cachegrind.
+
+The performance analysis records the following metrics:
+
+1. **GFLOPS (Giga Floating-Point Operations Per Second)** – computational throughput.
+2. **Effective Bandwidth (GB/s)** – utilized memory bandwidth.
+3. **Kernel-Time** – actual execution time of the SpMV kernel.
+4. **Cache Metrics** – cache hits and misses (D1, LL) collected via Cachegrind.
+
+---
 
 ## Target Hardware (UniTN Cluster)
 
-The execution and analysis of the benchmarks were designed for the University Cluster (*edu01* node | *edu-short* partition), with the following specifications:
+Benchmarks were designed for the University cluster (**edu01 node**, **edu-short partition**).
 
-| Feature | Host (CPU) | Device (GPU) |
-| :--- | :--- | :--- |
-| **Model** | Intel(R) Xeon(R) Silver 4309Y | NVIDIA A30 |
-| **Architecture** | Ice Lake (x86_64) | Ampere (Compute Capability 8.0) |
-| **Cores / SMs** | 16 Cores / 32 Threads (2 Sockets) | 56 SMs (3584 CUDA Cores) |
-| **Clock Frequency** | 2.80 GHz (Base) / 3.60 GHz (Max) | 1.44 GHz (Boost) |
-| **FP32 Performance** | 1.84 TFLOPS | 10.3 TFLOPS |
-| **Memory Bandwidth** | 102.4 GB/s | 933.1 GB/s (HBM2) |
-| **Total Global Memory** | N/A | 24 GB |
-| **L1 Cache** | 768 KiB Data / 512 KiB Inst. (Tot) | 192 KiB per SM (Unified L1/Shared) |
-| **L2 Cache** | 20 MiB (16 instances, 1.25 MiB/core) | 24 MiB (Shared LLC) |
-| **L3 Cache** | 24 MiB (Shared LLC) | N/A (L2 serves as LLC) |
-| **Shared Memory** | N/A | 48 KiB (up to 100 KiB per SM) |
-| **Thread Limits** | 2 Threads/Core (Hyper-threading) | 1024 th/block (2048 th/SM) |
-| **Warp Size** | N/A | 32 |
+| Feature              | Host (CPU)                        | Device (GPU)                    |
+| -------------------- | --------------------------------- | ------------------------------- |
+| **Model**            | Intel(R) Xeon(R) Silver 4309Y     | NVIDIA A30                      |
+| **Architecture**     | Ice Lake (x86_64)                 | Ampere (Compute Capability 8.0) |
+| **Cores / SMs**      | 16 Cores / 32 Threads (2 Sockets) | 56 SMs (3584 CUDA Cores)        |
+| **Clock Frequency**  | 2.80 GHz (Base) / 3.60 GHz (Max)  | 1.44 GHz (Boost)                |
+| **FP32 Performance** | 1.84 TFLOPS                       | 10.3 TFLOPS                     |
+| **Memory Bandwidth** | 102.4 GB/s                        | 933.1 GB/s (HBM2)               |
+| **Global Memory**    | N/A                               | 24 GB                           |
+| **L1 Cache**         | 768 KiB Data / 512 KiB Inst.      | 192 KiB per SM                  |
+| **L2 Cache**         | 20 MiB                            | 24 MiB                          |
+| **L3 Cache**         | 24 MiB                            | N/A                             |
+| **Shared Memory**    | N/A                               | 48 KiB (up to 100 KiB per SM)   |
+| **Thread Limits**    | 2 Threads/Core                    | 1024 Threads/Block              |
+| **Warp Size**        | N/A                               | 32                              |
+
+---
 
 ## Software Environment and Dependencies
-- **Cluster Modules:** `CUDA/11.8.0`
-- **Compilers:** `gcc` (`-fopenmp` support for CPU) and `nvcc` (CUDA compiler, target architecture `sm_80`).
-- **Cache Profiling:** Valgrind (specifically the `Cachegrind` tool) simulating CPU cache behavior.
+
+### Cluster Modules
+
+```bash
+CUDA/12.3.2
+OpenMpi/4.1.5-CUDA-12.3.2
+```
+
+### Compilers
+
+* `gcc` with OpenMP support (`-fopenmp`)
+* `nvcc` targeting architecture `sm_80`
+
+### Profiling Tools
+
+* Valgrind
+* Cachegrind
+
+---
 
 ## Repository Structure
-The directory is organized to logically separate sources, compilation logic, benchmarks, and final results:
 
 ```text
 .
-├── bin/          # Final compiled executables (CPU, CUDA, and tools)
-├── data/         # Matrix datasets in Matrix Market (.mtx) format downloaded from SuiteSparse
-├── deviceQuery/  # Text files and logs extracted on the cluster (CPU, GPU info, NVCC environment)
-├── doc/          # Notes, technical memos, and LaTeX support files for the report
-├── include/      # Header Files (data structures, format calculation, and timer functions)
-├── makefile      # Compilation instructions with standard and profile targets (flags -O3, sm_80)
-├── obj/          # Object files (.o) generated by the compilation
-├── results/      # Python scripts for data analysis/plotting, generated logs, and folders for the Runs (1..5)
-├── src/          # Main source code (C/C++ and CUDA) of the various implementations
-└── *.sh          # Bash scripts for compilation automation, test jobs (SLURM), and Cache profiling
+├── baselinemultigpu/             # Reference Multi-GPU baseline implementations
+│   ├── include/                  # Baseline matrix parsing and utility headers
+│   └── testmtx/                  # Small example matrices
+├── bin/                          # Generated executables
+├── data/                         # Real SuiteSparse datasets (.mtx)
+├── data-synt/                    # Synthetic datasets for Weak Scaling
+├── deviceQuery/                  # CPU/GPU environment logs
+├── doc/                          # Technical report and LaTeX material
+├── generate_matrices.py          # Synthetic matrix generator
+├── include/                      # Project headers
+├── makefile                      # Build configuration
+├── paper/                        # Reference literature
+├── README.md                     # Project documentation
+├── results/                      # Analysis scripts, CSVs and plots
+├── src/                          # Source code (.c, .cu)
+├── run_performance_multi.sh      # Main execution script
+├── submit_all_multi.sh           # Strong Scaling batch launcher
+└── submit_weak_scaling.sh        # Weak Scaling batch launcher
 ```
 
 ---
-## Reproducing Benchmarks on the Cluster
 
-### Phase 1: Access and Preparation
-1. **VPN Connection:** Make sure you are connected to the University VPN via *Global Protect* (vpn-mfa.icts.unitn.it) if you are not inside the university network.
-2. **Access the cluster:**
-   ```bash
-   ssh username@baldo.disi.unitn.it
-   ```
-3. **Clone the repository (directly on the cluster):**
-   ```bash
-   git clone -b Deliverable2 https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication.git
-   ```
+# Reproducing Benchmarks on the Cluster
 
-### Phase 2: Dataset Download and Setup
-1. **Create and move to the `data` folder** to run the downloads:
-   ```bash
-   cd ~/Sparse-Matrix-Vector-Multiplication
-   mkdir -p data
-   cd data
+## Phase 1: Access and Preparation
 
-   wget https://suitesparse-collection-website.herokuapp.com/MM/Freescale/FullChip.tar.gz
-   wget https://suitesparse-collection-website.herokuapp.com/MM/PARSEC/Ga41As41H72.tar.gz
-   wget https://suitesparse-collection-website.herokuapp.com/MM/Oberwolfach/bone010.tar.gz
-   wget https://suitesparse-collection-website.herokuapp.com/MM/PARSEC/Si41Ge41H72.tar.gz
-   wget https://suitesparse-collection-website.herokuapp.com/MM/GHS_psdef/ldoor.tar.gz
-   wget https://suitesparse-collection-website.herokuapp.com/MM/Rajat/rajat31.tar.gz
-   wget https://suitesparse-collection-website.herokuapp.com/MM/Sandia/ASIC_680ks.tar.gz
-   wget https://suitesparse-collection-website.herokuapp.com/MM/Rucci/Rucci1.tar.gz
-   wget https://suitesparse-collection-website.herokuapp.com/MM/GHS_indef/boyd2.tar.gz
-   wget https://suitesparse-collection-website.herokuapp.com/MM/Williams/webbase-1M.tar.gz
-   ```
-2. **Extract and clean up the folders:**
-   ```bash
-   for f in *.tar.gz; do tar -xzf "$f"; done
-   mv */*.mtx .
-   rm *.tar.gz
-   rm -rf */
-   ```
+### 1. Connect to the University VPN
 
-### Phase 3: Execution and Analysis
-Move to the project root (`~/Sparse-Matrix-Vector-Multiplication`), load the required modules, and execute the runs via SLURM.
+Use Global Protect:
+
+```text
+vpn-mfa.icts.unitn.it
+```
+
+### 2. Access the cluster
+
+```bash
+ssh username@baldo.disi.unitn.it
+```
+
+### 3. Clone the repository
+
+```bash
+git clone -b Deliverable2 https://github.com/Michael-Bernasconi/Sparse-Matrix-Vector-Multiplication.git
+
+cd Sparse-Matrix-Vector-Multiplication
+```
+
+---
+
+## Phase 2: Real Dataset Download and Setup
+
+Create and populate the `data/` directory with matrices from SuiteSparse.
+
+### Download datasets
+
+```bash
+mkdir -p data
+cd data
+
+wget https://suitesparse-collection-website.herokuapp.com/MM/Freescale/FullChip.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/PARSEC/Ga41As41H72.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/Oberwolfach/bone010.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/PARSEC/Si41Ge41H72.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/GHS_psdef/ldoor.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/Rajat/rajat31.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/Sandia/ASIC_680ks.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/Rucci/Rucci1.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/GHS_indef/boyd2.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/Williams/webbase-1M.tar.gz
+```
+
+### Extract archives
+
+```bash
+for f in *.tar.gz; do
+    tar -xzf "$f"
+done
+
+mv */*.mtx .
+rm *.tar.gz
+rm -rf */
+```
+
+---
+
+## Phase 2.3: Synthetic Dataset Generation (Weak Scaling Targets)
+
+Large synthetic workloads are generated locally and therefore are not stored in the repository.
+
+Return to the project root and execute:
 
 ```bash
 cd ~/Sparse-Matrix-Vector-Multiplication
 
-# 1. Load the correct CUDA module
+python3 generate_matrices.py
+```
+
+The script creates benchmark datasets inside:
+
+```text
+data-synt/
+```
+
+Two workload families are generated:
+
+### Balanced Matrices
+
+* Uniform row distribution
+* Constant non-zero density
+* Inspired by the structural behavior of `rajat31`
+
+### Imbalanced Matrices
+
+* Heavy-tail distribution
+* Approximately 5% of rows contain 80% of total non-zeros
+* Inspired by the irregularity observed in `FullChip`
+
+Datasets are produced for experiments targeting:
+
+* 1 GPU
+* 2 GPUs
+* 4 GPUs
+
+allowing Weak Scaling studies where problem size grows proportionally to the number of devices.
+
+---
+
+## Phase 3: Compilation and Execution
+
+Move to the project root:
+
+```bash
+cd ~/Sparse-Matrix-Vector-Multiplication
+```
+
+### Load the environment
+
+```bash
 module purge
+
 module load CUDA/12.3.2
 module load OpenMpi/4.1.5-CUDA-12.3.2
-
-# 2. Assign execution permissions to the Bash scripts
-chmod +x run_performance_multi.sh submit_all_multi.sh
-
-# 3. Compile the project
-make
-
-# 4. Run the benchmark (submission via SLURM partitions)
-# A) To execute ALL matrix files (.mtx) for the 5 scheduled runs:
-./submit_all_multi.sh 
-
-# B) Alternatively, to test only 1 specific file:
-./submit_all_multi.sh data/ASIC_680ks.mtx
 ```
 
-### Graphs and Tables Generation
-Once the jobs on the cluster are finished, move to `results` to analyze the text logs and generate the aggregated graphs:
+### Grant execution permissions
+
+```bash
+chmod +x run_performance_multi.sh
+chmod +x submit_all_multi.sh
+chmod +x submit_weak_scaling.sh
+```
+
+### Build the project
+
+```bash
+make clean
+make
+```
+
+---
+
+## Running Benchmark Campaigns
+
+### Strong Scaling (Real Matrices)
+
+Evaluate performance on SuiteSparse datasets using:
+
+```bash
+./submit_all_multi.sh
+```
+
+The campaign executes experiments across:
+
+* 1 GPU
+* 2 GPUs
+* 4 GPUs
+
+while keeping the problem size fixed.
+
+### Weak Scaling (Synthetic Matrices)
+
+Evaluate resource-to-problem growth behavior using:
+
+```bash
+./submit_weak_scaling.sh
+```
+
+The campaign pairs:
+
+| GPUs | Problem Size |
+| ---- | ------------ |
+| 1    | Base         |
+| 2    | 2× Base      |
+| 4    | 4× Base      |
+
+for both balanced and imbalanced synthetic datasets.
+
+---
+
+## Graphs and Tables Generation
+
+After all SLURM jobs complete, move to the analysis directory:
+
 ```bash
 cd results
+```
 
-# Extract text results and generate CSV files
+### Aggregate benchmark logs
+
+```bash
 python3 analyze-result.py
+```
 
-# Starting from the generated CSVs, create the plots for the metrics (GFLOPS, BW, TTS, Kernel Time, Cache)
+This produces structured CSV files containing:
+
+* GFLOPS
+* Bandwidth
+* Kernel Time
+* Cache Statistics
+
+### Generate plots
+
+```bash
 python3 gflops-bw-tts-kerneltime-cache.py
 ```
-The generated images will be saved inside `results/plots/` and the tables in `results/tables/`.
+
+The generated artifacts are stored in:
+
+```text
+results/
+├── plots/
+└── tables/
+```
+
+---
+
+## Output Artifacts
+
+### Plots
+
+Located in:
+
+```text
+results/plots/
+```
+
+Including:
+
+* GFLOPS comparisons
+* Effective bandwidth comparisons
+* Kernel execution times
+* Scaling efficiency
+* Cache behavior visualizations
+
+### Tables
+
+Located in:
+
+```text
+results/tables/
+```
+
+Containing aggregated benchmark statistics and summary metrics.
+
+---
+
