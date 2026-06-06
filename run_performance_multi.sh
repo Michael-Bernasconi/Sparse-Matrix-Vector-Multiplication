@@ -10,7 +10,14 @@ BIN_DIR="./bin"
 MATRIX_NAME=$(basename "$MATRIX_PATH")
 LOG_FILE="$RUN_FOLDER/PERF_${NUM_GPUS}GPU_${MATRIX_NAME}.log"
 
-executables=("cuda-SpMV-CSR-multi" "cuda-SpMV-COO-multi" "cuda-SpMV-CSR-Vector-multi" "cuda-SpMV-cuSparse-multi")
+# Aggiunto l'eseguibile del prof alla lista di esecuzione ordinaria
+executables=(
+    "cuda-SpMV-CSR-multi" 
+    "cuda-SpMV-COO-multi" 
+    "cuda-SpMV-CSR-Vector-multi" 
+    "cuda-SpMV-cuSparse-multi"
+    "prof-SpMV-baseline"
+)
 
 echo "--- Benchmarking: $MATRIX_NAME with $NUM_GPUS GPUs ---"
 for exe in "${executables[@]}"; do
@@ -18,6 +25,7 @@ for exe in "${executables[@]}"; do
         echo "Running $exe on $NUM_GPUS GPUs..."
         echo -e "\n[$exe - $NUM_GPUS GPUs]" >> "$LOG_FILE"
         
+        # Esecuzione MPI mappata sulle risorse allocate da SLURM
         mpirun --oversubscribe -np $NUM_GPUS ./$BIN_DIR/$exe "$MATRIX_PATH" >> "$LOG_FILE" 2>&1
     fi
 done

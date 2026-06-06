@@ -2,6 +2,7 @@
 MATRIX_DIR="./data"
 BASE_LOG_DIR="./results/multi_gpu"
 
+# Sfrutta il nuovo makefile centralizzato
 make clean
 make
 
@@ -19,9 +20,8 @@ for run_id in {1..5}; do
             [ -e "$matrix" ] || continue
             m_name=$(basename "$matrix")
 
-            echo "Submitting: $m_name on $gpus GPUs"
+            echo "Submitting Strong Scaling: $m_name on $gpus GPUs (Mine vs Prof)"
 
-            
             srun --nodes=1 --ntasks=1 --cpus-per-task=$gpus --gres=gpu:$gpus \
                  --partition=edu-short -w edu01 --account=gpu.computing26 \
                  --time=00:05:00 \
@@ -29,3 +29,4 @@ for run_id in {1..5}; do
         done
     done
 done
+echo "All Strong Scaling data collection sequences completed!"
