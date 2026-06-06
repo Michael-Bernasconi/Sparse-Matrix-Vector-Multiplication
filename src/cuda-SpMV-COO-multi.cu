@@ -68,6 +68,13 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaGetDeviceCount(&device_count));
     CUDA_CHECK(cudaSetDevice(rank % device_count));
 
+    // Creazione eventi CUDA per isolare i tempi
+    cudaEvent_t start_comm, stop_comm, start_comp, stop_comp;
+    CUDA_CHECK(cudaEventCreate(&start_comm));
+    CUDA_CHECK(cudaEventCreate(&stop_comm));
+    CUDA_CHECK(cudaEventCreate(&start_comp));
+    CUDA_CHECK(cudaEventCreate(&stop_comp));
+
     int M, N, global_nnz;
     COOMatrix mat;
 
@@ -257,6 +264,9 @@ int main(int argc, char **argv) {
     int **d_send_indices = (int**)malloc(size * sizeof(int*));
     int **d_recv_indices = (int**)malloc(size * sizeof(int*));
 
+    // START TIMER COMUNICAZIONE (Include setup device-side, packing, MPI, unpacking)
+    CUDA_CHECK(cudaEventRecord(start_comm));
+
     for (int r = 0; r < size; r++) {
         if (send_to_rank_counts[r] > 0) {
             CUDA_CHECK(cudaMalloc(&d_send_values[r], send_to_rank_counts[r] * sizeof(float)));
@@ -300,6 +310,12 @@ int main(int argc, char **argv) {
         }
     }
     CUDA_CHECK(cudaDeviceSynchronize());
+
+    // STOP TIMER COMUNICAZIONE
+    CUDA_CHECK(cudaEventRecord(stop_comm));
+    CUDA_CHECK(cudaEventSynchronize(stop_comm));
+    float ms_comm = 0.0f;
+    CUDA_CHECK(cudaEventElapsedTime(&ms_comm, start_comm, stop_comm));
 
     int total_elements_sent = 0;
     int total_elements_recv = 0;
@@ -361,17 +377,33 @@ int main(int argc, char **argv) {
     int block_size = 256;
     int grid_size = (local_nnz + block_size - 1) / block_size;
 
+    // START TIMER COMPUTAZIONE
+    CUDA_CHECK(cudaEventRecord(start_comp));
+
     for (int iter = 0; iter < num_iterations; iter++) {
         CUDA_CHECK(cudaMemset(d_y, 0, local_M * sizeof(float)));
         spmv_coo_kernel<<<grid_size, block_size>>>(local_nnz, d_rows, d_cols, d_values, d_x, d_y);
         CUDA_CHECK(cudaDeviceSynchronize());
     }
 
+    // STOP TIMER COMPUTAZIONE
+    CUDA_CHECK(cudaEventRecord(stop_comp));
+    CUDA_CHECK(cudaEventSynchronize(stop_comp));
+    float ms_comp = 0.0f;
+    CUDA_CHECK(cudaEventElapsedTime(&ms_comp, start_comp, stop_comp));
+
     double end_time = omp_get_wtime();
     double avg_time_s = (end_time - start_time) / num_iterations;
 
     double max_avg_time_s;
     MPI_Reduce(&avg_time_s, &max_avg_time_s, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+    // Riduzione dei tempi specifici per Comm e Comp ricavati dagli eventi CUDA
+    double local_comm_s = ms_comm / 1000.0;
+    double local_comp_s = (ms_comp / 1000.0) / num_iterations; // scalato per numero iterazioni
+    double max_comm_s, max_comp_s;
+    MPI_Reduce(&local_comm_s, &max_comm_s, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&local_comp_s, &max_comp_s, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     // =========================================================================
     // --- GIORNO 6: REFACTORING IN MPI "GPU-AWARE" (Gather) ---
@@ -412,6 +444,8 @@ int main(int argc, char **argv) {
         printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], M, N, global_nnz);
         printf("Load Bal: NNZ Min: %d | NNZ Avg: %.2f | NNZ Max: %d\n", min_nnz, avg_nnz, max_nnz);
         printf("Avg Time: %e s\n", max_avg_time_s);
+        printf("  ├─ Comm Time: %e s (Ghost Exchange Setup & Comm)\n", max_comm_s);
+        printf("  └─ Comp Time: %e s (Pure Kernel Computation)\n", max_comp_s);
         printf("GFLOPS  : %.4f\n", calculate_gflops(global_nnz, max_avg_time_s));
         printf("BW      : %.4f GB/s\n", calculate_bandwidth(M, N, global_nnz, max_avg_time_s, "COO"));
         printf("TTS     : %.4f s\n", calculate_tts(global_start));
@@ -422,6 +456,12 @@ int main(int argc, char **argv) {
         free(recv_counts); free(recv_displs); free(gather_buf);
         CUDA_CHECK(cudaFree(d_gather_buf));
     }
+
+    // Pulizia eventi
+    CUDA_CHECK(cudaEventDestroy(start_comm));
+    CUDA_CHECK(cudaEventDestroy(stop_comm));
+    CUDA_CHECK(cudaEventDestroy(start_comp));
+    CUDA_CHECK(cudaEventDestroy(stop_comp));
 
     CUDA_CHECK(cudaFree(d_rows)); CUDA_CHECK(cudaFree(d_cols));
     CUDA_CHECK(cudaFree(d_values)); CUDA_CHECK(cudaFree(d_x)); CUDA_CHECK(cudaFree(d_y));
