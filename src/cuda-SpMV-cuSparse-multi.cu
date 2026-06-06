@@ -280,6 +280,26 @@ int main(int argc, char **argv) {
         }
     }
 
+    // --- NUOVA AGGIUNTA: STAMPA VOLUME DI COMUNICAZIONE PER RANK ---
+    int total_elements_sent = 0;
+    int total_elements_recv = 0;
+    for (int r = 0; r < size; r++) {
+        total_elements_sent += send_to_rank_counts[r];
+        total_elements_recv += recv_from_rank_counts[r];
+    }
+    
+    for (int i = 0; i < size; i++) {
+        if (rank == i) {
+            printf("[Rank %d] Volume di comunicazione Ghost: %d elementi inviati (%zu byte), %d elementi ricevuti (%zu byte)\n", 
+                   rank, 
+                   total_elements_sent, total_elements_sent * sizeof(float), 
+                   total_elements_recv, total_elements_recv * sizeof(float));
+            fflush(stdout);
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+    }
+    // ---------------------------------------------------------------
+
     for (int r = 0; r < size; r++) {
         free(recv_indices[r]); free(send_indices[r]);
         free(send_values[r]); free(recv_values[r]);
