@@ -1,5 +1,3 @@
-Certo. Ecco il README completo già formattato in Markdown, pronto da copiare e incollare nel tuo `README.md`.
-
 # Sparse Matrix-Vector Multiplication (SpMV)
 
 **Course:** GPU-Computing-2026
