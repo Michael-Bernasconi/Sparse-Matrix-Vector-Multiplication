@@ -194,6 +194,13 @@ int main(int argc, char **argv) {
     MPI_Scatterv(flat_values, send_counts_nnz, displs_nnz, MPI_FLOAT, local_values, local_nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Scatterv(flat_col_idx, send_counts_nnz, displs_nnz, MPI_INT, local_col_idx, local_nnz, MPI_INT, 0, MPI_COMM_WORLD);
 
+    // --- Calcolo metriche di Load Balance sui Non-Zeri (NNZ) ---
+    int min_nnz, max_nnz, sum_nnz;
+    MPI_Reduce(&local_nnz, &min_nnz, 1, MPI_INT, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&local_nnz, &max_nnz, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&local_nnz, &sum_nnz, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    float avg_nnz = (float)sum_nnz / size;
+
     // --- DAY 4 & 5: GHOST ENTRIES IDENTIFICATION E SCAMBIO VALORI ---
     int *ghost_cols = (int*)malloc(local_nnz * sizeof(int));
     int local_ghost_count = 0;
@@ -366,6 +373,7 @@ int main(int argc, char **argv) {
 
         printf("\n--- MULTI-GPU CSR SCALAR ( %d GPUs - Modulo 1D - GPU-Aware ) ---\n", size);
         printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], M, N, nnz);
+        printf("Load Bal: NNZ Min: %d | NNZ Avg: %.2f | NNZ Max: %d\n", min_nnz, avg_nnz, max_nnz);
         printf("Avg Time: %e s\n", max_avg_time_s);
         printf("GFLOPS  : %.4f\n", calculate_gflops(nnz, max_avg_time_s));
         printf("BW      : %.4f GB/s\n", calculate_bandwidth(M, N, nnz, max_avg_time_s, "CSR"));
