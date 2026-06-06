@@ -10,6 +10,10 @@ extern "C" {
     #include "my_time_lib.h"
 }
 
+/**
+ * @brief Macro for validation of runtime CUDA API statuses.
+ * Forces an immediate termination of the global MPI context upon error detection.
+ */
 #define CUDA_CHECK(call) \
     do { \
         cudaError_t err = call; \
@@ -19,7 +23,15 @@ extern "C" {
         } \
     } while (0)
 
-// --- KERNEL PER GHOST PACKING/UNPACKING SU GPU ---
+// --- CUDA KERNELS FOR DEVICE-SIDE GHOST DATA PACKING/UNPACKING ---
+
+/**
+ * @brief Gathers arbitrary source vector elements into a contiguous buffer on the device.
+ * @param d_x Source dense vector array allocated on the device.
+ * @param d_send_values Target device buffer for packed outbound ghost values.
+ * @param d_send_indices Mapping array containing the target indices required by peer processes.
+ * @param count Total number of items to pack.
+ */
 __global__ void pack_ghost_kernel(const float* d_x, float* d_send_values, const int* d_send_indices, int count) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < count) {
@@ -27,6 +39,13 @@ __global__ void pack_ghost_kernel(const float* d_x, float* d_send_values, const 
     }
 }
 
+/**
+ * @brief Scatters received message buffers back into their respective indices inside the local device vector.
+ * @param d_x Target dense vector array on the device to be updated.
+ * @param d_recv_values Contiguous device buffer holding inbound ghost elements.
+ * @param d_recv_indices Mapping array tracking the exact structural placement of incoming values.
+ * @param count Total number of items to unpack.
+ */
 __global__ void unpack_ghost_kernel(float* d_x, const float* d_recv_values, const int* d_recv_indices, int count) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < count) {
@@ -34,6 +53,9 @@ __global__ void unpack_ghost_kernel(float* d_x, const float* d_recv_values, cons
     }
 }
 
+/**
+ * @brief Host-side sequential Reference SpMV implementation utilizing the Compressed Sparse Row (CSR) format.
+ */
 void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
     for (int i = 0; i < mat->M; i++) {
         float sum = 0.0f;
@@ -44,6 +66,10 @@ void spmv_csr_sequential(const CSRMatrix *mat, const float *x, float *y) {
     }
 }
 
+/**
+ * @brief Parallel CSR Scalar SpMV CUDA Kernel.
+ * Maps exactly one thread to evaluate one row of the sparse matrix structure.
+ */
 __global__ void spmv_csr_kernel(int num_rows, const int* d_row_ptr, const int* d_col_ind, const float* d_values, const float* d_x, float* d_y) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < num_rows) {
@@ -75,24 +101,29 @@ int main(int argc, char **argv) {
 
     double global_start = omp_get_wtime();
 
+    // Rank 0 executes file input operations to initialize structural metadata
     if (rank == 0) {
         load_matrix_market_to_csr(argv[1], &A);
         M = A.M; N = A.N; nnz = A.nnz;
     }
 
+    // Distribute structural configurations to all distributed instances
     MPI_Bcast(&M, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&N, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+    // Dynamic sizing allocation for local vector components
     float *h_x = (float*)calloc(N, sizeof(float));
     float *h_x_full = NULL;
     float *h_y_ref = NULL;
 
+    // --- 1D Interleaved Vector X Distribution Context ---
     if (rank == 0) {
         h_x_full = (float*)malloc(N * sizeof(float));
         h_y_ref = (float*)calloc(M, sizeof(float));
         fill_random_vector(h_x_full, N);
 
+        // Partition and send matching subsegments to distinct ranks
         for (int r = 1; r < size; r++) {
             int count_r = N / size + (r < N % size ? 1 : 0);
             if (count_r > 0) {
@@ -105,6 +136,7 @@ int main(int argc, char **argv) {
                 free(buf);
             }
         }
+        // Extract localized components belonging to Rank 0
         for (int i = 0; i < N; i++) {
             if (i % size == 0) h_x[i] = h_x_full[i];
         }
@@ -121,6 +153,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    // --- Compute Work Distribution Arrays for 1D Modulo Row-Interleaved CSR Matrix Partitioning ---
     int local_M = M / size + (rank < M % size ? 1 : 0);
     int local_nnz = 0;
 
@@ -147,6 +180,7 @@ int main(int argc, char **argv) {
             rank_nnz[r] = 0;
         }
 
+        // Aggregate total non-zero elements required per computational rank using modulo indexing
         for (int i = 0; i < M; i++) {
             int target_rank = i % size;
             rank_nnz[target_rank] += (A.row_ptr[i + 1] - A.row_ptr[i]);
@@ -160,6 +194,7 @@ int main(int argc, char **argv) {
         int *rank_curr_row = (int*)calloc(size, sizeof(int));
         int *rank_curr_nnz = (int*)calloc(size, sizeof(int));
 
+        // Populate independent CSR buffers mapping directly to targeted ranks
         for (int i = 0; i < M; i++) {
             int r = i % size;
             int start = A.row_ptr[i];
@@ -171,7 +206,7 @@ int main(int argc, char **argv) {
                 rank_col_idx_bufs[r][idx] = A.col_idx[j];
             }
             int row_idx = ++rank_curr_row[r];
-            rank_row_ptr_bufs[r][row_idx] = rank_curr_nnz[r];
+            rank_row_ptr_bufs[r][row_idx] = rank_curr_nnz[r]; // Create relative offsets locally
         }
 
         int total_rows_alloc = 0;
@@ -185,6 +220,7 @@ int main(int argc, char **argv) {
             total_nnz_alloc += send_counts_nnz[r];
         }
 
+        // Linearize nested multidimensional buffers to support collective scatter distributions
         flat_row_ptr = (int*)malloc(total_rows_alloc * sizeof(int));
         flat_values = (float*)malloc(total_nnz_alloc * sizeof(float));
         flat_col_idx = (int*)malloc(total_nnz_alloc * sizeof(int));
@@ -199,12 +235,14 @@ int main(int argc, char **argv) {
         free(rank_curr_row); free(rank_curr_nnz);
     }
 
+    // Synchronize localized partition metadata boundaries across the network
     MPI_Scatter(rank_nnz, 1, MPI_INT, &local_nnz, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     int *local_row_ptr = (int*)malloc((local_M + 1) * sizeof(int));
     float *local_values = (float*)malloc(local_nnz * sizeof(float));
     int *local_col_idx = (int*)malloc(local_nnz * sizeof(int));
 
+    // Scatter the divided sparse subsegments across the cluster node layout
     MPI_Scatterv(flat_row_ptr, send_counts_rows, displs_rows, MPI_INT, local_row_ptr, local_M + 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Scatterv(flat_values, send_counts_nnz, displs_nnz, MPI_FLOAT, local_values, local_nnz, MPI_FLOAT, 0, MPI_COMM_WORLD);
     MPI_Scatterv(flat_col_idx, send_counts_nnz, displs_nnz, MPI_INT, local_col_idx, local_nnz, MPI_INT, 0, MPI_COMM_WORLD);
@@ -216,13 +254,13 @@ int main(int argc, char **argv) {
     float avg_nnz = (float)sum_nnz / size;
 
     // =========================================================================
-    // --- SETUP DEVICE (SPOSTATO PRIMA DELLO SCAMBIO GHOST) ---
+    // --- CUDA INITIALIZATION (POSITIONED TO SUPPORT DEVICE-SIDE GHOST OPS) ---
     // =========================================================================
     int device_count;
     CUDA_CHECK(cudaGetDeviceCount(&device_count));
     CUDA_CHECK(cudaSetDevice(rank % device_count));
 
-    // Creazione eventi CUDA per isolare i tempi
+    // Allocate high-resolution CUDA Timeline events for isolated performance profiling
     cudaEvent_t start_comm, stop_comm, start_comp, stop_comp;
     CUDA_CHECK(cudaEventCreate(&start_comm));
     CUDA_CHECK(cudaEventCreate(&stop_comm));
@@ -233,13 +271,14 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaMalloc(&d_x, N * sizeof(float)));
     CUDA_CHECK(cudaMemcpy(d_x, h_x, N * sizeof(float), cudaMemcpyHostToDevice));
 
-    // --- DAY 4 & 5: GHOST ENTRIES IDENTIFICATION (SU CPU) ---
+    // --- IDENTIFY REQUIRED GHOST ELEMENTS BASED ON INTERNAL MATRIX COLUMN OVERLAPS ---
     int *ghost_cols = (int*)malloc(local_nnz * sizeof(int));
     int local_ghost_count = 0;
     
     int *send_to_rank_counts = (int*)calloc(size, sizeof(int));
     int *recv_from_rank_counts = (int*)calloc(size, sizeof(int));
 
+    // Check for column references tracking back to external processing ranks
     for (int i = 0; i < local_nnz; i++) {
         int col = local_col_idx[i];
         int owner_rank = col % size; 
@@ -258,6 +297,7 @@ int main(int argc, char **argv) {
         }
     }
 
+    // Synchronize multi-directional exchange shapes across all participating units
     MPI_Alltoall(recv_from_rank_counts, 1, MPI_INT, send_to_rank_counts, 1, MPI_INT, MPI_COMM_WORLD);
 
     int **recv_indices = (int**)malloc(size * sizeof(int*));
@@ -277,6 +317,7 @@ int main(int argc, char **argv) {
     MPI_Request *reqs = (MPI_Request*)malloc(2 * size * sizeof(MPI_Request));
     int req_count = 0;
 
+    // Interchange structural data indices using non-blocking MPI operations
     for (int r = 0; r < size; r++) {
         if (r != rank) {
             if (recv_from_rank_counts[r] > 0) MPI_Isend(recv_indices[r], recv_from_rank_counts[r], MPI_INT, r, 100, MPI_COMM_WORLD, &reqs[req_count++]);
@@ -286,7 +327,7 @@ int main(int argc, char **argv) {
     MPI_Waitall(req_count, reqs, MPI_STATUSES_IGNORE);
 
     // =========================================================================
-    // --- DAY 6: GHOST EXCHANGE VALUES (100% GPU-AWARE MPI) ---
+    // --- GHOST VECTOR EXCHANGE VALUES (100% GPU-AWARE INTER-NODE MPI) ---
     // =========================================================================
     float **d_send_values = (float**)malloc(size * sizeof(float*));
     float **d_recv_values = (float**)malloc(size * sizeof(float*));
@@ -308,19 +349,19 @@ int main(int argc, char **argv) {
         }
     }
 
-    // START TIMER COMUNICAZIONE (Include packing su GPU, MPI p2p e unpacking)
+    // START COMMUNICATION TIMER (Encompasses device-side packing, GPU-Aware MPI p2p, and device-side unpacking)
     CUDA_CHECK(cudaEventRecord(start_comm));
 
-    // FASE 1: Packing dei valori da inviare (eseguito in GPU)
+    // STAGE 1: Asynchronous device-side vector element collection (Packing via Device Kernels)
     for (int r = 0; r < size; r++) {
         if (r != rank && send_to_rank_counts[r] > 0) {
             int blocks = (send_to_rank_counts[r] + 255) / 256;
             pack_ghost_kernel<<<blocks, 256>>>(d_x, d_send_values[r], d_send_indices[r], send_to_rank_counts[r]);
         }
     }
-    CUDA_CHECK(cudaDeviceSynchronize()); // Sincronizza prima dell'invio MPI
+    CUDA_CHECK(cudaDeviceSynchronize()); // Block execution until device packing stages are fully compiled
 
-    // FASE 2: Scambio MPI Isend/Irecv passando PUNTATORI DEVICE
+    // STAGE 2: GPU-Aware Point-to-Point Communication (Inject Device Addresses Directly to MPI Contexts)
     req_count = 0;
     for (int r = 0; r < size; r++) {
         if (r != rank) {
@@ -334,22 +375,22 @@ int main(int argc, char **argv) {
     }
     MPI_Waitall(req_count, reqs, MPI_STATUSES_IGNORE);
 
-    // FASE 3: Unpacking dei valori ricevuti (eseguito in GPU)
+    // STAGE 3: Asynchronous device-side vector structural placement (Unpacking via Device Kernels)
     for (int r = 0; r < size; r++) {
         if (r != rank && recv_from_rank_counts[r] > 0) {
             int blocks = (recv_from_rank_counts[r] + 255) / 256;
             unpack_ghost_kernel<<<blocks, 256>>>(d_x, d_recv_values[r], d_recv_indices[r], recv_from_rank_counts[r]);
         }
     }
-    CUDA_CHECK(cudaDeviceSynchronize()); // Assicura che d_x sia pronto per la SpMV
+    CUDA_CHECK(cudaDeviceSynchronize()); // Ensure the updated vector x state is ready for the multiplication pass
 
-    // STOP TIMER COMUNICAZIONE
+    // STOP COMMUNICATION TIMER
     CUDA_CHECK(cudaEventRecord(stop_comm));
     CUDA_CHECK(cudaEventSynchronize(stop_comm));
     float ms_comm = 0.0f;
     CUDA_CHECK(cudaEventElapsedTime(&ms_comm, start_comm, stop_comm));
 
-    // --- STAMPA VOLUME DI COMUNICAZIONE PER RANK ---
+    // --- MEASURE PER-RANK GHOST METRIC TRAFFIC QUANTITIES ---
     int total_elements_sent = 0;
     int total_elements_recv = 0;
     for (int r = 0; r < size; r++) {
@@ -359,7 +400,7 @@ int main(int argc, char **argv) {
     
     for (int i = 0; i < size; i++) {
         if (rank == i) {
-            printf("[Rank %d] Volume di comunicazione Ghost: %d elementi inviati (%zu byte), %d elementi ricevuti (%zu byte)\n", 
+            printf("[Rank %d] Ghost Communication Volume: %d elements sent (%zu bytes), %d elements received (%zu bytes)\n", 
                    rank, 
                    total_elements_sent, total_elements_sent * sizeof(float), 
                    total_elements_recv, total_elements_recv * sizeof(float));
@@ -370,12 +411,12 @@ int main(int argc, char **argv) {
     // ---------------------------------------------------------------
 
     if (rank == 0) {
-        printf("\n=== [DAY 6/7 DIAGNOSTIC - CSR SCALAR] ===\n");
-        printf("I valori Ghost di X sono stati scambiati con successo tramite MPI GPU-Aware.\n");
+        printf("\n=== [DIAGNOSTIC - CSR SCALAR] ===\n");
+        printf("Ghost vector components interchanged successfully using GPU-Aware MPI handles.\n");
         printf("===========================================\n\n");
     }
 
-    // Pulizia delle strutture Host e Device temporanee per i Ghost
+    // Deallocate intermediate device and host structures used for ghost exchanges
     for (int r = 0; r < size; r++) {
         if (r != rank) {
             if (send_to_rank_counts[r] > 0) {
@@ -394,7 +435,7 @@ int main(int argc, char **argv) {
     free(send_to_rank_counts); free(recv_from_rank_counts); free(ghost_cols);
 
     // =========================================================================
-    // --- COMPLETAMENTO SETUP DEVICE ---
+    // --- ALLOCATE AND COPY PERMANENT LOCAL CSR STRUCTURES TO THE DEVICE ---
     // =========================================================================
     int *d_row_ptr, *d_col_idx;
     float *d_values, *d_y;
@@ -414,7 +455,7 @@ int main(int argc, char **argv) {
     int block_size = 256;
     int grid_size = (local_M + block_size - 1) / block_size;
 
-    // START TIMER COMPUTAZIONE
+    // START KERNEL COMPUTATION TIMER
     CUDA_CHECK(cudaEventRecord(start_comp));
 
     for (int iter = 0; iter < num_iterations; iter++) {
@@ -423,7 +464,7 @@ int main(int argc, char **argv) {
         CUDA_CHECK(cudaDeviceSynchronize());
     }
 
-    // STOP TIMER COMPUTAZIONE
+    // STOP KERNEL COMPUTATION TIMER
     CUDA_CHECK(cudaEventRecord(stop_comp));
     CUDA_CHECK(cudaEventSynchronize(stop_comp));
     float ms_comp = 0.0f;
@@ -435,15 +476,15 @@ int main(int argc, char **argv) {
     double max_avg_time_s;
     MPI_Reduce(&avg_time_s, &max_avg_time_s, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
-    // Riduzione dei tempi specifici per Comm e Comp ricavati dagli eventi CUDA
+    // Normalize metric measurements across processing nodes via reductions
     double local_comm_s = ms_comm / 1000.0;
-    double local_comp_s = (ms_comp / 1000.0) / num_iterations; // scalato per numero iterazioni
+    double local_comp_s = (ms_comp / 1000.0) / num_iterations; // Scaled relative to execution loop count
     double max_comm_s, max_comp_s;
     MPI_Reduce(&local_comm_s, &max_comm_s, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&local_comp_s, &max_comp_s, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
     // =========================================================================
-    // --- GATHER FINALE GPU-AWARE MPI ---
+    // --- GATHER AND RECONSTRUCT GLOBAL RESULTS WITH GPU-AWARE MPI ---
     // =========================================================================
     int *recv_counts = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
     int *recv_displs = (rank == 0) ? (int*)malloc(size * sizeof(int)) : NULL;
@@ -459,11 +500,13 @@ int main(int argc, char **argv) {
         CUDA_CHECK(cudaMalloc(&d_gather_buf, M * sizeof(float)));
     }
 
+    // Gather distributed results using device address buffers injected straight to MPI
     MPI_Gatherv(d_y, local_M, MPI_FLOAT, d_gather_buf, recv_counts, recv_displs, MPI_FLOAT, 0, MPI_COMM_WORLD);
 
     if (rank == 0) {
         CUDA_CHECK(cudaMemcpy(gather_buf, d_gather_buf, M * sizeof(float), cudaMemcpyDeviceToHost));
 
+        // Reassemble the 1D interleaved rows back into linear continuous matrix rows
         int *rank_offset = (int*)calloc(size, sizeof(int));
         for (int i = 0; i < M; i++) {
             int r = i % size;
@@ -472,6 +515,7 @@ int main(int argc, char **argv) {
         }
         free(rank_offset);
 
+        // Verification and diagnostic reporting pipelines
         spmv_csr_sequential(&A, h_x_full, h_y_ref);
         validate_results(h_y_ref, h_global_y_gpu, M);
 
@@ -492,12 +536,13 @@ int main(int argc, char **argv) {
         CUDA_CHECK(cudaFree(d_gather_buf));
     }
 
-    // Pulizia eventi
+    // Explicit destruction of performance events
     CUDA_CHECK(cudaEventDestroy(start_comm));
     CUDA_CHECK(cudaEventDestroy(stop_comm));
     CUDA_CHECK(cudaEventDestroy(start_comp));
     CUDA_CHECK(cudaEventDestroy(stop_comp));
 
+    // Release global application heap and device data structures
     CUDA_CHECK(cudaFree(d_row_ptr)); CUDA_CHECK(cudaFree(d_col_idx));
     CUDA_CHECK(cudaFree(d_values)); CUDA_CHECK(cudaFree(d_x)); CUDA_CHECK(cudaFree(d_y));
     free(local_row_ptr); free(local_values); free(local_col_idx); free(h_x);
