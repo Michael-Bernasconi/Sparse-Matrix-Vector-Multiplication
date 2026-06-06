@@ -33,7 +33,7 @@ $(BIN_FOLDER)/%-multi: $(SRC_FOLDER)/%-multi.cu $(SRC_FOLDER)/matrix_utils.c $(S
 
 $(OBJ_FOLDER)/mmio.o: $(BASE_FOLDER)/include/mmio.c
 	@mkdir -p $(OBJ_FOLDER)
-	$(CC) -O2 -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 $(OBJ_FOLDER)/%.o: $(BASE_FOLDER)/include/%.cpp
 	@mkdir -p $(OBJ_FOLDER)
