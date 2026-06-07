@@ -1,0 +1,11 @@
+ID,Matrix Name,Rows,Columns,NNZ,Average NNZ,Dev Std Rows,Description
+1420,ASIC_680ks,"682,712","682,712","1,693,767",2.48,4.16,Circuit simulation. Highly sparse and asymmetric distribution.
+1297,boyd2,"466,316","466,316","1,500,397",3.22,194.91,Convex optimization. Extreme structural imbalance (dense spikes).
+1881,Rucci1,"1,977,885","109,900","7,791,168",3.94,0.34,"Least squares. Tall rectangular layout, perfectly uniform rows."
+2379,webbase-1M,"1,000,005","1,000,005","3,105,536",3.11,25.35,Web crawl graph. Power-law scaling with massive hub nodes.
+1419,ASIC_320ks,"321,671","321,671","1,316,085",4.09,3.80,Circuit simulation. Medium-sized uniform sparse test.
+1513,patents_main,"240,547","240,547","560,943",2.33,1.94,Patent citation network. Ultra-lightweight and predictable 1D blocks.
+39,bcsstk17,"10,974","10,974","428,650",39.06,8.40,Structural stiffness matrix. Small size but high row density.
+1269,m_t1,"185,000","97,500","9,753,570",52.72,1.18,"Least squares. Rectangular grid, exceptionally well-balanced."
+38,bcsstk16,"4,884","4,884","290,378",59.45,19.23,"Structural problem. Smallest test, high density with localized noise."
+1416,ASIC_100ks,"99,190","99,190","578,890",5.84,13.91,Circuit simulation. Small regular baseline for hardware verification.
