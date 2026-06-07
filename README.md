@@ -153,7 +153,7 @@ wget https://suitesparse-collection-website.herokuapp.com/MM/HB/bcsstk17.tar.gz
 
 wget https://suitesparse-collection-website.herokuapp.com/MM/DNVS/m_t1.tar.gz
 
-wget https://suitesparse-collection-website.herokuapp.com/MM/HB/can_1054.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/HB/bcsstk16.tar.gz
 
 wget https://suitesparse-collection-website.herokuapp.com/MM/Sandia/ASIC_100ks.tar.gz
 
