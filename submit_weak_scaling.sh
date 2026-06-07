@@ -8,7 +8,7 @@ make
 
 GPU_CONFIGS=(1 2 4)
 
-for run_id in {1..3}; do
+for run_id in {1..1}; do
     echo "=========================================="
     echo "=== WEAK SCALING EXPERIMENT - RUN ${run_id} ==="
     echo "=========================================="

@@ -1,14 +1,15 @@
 #!/bin/bash
 MATRIX_DIR="./data"
-BASE_LOG_DIR="./results/multi_gpu/strong_scaling"
+BASE_LOG_DIR="./results/multi_gpu"
 
+# Sfrutta il nuovo makefile centralizzato
 make clean
 make
 
 SELECTED_MATRICES=("$MATRIX_DIR"/*.mtx)
 GPU_CONFIGS=(1 2 4)
 
-for run_id in {1..3}; do
+for run_id in {1..1}; do
     for gpus in "${GPU_CONFIGS[@]}"; do
         RUN_FOLDER="${BASE_LOG_DIR}/run_${run_id}/${gpus}gpu"
         mkdir -p "$RUN_FOLDER"
