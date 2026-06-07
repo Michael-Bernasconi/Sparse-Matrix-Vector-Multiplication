@@ -12,10 +12,12 @@ RESULTS_DIR = os.path.dirname(os.path.abspath(__file__))
 TABLES_DIR = os.path.join(RESULTS_DIR, "tables")
 PLOTS_DIR = os.path.join(RESULTS_DIR, "plots")
 
-STRONG_CSV = os.path.join(TABLES_DIR, "multi_gpu_analysis_strong_report.csv")
-WEAK_CSV = os.path.join(TABLES_DIR, "multi_gpu_analysis_weak_report.csv")
+# SOLUZIONE ERRORE 2: I file CSV sono direttamente in RESULTS_DIR, non in TABLES_DIR
+STRONG_CSV = os.path.join(RESULTS_DIR, "multi_gpu_analysis_strong_report.csv")
+WEAK_CSV = os.path.join(RESULTS_DIR, "multi_gpu_analysis_weak_report.csv")
 
 os.makedirs(PLOTS_DIR, exist_ok=True)
+os.makedirs(TABLES_DIR, exist_ok=True)
 
 # Clean IEEE / ACM Style for required core plots
 plt.style.use('seaborn-v0_8-whitegrid')
@@ -60,7 +62,6 @@ def generate_essential_strong_plots(df, metric_column, y_label, title, filename,
     kernels = sorted(df['Kernel_Clean'].unique())
     matrices = sorted(df['Matrix'].unique())
     
-    # MODIFICA: Altezza ridotta a 2.3 per sotto-grafico per "schiacciare" visivamente la figura
     fig, axs = plt.subplots(len(kernels), 1, figsize=(12, 2.3 * len(kernels)))
     if len(kernels) == 1:
         axs = [axs]
@@ -84,7 +85,6 @@ def generate_essential_strong_plots(df, metric_column, y_label, title, filename,
         ax.bar(x, y_2, width, label='2 GPUs', color=STRONG_COLORS[2], edgecolor='black', linewidth=0.3)
         ax.bar(x + width, y_4, width, label='4 GPUs', color=STRONG_COLORS[4], edgecolor='black', linewidth=0.3)
 
-        # Ridotto il padding del titolo interno per recuperare spazio
         ax.set_title(f"Format / Kernel: {kernel}", pad=2, fontweight='bold')
         ax.set_ylabel(y_label)
         
@@ -99,14 +99,12 @@ def generate_essential_strong_plots(df, metric_column, y_label, title, filename,
             
             ax.grid(True, which='both', linestyle=':', linewidth=0.3, alpha=0.6)
         else:
-            # Confermato: Una sola cifra decimale per i GFLOPS lineari
             ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.1f'))
 
         ax.set_xlabel("Matrix File Name (.mtx)", labelpad=1)
         ax.set_xticks(x)
         ax.set_xticklabels(matrices, rotation=11, ha='right', fontsize=7.5)
 
-    # MODIFICA: Spazi compressi al massimo tra Titolo, Legenda e l'inizio dei grafici (rect alto a 0.93)
     fig.suptitle(title, y=0.98, fontweight='bold', fontsize=11)
     handles, labels = axs[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 0.955), ncol=3, frameon=True)
@@ -124,7 +122,6 @@ def generate_weak_plots(df):
     kernels = sorted(df['Kernel_Clean'].unique())
     families = sorted(df['Matrix Family'].unique())
     
-    # MODIFICA: Altezza ridotta a ben 1.5 per "schiacciare" totalmente il grafico del weak scaling
     fig, axs = plt.subplots(len(kernels), 2, figsize=(10, 1.5 * len(kernels)), sharex=True)
     if len(kernels) == 1:
         axs = np.array([axs])
@@ -172,8 +169,6 @@ def generate_weak_plots(df):
     axs[-1, 1].set_xticks(x)
     axs[-1, 1].set_xticklabels(families, rotation=12, fontsize=7)
 
-    # MODIFICA RITOCCO SPAZIO BIANCO: Titolo a y=0.98, Legenda a 0.945 e limite dei grafici (rect) a 0.92. 
-    # Spazio bianco completamente rimosso, tutto compatto e attaccato.
     fig.suptitle("Weak Scaling Profile per Individual Synthetic Matrix Family", y=0.98, fontweight='bold', fontsize=10)
     
     handles, labels = axs[0, 0].get_legend_handles_labels()
@@ -236,7 +231,8 @@ def generate_summary_tables_and_latex(df_strong):
 \hline
 \textbf{Kernel} & \textbf{GPU Config} & \textbf{\% Pure CUDA Compute} & \textbf{\% MPI Ghost Comm} \\ \hline""")
     for idx, row in breakdown.iterrows():
-        print(f"{row['Kernel_Clean']} & {int(row['GPUs'])}G & {row['Comp_Pct']:.2f}\% & {row['Comm_Pct']:.2f}\% \\\\")
+        # SOLUZIONE ERRORE 1: Inserito '\\%' al posto di '\%' per prevenire il SyntaxWarning di Python 3.12+
+        print(f"{row['Kernel_Clean']} & {int(row['GPUs'])}G & {row['Comp_Pct']:.2f}\\% & {row['Comm_Pct']:.2f}\\% \\\\")
     print(r"""\hline
 \end{tabular}
 \end{table}""")
