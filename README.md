@@ -142,16 +142,19 @@ Create and populate the `data/` directory with matrices from SuiteSparse.
 mkdir -p data
 cd data
 
-wget https://suitesparse-collection-website.herokuapp.com/MM/Freescale/FullChip.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/PARSEC/Ga41As41H72.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/Oberwolfach/bone010.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/PARSEC/Si41Ge41H72.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/GHS_psdef/ldoor.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/Rajat/rajat31.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/Sandia/ASIC_320ks.tar.gz
 wget https://suitesparse-collection-website.herokuapp.com/MM/Sandia/ASIC_680ks.tar.gz
 wget https://suitesparse-collection-website.herokuapp.com/MM/Rucci/Rucci1.tar.gz
 wget https://suitesparse-collection-website.herokuapp.com/MM/GHS_indef/boyd2.tar.gz
 wget https://suitesparse-collection-website.herokuapp.com/MM/Williams/webbase-1M.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/Freescale/circuit5M_dc.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/Pajek/patents_main.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/LAW/amazon-2008.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/DIMACS10/coAuthorsDBLP.tar.gz
+wget https://suitesparse-collection-website.herokuapp.com/MM/LAW/cnr-2000.tar.gz
+
+
+
 ```
 
 ### Extract archives
@@ -188,13 +191,13 @@ data-synt/
 
 Two workload families are generated:
 
-### Balanced Matrices
+### Balanced Matrices    (da cambiare)
 
 * Uniform row distribution
 * Constant non-zero density
 * Inspired by the structural behavior of `rajat31`
 
-### Imbalanced Matrices
+### Imbalanced Matrices  (da cambiare)
 
 * Heavy-tail distribution
 * Approximately 5% of rows contain 80% of total non-zeros
