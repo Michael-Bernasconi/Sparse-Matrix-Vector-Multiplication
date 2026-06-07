@@ -365,7 +365,7 @@ int main(int argc, char **argv) {
     
     for (int i = 0; i < size; i++) {
         if (rank == i) {
-            printf("[Rank %d] Ghost Communication Volume: %d elements sent (%zu bytes), %d elements received (%zu bytes)\n", 
+            printf("[Rank %d] Volume of comunication Ghost: %d send elements (%zu byte), %d receive elements (%zu byte)\n", 
                    rank, 
                    total_elements_sent, total_elements_sent * sizeof(float), 
                    total_elements_recv, total_elements_recv * sizeof(float));

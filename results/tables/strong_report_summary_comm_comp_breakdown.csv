@@ -1,0 +1,9 @@
+Kernel_Clean,GPUs,Comp_Pct,Comm_Pct
+COO,2,99.44,2460.11
+COO,4,99.31,5256.64
+CSR,2,99.46,2083.82
+CSR,4,99.42,4638.54
+CSR-Vector,2,99.4,2073.85
+CSR-Vector,4,99.31,4131.61
+cuSparse,2,99.86,1337.94
+cuSparse,4,99.85,1984.15
