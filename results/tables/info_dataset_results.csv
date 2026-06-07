@@ -4,9 +4,9 @@ ID,Matrix Name,Rows,Columns,NNZ,Average NNZ for rows,Dev Std Rows,Description
 1881,Rucci1,1977885,109900,7791168,3.94,0.34,"Bad conditioned least squares mathematical problem. It is the only rectangular dataset, with the number of rows disproportionately exceeding the number of columns."
 2379,webbase-1M,1000005,1000005,3105536,3.11,25.35,"Directed graph of web connections. The data follows an irregular 'power-law' distribution, featuring a few hyper-connected hubs and a vast number of nearly isolated nodes."
 1419,ASIC_320ks,321671,321671,1316085,4.09,3.80,Similar to ASIC_680ks
-2277,circuit5M_dc,3523317,3523317,14865409,,,"Matrice di un circuito elettronico in corrente continua. Dimensione imponente, ottima per testare forti volumi di calcolo (Strong Scaling) mantenendo le righe uniformi e bilanciate."
 1513,patents_main,240547,240547,"560943
 ",,,Rete di citazioni di brevetti. Struttura iper-leggera che non genera sbilanciamenti computazionali e si divide linearmente a blocchi in modo impeccabile
-2445,amazon-2008,735323,735323,5158388,,"","Grafo di similarità di prodotti Amazon. Presenta una distribuzione a legge di potenza (pochi articoli iper-connessi, molti isolati)."
-2462,coAuthorsDBLP,299067,299067,1955352,,10.11,Rete di co-autorship di pubblicazioni scientifiche.
-2441,cnr-2000,325557,325557,3216152,,,Web crawl di un dominio web italiano.
+,bcsstk17
+,m_t1
+,can_1054
+,ASIC_100ks

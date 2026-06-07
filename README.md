@@ -147,13 +147,15 @@ wget https://suitesparse-collection-website.herokuapp.com/MM/Sandia/ASIC_680ks.t
 wget https://suitesparse-collection-website.herokuapp.com/MM/Rucci/Rucci1.tar.gz
 wget https://suitesparse-collection-website.herokuapp.com/MM/GHS_indef/boyd2.tar.gz
 wget https://suitesparse-collection-website.herokuapp.com/MM/Williams/webbase-1M.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/Freescale/circuit5M_dc.tar.gz
 wget https://suitesparse-collection-website.herokuapp.com/MM/Pajek/patents_main.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/LAW/amazon-2008.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/DIMACS10/coAuthorsDBLP.tar.gz
-wget https://suitesparse-collection-website.herokuapp.com/MM/LAW/cnr-2000.tar.gz
 
+wget https://suitesparse-collection-website.herokuapp.com/MM/HB/bcsstk17.tar.gz
 
+wget https://suitesparse-collection-website.herokuapp.com/MM/DNVS/m_t1.tar.gz
+
+wget https://suitesparse-collection-website.herokuapp.com/MM/HB/can_1054.tar.gz
+
+wget https://suitesparse-collection-website.herokuapp.com/MM/Sandia/ASIC_100ks.tar.gz
 
 ```
 
