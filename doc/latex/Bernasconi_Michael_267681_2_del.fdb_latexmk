@@ -1,11 +1,11 @@
 # Fdb version 4
-["pdflatex"] 1778507456.47944 "/home/michael/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" "Bernasconi_Michael_267681_1_del.pdf" "Bernasconi_Michael_267681_1_del" 1778507458.00831 0
-  "../../results/plots/1_del_bandwidth.pdf" 1778096183.49035 32589 730f7a87e56e30b5edb3207463806201 ""
-  "../../results/plots/1_del_gflops.pdf" 1778096183.49066 32621 a01a535345192cf1f0bb6fbfe86eb9ce ""
-  "../../results/plots/1_del_kernel_time.pdf" 1778096183.49066 30753 7a5d5bc6cb8a031e7d45fdecf1127590 ""
-  "../../results/plots/1_del_tts.pdf" 1778096183.49066 30617 fcd69a402a200ee367091b18e7d92637 ""
+["pdflatex"] 1780824007.90866 "/home/michael/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_2_del.tex" "Bernasconi_Michael_267681_2_del.pdf" "Bernasconi_Michael_267681_2_del" 1780824009.62293 2
+  "../../results/plots/1_del_bandwidth.pdf" 0 -1 0 ""
+  "../../results/plots/1_del_gflops.pdf" 0 -1 0 ""
+  "../../results/plots/1_del_kernel_time.pdf" 0 -1 0 ""
+  "../../results/plots/1_del_tts.pdf" 0 -1 0 ""
   "/etc/texmf/web2c/texmf.cnf" 1778506864.75507 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/michael/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_1_del.tex" 1778507454.51985 21712 97c9ae122e8df2e8f9562546cd890f7b ""
+  "/home/michael/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_2_del.tex" 1778507454.51985 21712 97c9ae122e8df2e8f9562546cd890f7b ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136768653 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -127,13 +127,13 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1778506889.95569 5472669 54eaf61a88b6b7896ebd0dac973cb29c ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1778507035 8214941 2a286de860800f048c511c1fa9db929e ""
-  "Bernasconi_Michael_267681_1_del.aux" 1778507457.83636 5641 6b62d44bf695c5c037683191e5c82f96 "pdflatex"
-  "Bernasconi_Michael_267681_1_del.out" 1778507457.83836 3490 97302dfffb463bbd489fd479ca6784d7 "pdflatex"
-  "Bernasconi_Michael_267681_1_del.tex" 1778507454.51985 21712 97c9ae122e8df2e8f9562546cd890f7b ""
+  "Bernasconi_Michael_267681_2_del.aux" 1780824009.39526 5641 7670dae97a586c4151a3ef01bcef84bb "pdflatex"
+  "Bernasconi_Michael_267681_2_del.out" 1780824009.39726 3490 97302dfffb463bbd489fd479ca6784d7 "pdflatex"
+  "Bernasconi_Michael_267681_2_del.tex" 1778507454.51985 21712 97c9ae122e8df2e8f9562546cd890f7b ""
   "IEEEtran.cls" 1778096183.48926 281957 5b2e4fa15b0f7eabb840ebf67df4c0f7 ""
   (generated)
-  "Bernasconi_Michael_267681_1_del.aux"
-  "Bernasconi_Michael_267681_1_del.log"
-  "Bernasconi_Michael_267681_1_del.out"
-  "Bernasconi_Michael_267681_1_del.pdf"
+  "Bernasconi_Michael_267681_2_del.aux"
+  "Bernasconi_Michael_267681_2_del.log"
+  "Bernasconi_Michael_267681_2_del.out"
+  "Bernasconi_Michael_267681_2_del.pdf"
   (rewritten before read)

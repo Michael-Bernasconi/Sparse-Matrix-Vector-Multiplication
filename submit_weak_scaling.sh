@@ -1,13 +1,14 @@
 #!/bin/bash
 SYNTH_DIR="./data-synt"
-BASE_LOG_DIR="./results/weak_scaling"
+BASE_LOG_DIR="./results/multi_gpu/weak_scaling"
 
+# Compilazione pulita con i moduli correttamente caricati
 make clean
 make
 
 GPU_CONFIGS=(1 2 4)
 
-for run_id in {1..5}; do
+for run_id in {1..3}; do
     echo "=========================================="
     echo "=== WEAK SCALING EXPERIMENT - RUN ${run_id} ==="
     echo "=========================================="
@@ -18,7 +19,7 @@ for run_id in {1..5}; do
 
         echo "--- Active Configuration: ${gpus} GPU(s) ---"
 
-        MATRICES=("$SYNTH_DIR"/*_${gpus}gpu.mtx)
+        MATRICES=("${SYNTH_DIR}"/*_"${gpus}"gpu.mtx)
 
         for matrix in "${MATRICES[@]}"; do
             [ -e "$matrix" ] || continue

@@ -8,5 +8,5 @@ ID,Matrix Name,Rows,Columns,NNZ,Average NNZ for rows,Dev Std Rows,Description
 ",,,Rete di citazioni di brevetti. Struttura iper-leggera che non genera sbilanciamenti computazionali e si divide linearmente a blocchi in modo impeccabile
 ,bcsstk17
 ,m_t1
-,can_1054
+,bcsstk16,
 ,ASIC_100ks

@@ -1,8 +1,7 @@
 #!/bin/bash
 MATRIX_DIR="./data"
-BASE_LOG_DIR="./results/multi_gpu"
+BASE_LOG_DIR="./results/multi_gpu/strong_scaling"
 
-# Sfrutta il nuovo makefile centralizzato
 make clean
 make
 
