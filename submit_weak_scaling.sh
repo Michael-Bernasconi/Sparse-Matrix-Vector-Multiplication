@@ -18,7 +18,6 @@ for run_id in {1..5}; do
 
         echo "--- Active Configuration: ${gpus} GPU(s) ---"
 
-        # Seleziona unicamente i set sintetici dedicati a questa scala di risorse
         MATRICES=("$SYNTH_DIR"/*_${gpus}gpu.mtx)
 
         for matrix in "${MATRICES[@]}"; do

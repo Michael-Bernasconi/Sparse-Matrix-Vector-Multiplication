@@ -17,7 +17,6 @@ BIN_DIR="./bin"
 MATRIX_NAME=$(basename "$MATRIX_PATH")
 LOG_FILE="$RUN_FOLDER/PERF_${NUM_GPUS}GPU_${MATRIX_NAME}.log"
 
-# Elenco degli eseguibili da testare (incluso il baseline del prof)
 executables=(
     "cuda-SpMV-CSR-multi" 
     "cuda-SpMV-COO-multi" 
@@ -36,7 +35,7 @@ for exe in "${executables[@]}"; do
         echo "Running $exe on $NUM_GPUS GPUs..."
         echo -e "\n[$exe - $NUM_GPUS GPUs]" >> "$LOG_FILE"
         
-        # Esecuzione MPI con i flag MCA per disattivare il memory pinning problematico
+        #  MPI with flag MCA to avoid memory pinning 
         mpirun --oversubscribe -np $NUM_GPUS \
             --mca mpi_common_cuda_register_memory 0 \
             --mca btl_openib_allow_cuda_cuda_reg_mem 0 \
