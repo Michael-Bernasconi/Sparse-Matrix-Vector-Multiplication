@@ -186,7 +186,7 @@ To properly evaluate Weak Scaling, the problem size must grow proportionally to 
 \end{table}
 
 \section{Performance Evaluation}
-Execution statistics were gathered across 1, 2, and 4 GPU configurations. Custom execution frameworks (Distributed CSR, COO, CSR-Vector, and cuSPARSE wrappers) were benchmarked against the official multi-GPU SpMV baseline (\texttt{prof-SpMV-baseline}). 
+Execution statistics were gathered across 1, 2, and 4 GPU configurations. Custom execution frameworks (Distributed CSR, COO, CSR-Vector, and cuSPARSE wrappers) were benchmarked against the multi-GPU SpMV baseline. 
 
 \subsection{Execution Time and Computational Throughput}
 As depicted in Figure \ref{fig:time} and Figure \ref{fig:gflops}, the vendor-optimized \texttt{cuSparse} framework retains dominance in raw execution speed and GFLOPS per SpMV, particularly on large matrices such as \texttt{Rucci1} and \texttt{webbase-1M}. However, among the custom implementations, the \texttt{CSR-Vector} kernel exhibits an impressive computational throughput (reaching peaks near 300 GFLOPS locally), effectively managing the warp-divergence typically associated with standard CSR implementations. 
@@ -265,7 +265,7 @@ With the current memory layout, the maximum manageable matrix size is bounded pr
 This study expanded custom sparse matrix execution paths into a highly optimized distributed multi-GPU paradigm. Implementing a 1D cyclic distribution pattern effectively minimizes load imbalances for uniform structural topologies. Transitioning to a sparse peer-to-peer point-to-point network model built on GPU-Aware MPI concepts significantly reduces communication overheads compared to standard collective broadcasts. However, experimental results underscore the critical importance of matching data topology with appropriate parallel distribution models, as highly skewed matrices remain severely limited by interconnect performance and load imbalance under 1D constraints.
 
 \begin{thebibliography}{00}
-\bibitem{boman2013scalable} E. G. Boman, K. D. Devine, and S. Rajamanickam, ``Scalable Matrix Computations on Large Scale-Free Graphs Using 2D Graph Partitioning,'' in \textit{Proceedings of the ACM Symposium on Parallelism in Algorithms and Architectures (SPAA)}, 2013.
+\bibitem{boman2013scalable} E. G. Boman, K. D. Devine, and S. Rajamanickam, ``Scalable Matrix Computations on Large Scale-Free Graphs Using 2D Graph Partitioning,'' in \textit{Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis (SC13)}, 2013.
 \bibitem{gao2024optimization} J. Gao, W. Ji, and Y. Wang, ``Optimization of Large-Scale Sparse Matrix-Vector Multiplication on Multi-GPU Systems,'' \textit{ACM Transactions on Architecture and Code Optimization (TACO)}, vol. 21, no. 4, art. 69, 2024.
 \end{thebibliography}
 
