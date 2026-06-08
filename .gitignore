@@ -24,8 +24,10 @@ data/*.zip
 *.nvvp
 *.nsys-rep
 *.log
+color.txt
 Notes.md
 todo.md
 Deliverable1_SpMV_Guidance_v2.pdf
 paper/*.pdf
+paper/2_del/*.pdf
 GPU-Computing-2025-2026-deliverable-2.pdf

@@ -66,11 +66,13 @@ To effectively transition single-device execution paths into an enterprise-grade
 \end{itemize}
 
 \subsection{GPU-Aware Point-to-Point Communication Overlay}
+\label{sec:gpu_aware_comm}
 To fulfill strict efficiency and high-throughput requirements, intermediate host-side staging operations are entirely bypassed. Standard multi-GPU implementations pull device results to host memory buffers via high-latency \texttt{cudaMemcpy} transactions prior to invoking MPI routines. 
 
-This architecture leverages a \textbf{GPU-Aware MPI} runtime. Because the underlying network stack safely decodes CUDA virtual memory spaces, device pointers are supplied directly to non-blocking point-to-point primitives (\texttt{MPI\_Irecv} and \texttt{MPI\_Isend}), followed by an explicit \texttt{MPI\_Waitall} barrier. 
+This architecture leverages a \textbf{GPU-Aware MPI} runtime. Because the underlying network stack safely decodes CUDA virtual memory spaces, device pointers are supplied directly to non-blocking point-to-point primitives (\texttt{MPI\_Irecv} and \texttt{MPI\_Isend}), followed by an explicit \texttt{MPI\_Waitall} barrier. The trade-offs between redundant numerical computations and communication framework penalties have been widely investigated within dense multi-GPU clusters to elevate iterative execution behaviors~\cite{gao2024optimization}.
 
 \begin{algorithm}[htbp]
+\footnotesize
 \DontPrintSemicolon
 \SetAlgoLined
 \KwIn{Local Sparse Matrix ($A_{loc}$), Managed Vector Segment ($x_{loc}$)}
@@ -126,6 +128,8 @@ All execution cycles were evaluated on the \texttt{edu01} compute node (\texttt{
 
 \subsection{Dataset Optimization Strategy}
 To guarantee a robust performance profile covering both Strong and Weak Scaling benchmarks, the experimental matrix framework is divided into two categories: real-world structures for Strong Scaling, and algorithmically generated structures for Weak Scaling.
+
+Compared to the previous single-GPU experimental campaign, the target selection of sparse datasets has been intentionally modified and optimized. This adaptation was required since several larger matrices tested in the single-node setup presented structural scaling blockages and introduced high memory allocation problems or outright execution failures when distributed across the current multi-GPU cluster overlay. Thus, the workload selection has been revised to preserve evaluation stability while properly maintaining topological variance and uneven sparsity domains.
 
 \subsubsection{Strong Scaling Dataset}
 The baseline dataset comprises six distinct real-world sparse structures from the SuiteSparse Matrix Collection, carefully selected to evaluate the algorithms against different structural domains.
@@ -202,27 +206,9 @@ As depicted in Figure \ref{fig:time} and Figure \ref{fig:gflops}, the vendor-opt
 \end{figure}
 
 \subsection{Strong Scaling: Speedup and Efficiency}
-Table \ref{tab:strong_summary} synthesizes the Strong Scaling capabilities of each kernel. While adding additional GPUs introduces non-trivial network overhead, the \texttt{CSR-Vector} approach scales the best among custom solutions, yielding an average speedup of $2.75\times$ on 4 GPUs with an efficiency of roughly $68.9\%$. Conversely, the \texttt{baseline} implementation fails to scale on our setup ($0.98\times$ on 4 GPUs), largely due to the severe unoptimized \texttt{MPI\_Bcast} overheads which our Ghost-Exchange implementation actively bypasses. 
-The individual matrix speedup and efficiency curves are visualized in Figures \ref{fig:speedup} and \ref{fig:efficiency}.
+As visualized across the real datasets in Figures \ref{fig:speedup} and \ref{fig:efficiency}, the Strong Scaling capabilities display clear behavioral trends among the different configurations. While adding additional GPUs introduces non-trivial network overhead, the \texttt{CSR-Vector} approach scales the best among custom solutions, yielding an average speedup of $2.75\times$ on 4 GPUs with an efficiency of roughly $68.9\%$. Conversely, the \texttt{baseline} implementation completely fails to scale on our setup ($0.98\times$ on 4 GPUs with an efficiency drop down to $24\%$), largely due to the severe unoptimized \texttt{MPI\_Bcast} overheads which our Ghost-Exchange implementation actively bypasses. 
 
-\begin{table}[htbp]
-\caption{Average Strong Scaling Performance across Real Datasets}
-\label{tab:strong_summary}
-\centering
-\resizebox{\columnwidth}{!}{
-\begin{tabular}{lrrrrrr}
-\toprule
-\textbf{Kernel} & \textbf{Speedup 1G} & \textbf{2G} & \textbf{4G} & \textbf{Efficiency 1G} & \textbf{2G} & \textbf{4G} \\
-\midrule
-COO & 1.00x & 1.39x & 1.97x & 1.00 & 0.69 & 0.49 \\
-CSR & 1.00x & 1.34x & 1.84x & 1.00 & 0.67 & 0.45 \\
-CSR-Vector & 1.00x & 1.56x & 2.75x & 1.00 & 0.78 & 0.68 \\
-baseline & 1.00x & 0.99x & 0.98x & 1.00 & 0.49 & 0.24 \\
-cuSparse & 1.00x & 0.95x & 0.99x & 1.00 & 0.47 & 0.24 \\
-\bottomrule
-\end{tabular}
-}
-\end{table}
+The individual matrix speedup and efficiency curves are detailed in Figures \ref{fig:speedup} and \ref{fig:efficiency}.
 
 \begin{figure}[htbp]
     \centering
@@ -266,7 +252,8 @@ To isolate the structural impact on multi-node balancing, Weak Scaling was evalu
 1D cyclic partitioning delivers excellent execution scaling when applied to matrices featuring low row-density standard deviations ($\sigma \le 4.16$), such as \texttt{Rucci1}, \texttt{m\_t1}, and the synthetic \texttt{synth\_asic} families. Because rows are distributed in an interleaved manner, localized variations in non-zero density are filtered out. This ensures that each independent GPU node receives an identical computational load.
 
 \subsection{When 2D Partitioning is Advantageous}
-1D cyclic partitioning fails when processing highly skewed power-law graphs or extreme optimization structures like \texttt{boyd2} ($\sigma = 194.91$) and our \texttt{synth\_boyd2}. These datasets contain hyper-dense rows that act as hubs. Because a 1D allocation scheme assigns an entire row indivisibly to a single executor, the GPU that receives the hyper-dense row becomes a critical bottleneck. In this scenario, a 2D partitioning strategy is highly advantageous to break up highly connected hubs across multiple executors.
+\label{sec:discussion_2d}
+1D cyclic partitioning fails when processing highly skewed power-law graphs or extreme optimization structures like \texttt{boyd2} ($\sigma = 194.91$) and our \texttt{synth\_boyd2}. These datasets contain hyper-dense rows that act as hubs. Because a 1D allocation scheme assigns an entire row indivisibly to a single executor, the GPU that receives the hyper-dense row becomes a critical bottleneck. In this scenario, a 2D partitioning strategy is highly advantageous to break up highly connected hubs across multiple executors. As structurally argued in literature, advanced two-dimensional graph layouts and edge partitioning provide significant scaling improvements over 1D strategies when mapping scale-free networks onto thousands of cores~\cite{boman2013scalable}.
 
 \subsection{When the Implementation is Bound by the Interconnect}
 As shown in the cost breakdown (Fig. \ref{fig:comm_breakdown}), the implementation becomes strictly bound by the interconnect network when scaling to 4 GPUs. The time required by \texttt{MPI\_Isend} and \texttt{MPI\_Irecv} routines to exchange non-local elements over the PCIe/network interface easily exceeds the pure execution time of the CUDA sparse multiplication kernel. Under these conditions, scaling to 4 GPUs yields decreasing performance returns, as the communication overhead dominates the total Time To Solution.
@@ -276,5 +263,10 @@ With the current memory layout, the maximum manageable matrix size is bounded pr
 
 \section{Conclusion}
 This study expanded custom sparse matrix execution paths into a highly optimized distributed multi-GPU paradigm. Implementing a 1D cyclic distribution pattern effectively minimizes load imbalances for uniform structural topologies. Transitioning to a sparse peer-to-peer point-to-point network model built on GPU-Aware MPI concepts significantly reduces communication overheads compared to standard collective broadcasts. However, experimental results underscore the critical importance of matching data topology with appropriate parallel distribution models, as highly skewed matrices remain severely limited by interconnect performance and load imbalance under 1D constraints.
+
+\begin{thebibliography}{00}
+\bibitem{boman2013scalable} E. G. Boman, K. D. Devine, and S. Rajamanickam, ``Scalable Matrix Computations on Large Scale-Free Graphs Using 2D Graph Partitioning,'' in \textit{Proceedings of the ACM Symposium on Parallelism in Algorithms and Architectures (SPAA)}, 2013.
+\bibitem{gao2024optimization} J. Gao, W. Ji, and Y. Wang, ``Optimization of Large-Scale Sparse Matrix-Vector Multiplication on Multi-GPU Systems,'' \textit{ACM Transactions on Architecture and Code Optimization (TACO)}, vol. 21, no. 4, art. 69, 2024.
+\end{thebibliography}
 
 \end{document}

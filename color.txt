@@ -1,10 +1,10 @@
 STRONG:
-rosso  #ff3636
-blu  #20e1ff
-giallo      #deff20
+red             #ff3636
+blue            #20e1ff
+yellow          #deff20
 
 WEAK:
-verde          #13ff2b
-viola       #894aff
-rosino   #ff23a4
+green           #13ff2b
+violet          #894aff
+pink            #ff23a4
   

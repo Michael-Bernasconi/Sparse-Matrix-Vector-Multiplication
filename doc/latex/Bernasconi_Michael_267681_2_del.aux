@@ -6,7 +6,9 @@
 \@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{section.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {II}Parallel Design Methodology}{1}{section.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Evolution via Foster's Design Strategy}{1}{subsection.2.1}\protected@file@percent }
+\citation{gao2024optimization}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}GPU-Aware Point-to-Point Communication Overlay}{2}{subsection.2.2}\protected@file@percent }
+\newlabel{sec:gpu_aware_comm}{{\mbox  {II-B}}{2}{GPU-Aware Point-to-Point Communication Overlay}{subsection.2.2}{}}
 \@writefile{loa}{\contentsline {algocf}{\numberline {1}{\ignorespaces Distributed GPU-Aware SpMV Pipeline}}{2}{algocf.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {III}Experimental Setup \& Dataset}{2}{section.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Hardware Infrastructure}{2}{subsection.3.1}\protected@file@percent }
@@ -27,22 +29,25 @@
 \@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Computational Throughput (GFLOPS) per Real Matrix.}}{3}{figure.caption.6}\protected@file@percent }
 \newlabel{fig:gflops}{{2}{3}{Computational Throughput (GFLOPS) per Real Matrix}{figure.caption.6}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Strong Scaling: Speedup and Efficiency}{3}{subsection.4.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Average Strong Scaling Performance across Real Datasets}}{3}{table.caption.7}\protected@file@percent }
-\newlabel{tab:strong_summary}{{IV}{3}{Average Strong Scaling Performance across Real Datasets}{table.caption.7}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Strong Scaling Speedup Factor per Real Matrix.}}{3}{figure.caption.8}\protected@file@percent }
-\newlabel{fig:speedup}{{3}{3}{Strong Scaling Speedup Factor per Real Matrix}{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Strong Scaling Speedup Factor per Real Matrix.}}{3}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:speedup}{{3}{3}{Strong Scaling Speedup Factor per Real Matrix}{figure.caption.7}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Communication vs Computation Breakdown}{3}{subsection.4.3}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Parallel Efficiency per Real Matrix (1, 2, and 4 GPUs).}}{4}{figure.caption.9}\protected@file@percent }
-\newlabel{fig:efficiency}{{4}{4}{Parallel Efficiency per Real Matrix (1, 2, and 4 GPUs)}{figure.caption.9}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Execution Cost Breakdown: Pure CUDA Compute vs. MPI Ghost Communication Overhead.}}{4}{figure.caption.10}\protected@file@percent }
-\newlabel{fig:comm_breakdown}{{5}{4}{Execution Cost Breakdown: Pure CUDA Compute vs. MPI Ghost Communication Overhead}{figure.caption.10}{}}
+\citation{boman2013scalable}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Parallel Efficiency per Real Matrix (1, 2, and 4 GPUs).}}{4}{figure.caption.8}\protected@file@percent }
+\newlabel{fig:efficiency}{{4}{4}{Parallel Efficiency per Real Matrix (1, 2, and 4 GPUs)}{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Execution Cost Breakdown: Pure CUDA Compute vs. MPI Ghost Communication Overhead.}}{4}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:comm_breakdown}{{5}{4}{Execution Cost Breakdown: Pure CUDA Compute vs. MPI Ghost Communication Overhead}{figure.caption.9}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Weak Scaling Profiling}{4}{subsection.4.4}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Weak Scaling Efficiency and Speedup on Synthetic Workloads.}}{4}{figure.caption.11}\protected@file@percent }
-\newlabel{fig:weak_scaling}{{6}{4}{Weak Scaling Efficiency and Speedup on Synthetic Workloads}{figure.caption.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Weak Scaling Efficiency and Speedup on Synthetic Workloads.}}{4}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:weak_scaling}{{6}{4}{Weak Scaling Efficiency and Speedup on Synthetic Workloads}{figure.caption.10}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {V}Discussion}{4}{section.5}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}When 1D Partitioning Works Well}{4}{subsection.5.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}When 2D Partitioning is Advantageous}{4}{subsection.5.2}\protected@file@percent }
+\newlabel{sec:discussion_2d}{{\mbox  {V-B}}{4}{When 2D Partitioning is Advantageous}{subsection.5.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}When the Implementation is Bound by the Interconnect}{4}{subsection.5.3}\protected@file@percent }
+\bibcite{boman2013scalable}{1}
+\bibcite{gao2024optimization}{2}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Largest Manageable Matrix Size}{5}{subsection.5.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {VI}Conclusion}{5}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{5}{section*.11}\protected@file@percent }
 \gdef \@abspage@last{5}
