@@ -103,28 +103,29 @@ Stop \texttt{cudaEvent\_t} Computational Timers\;
 
 \subsection{Hardware Infrastructure}
 All execution cycles were evaluated on the \texttt{edu01} compute node (\texttt{edu-short} partition) of the University of Trento cluster. The exact hardware specifications are detailed in Table \ref{tab:hardware}. All configurations utilized CUDA v12.3.2 and OpenMPI v4.1.5 with native CUDA-Aware support enabled.
-
 \begin{table}[htbp]
-\caption{Target Hardware Specifications (UniTN Cluster)}
+\caption{Target Hardware Specifications}
 \label{tab:hardware}
 \centering
-\resizebox{\columnwidth}{!}{
-\begin{tabular}{rll}
-\toprule
-\textbf{Component} & \textbf{Host (CPU)} & \textbf{Device (GPU)} \\
-\midrule
-\textbf{Model} & Intel(R) Xeon(R) Silver 4309Y & NVIDIA A30 \\
-\textbf{Architecture} & Ice Lake (x86\_64) & Ampere (Compute Cap. 8.0) \\
-\textbf{Cores / SMs} & 16 Cores / 32 Threads (2 Sockets) & 56 SMs (3584 CUDA Cores) \\
-\textbf{Frequency} & 2.80 GHz (Base) & 1.44 GHz (Boost) \\
-\textbf{FP32 Perf.} & 1.84 TFLOPS & 10.3 TFLOPS \\
-\textbf{Memory BW} & 102.4 GB/s & 933.1 GB/s (HBM2) \\
-\textbf{Global Mem.} & N/A & 24 GB \\
-\textbf{L2 Cache} & 20 MiB & 24 MiB \\
-\bottomrule
-\end{tabular}
+\resizebox{\columnwidth}{!}{%
+    \begin{tabular}{rll}
+    \toprule
+    Component & Host (CPU) & Device (GPU) \\
+    \midrule
+    Model & Intel(R) Xeon(R) Silver 4309Y & NVIDIA A30 \\
+    Architecture & Ice Lake (x86\_64) & Ampere (Compute Cap. 8.0) \\
+    Cores / SMs & 16 Cores / 32 Threads (2 Sockets) & 56 SMs (3584 CUDA Cores) \\
+    Frequency & 2.80 GHz (Base) / 3.60 GHz & 1.44 GHz (Boost) \\
+    FP32 Perf. & 1.84 TFLOPS & 10.3 TFLOPS \\
+    Memory BW & 102.4 GB/s & 933.1 GB/s (HBM2) \\
+    Global Mem. & N/A & 24 GB \\
+    Shared Mem. & N/A & 48-100 KiB /SMs \\ 
+    Warp Size.  & N/A & 32 \\ 
+    \bottomrule 
+    \end{tabular}
 }
 \end{table}
+
 
 \subsection{Dataset Optimization Strategy}
 To guarantee a robust performance profile covering both Strong and Weak Scaling benchmarks, the experimental matrix framework is divided into two categories: real-world structures for Strong Scaling, and algorithmically generated structures for Weak Scaling.
@@ -138,23 +139,23 @@ The baseline dataset comprises six distinct real-world sparse structures from th
 \caption{Real Datasets (Strong Scaling Configurations)}
 \label{tab:dataset}
 \centering
-\resizebox{\columnwidth}{!}{
-\begin{tabular}{rllrrrc}
-\toprule
-\textbf{ID} & \textbf{Matrix Name} & \textbf{Rows ($M$)} & \textbf{NNZ} & \textbf{Avg. NNZ} & \textbf{Dev. Std.} & \textbf{Structural Domain} \\
-\midrule
-1420 & ASIC\_680ks & 682,712 & 1,693,767 & 2.48 & 4.16 & Circuit (Sparse / Irregular) \\
-1297 & boyd2 & 466,316 & 1,500,397 & 3.22 & 194.91 & Convex Opt. (Severe Spikes) \\
-1881 & Rucci1 & 1,977,885 & 7,791,168 & 3.94 & 0.34 & Math Matrix (Rectangular) \\
-2379 & webbase-1M & 1,000,005 & 3,105,536 & 3.11 & 25.35 & Web Graph (Power-Law Hubs) \\
-1419 & ASIC\_320ks & 321,671 & 1,316,085 & 4.09 & 3.80 & Circuit (Medium Regular) \\
-1513 & patents\_main & 240,547 & 560,943 & 2.33 & 1.94 & Citation Graph (Ultra-Light) \\
-39   & bcsstk17 & 10,974 & 428,650 & 39.06 & 8.40 & Stiffness Matrix (High Density) \\
-1269 & m\_t1 & 185,000 & 9,753,570 & 52.72 & 1.18 & Least Squares (Uniform Heavy) \\
-38   & bcsstk16 & 4,884 & 290,378 & 59.45 & 19.23 & Stiffness Matrix (Small Dense) \\
-1416 & ASIC\_100ks & 99,190 & 578,890 & 5.84 & 13.91 & Circuit (Small Regular Base) \\
-\bottomrule
-\end{tabular}
+\resizebox{\columnwidth}{!}{%
+    \begin{tabular}{rllrrrrl}
+    \toprule
+    \textbf{ID} & \textbf{Matrix Name} & \textbf{Rows ($M$)} & \textbf{Columns ($N$)} & \textbf{NNZ} & \textbf{Avg. NNZ} & \textbf{Dev. Std.} & \textbf{Structural Domain / Description} \\
+    \midrule
+    1420 & ASIC\_680ks & 682,712 & 682,712 & 1,693,767 & 2.48 & 4.16 & Circuit simulation. Highly sparse and asymmetric distribution. \\
+    1297 & boyd2 & 466,316 & 466,316 & 1,500,397 & 3.22 & 194.91 & Convex optimization. Extreme structural imbalance (dense spikes). \\
+    1881 & Rucci1 & 1,977,885 & 109,900 & 7,791,168 & 3.94 & 0.34 & Least squares. Tall rectangular layout, perfectly uniform rows. \\
+    2379 & webbase-1M & 1,000,005 & 1,000,005 & 3,105,536 & 3.11 & 25.35 & Web crawl graph. Power-law scaling with massive hub nodes. \\
+    1419 & ASIC\_320ks & 321,671 & 321,671 & 1,316,085 & 4.09 & 3.80 & Circuit simulation. Medium-sized uniform sparse test. \\
+    1513 & patents\_main & 240,547 & 240,547 & 560,943 & 2.33 & 1.94 & Patent citation network. Ultra-lightweight and predictable 1D blocks. \\
+    39 & bcsstk17 & 10,974 & 10,974 & 428,650 & 39.06 & 8.40 & Structural stiffness matrix. Small size but high row density. \\
+    1269 & m\_t1 & 185,000 & 97,500 & 9,753,570 & 52.72 & 1.18 & Least squares. Rectangular grid, exceptionally well-balanced. \\
+    38 & bcsstk16 & 4,884 & 4,884 & 290,378 & 59.45 & 19.23 & Structural problem. Smallest test, high density with localized noise. \\
+    1416 & ASIC\_100ks & 99,190 & 99,190 & 578,890 & 5.84 & 13.91 & Circuit simulation. Small regular baseline for hardware verification. \\
+    \bottomrule
+    \end{tabular}%
 }
 \end{table}
 
@@ -169,22 +170,21 @@ To properly evaluate Weak Scaling, the problem size must grow proportionally to 
 \caption{Synthetic Datasets (Weak Scaling Configurations)}
 \label{tab:dataset-syth}
 \centering
-\resizebox{\columnwidth}{!}{
-\begin{tabular}{llrrrl}
-\toprule
-\textbf{Target GPUs} & \textbf{Matrix Name} & \textbf{Rows ($M$)} & \textbf{Total NNZ} & \textbf{Avg. D} & \textbf{Structural Profile} \\
-\midrule
-1 GPU & synth\_asic\_1gpu & 200,000 & $\approx$ 600,000 & 3.0 & Balanced / Uniform \\
-1 GPU & synth\_boyd2\_1gpu & 200,000 & 600,000 & 3.0 & Imbalanced / Hubs \\
-2 GPUs & synth\_asic\_2gpu & 400,000 & $\approx$ 1,200,000 & 3.0 & Balanced / Uniform \\
-2 GPUs & synth\_boyd2\_2gpu & 400,000 & 1,200,000 & 3.0 & Imbalanced / Hubs \\
-4 GPUs & synth\_asic\_4gpu & 800,000 & $\approx$ 2,400,000 & 3.0 & Balanced / Uniform \\
-4 GPUs & synth\_boyd2\_4gpu & 800,000 & 2,400,000 & 3.0 & Imbalanced / Hubs \\
-\bottomrule
-\end{tabular}
+\resizebox{\columnwidth}{!}{%
+    \begin{tabular}{llrrrrl}
+    \toprule
+    \textbf{Target GPUs} & \textbf{Matrix Name} & \textbf{Rows ($M$)} & \textbf{Columns ($N$)} & \textbf{Total NNZ} & \textbf{Avg. D} & \textbf{Structural Profile} \\
+    \midrule
+    1 GPU & synth\_asic\_1gpu & 200,000 & 200,000 & $\approx$ 600,000 & 3.0 & Balanced / Uniform \\
+    1 GPU & synth\_boyd2\_1gpu & 200,000 & 200,000 & 600,000 & 3.0 & Imbalanced / Hubs \\
+    2 GPUs & synth\_asic\_2gpu & 400,000 & 400,000 & $\approx$ 1,200,000 & 3.0 & Balanced / Uniform \\
+    2 GPUs & synth\_boyd2\_2gpu & 400,000 & 400,000 & 1,200,000 & 3.0 & Imbalanced / Hubs \\
+    4 GPUs & synth\_asic\_4gpu & 800,000 & 800,000 & $\approx$ 2,400,000 & 3.0 & Balanced / Uniform \\
+    4 GPUs & synth\_boyd2\_4gpu & 800,000 & 800,000 & 2,400,000 & 3.0 & Imbalanced / Hubs \\
+    \bottomrule
+    \end{tabular}%
 }
 \end{table}
-
 \section{Performance Evaluation}
 Execution statistics were gathered across 1, 2, and 4 GPU configurations. Custom execution frameworks (Distributed CSR, COO, CSR-Vector, and cuSPARSE wrappers) were benchmarked against the multi-GPU SpMV baseline. 
 
