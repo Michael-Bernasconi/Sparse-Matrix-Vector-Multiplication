@@ -55,21 +55,21 @@ This deliverable implements a 1D cyclic row-distribution framework designed to o
 To effectively transition single-device execution paths into an enterprise-grade multi-GPU paradigm, the application architecture was evolved adhering strictly to Foster's four-stage design methodology:
 
 \begin{itemize}
-    \item \textbf{Partitioning:} Fine-grained domain decomposition is performed on the row primitives of matrix $A$. In accordance with the required baseline configuration, Rank 0 sequentially reads the entire Matrix Market file from disk and handles the distribution of matrix entries to all other processes. The assignment of global row indices to target cluster ranks follows a precise modular distribution scheme, formally defined as:
+    \item Partitioning: Fine-grained domain decomposition is performed on the row primitives of matrix $A$. In accordance with the required baseline configuration, Rank 0 sequentially reads the entire Matrix Market file from disk and handles the distribution of matrix entries to all other processes. The assignment of global row indices to target cluster ranks follows a precise modular distribution scheme, formally defined as:
     \begin{equation}
         owner(i) = i \pmod{\text{size}}
     \end{equation}
     where $i$ represents the global row index and $\text{size}$ corresponds to the number of active MPI ranks (GPUs).
-    \item \textbf{Communication:} Rather than distributing the entire multiplier vector $x$ via global collectives, a specialized discovery process identifies non-local indices requested by local non-zero elements ($col\_idx$). These indices represent the matrix \textit{Ghost Entries}, which are captured in isolated communication descriptors.
-    \item \textbf{Agglomeration:} Rows assigned to a single executor are agglomerated into an independent, compact local sparse matrix representation (local CSR or COO layouts), converting the sparse structure into relative coordinate systems to ensure zero index-translation overhead during raw kernel execution.
-    \item \textbf{Mapping:} Each MPI process is pinned to a dedicated hardware device ($NVIDIA\ A30\ GPU$), executing localized data processing routines natively within isolated CUDA streams.
+    \item Communication: Rather than distributing the entire multiplier vector $x$ via global collectives, a specialized discovery process identifies non-local indices requested by local non-zero elements ($col\_idx$). These indices represent the matrix \textit{Ghost Entries}, which are captured in isolated communication descriptors.
+    \item Agglomeration: Rows assigned to a single executor are agglomerated into an independent, compact local sparse matrix representation (local CSR or COO layouts), converting the sparse structure into relative coordinate systems to ensure zero index-translation overhead during raw kernel execution.
+    \item Mapping: Each MPI process is pinned to a dedicated hardware device ($NVIDIA\ A30\ GPU$), executing localized data processing routines natively within isolated CUDA streams.
 \end{itemize}
 
 \subsection{GPU-Aware Point-to-Point Communication Overlay}
 \label{sec:gpu_aware_comm}
 To fulfill strict efficiency and high-throughput requirements, intermediate host-side staging operations are entirely bypassed. Standard multi-GPU implementations pull device results to host memory buffers via high-latency \texttt{cudaMemcpy} transactions prior to invoking MPI routines. 
 
-This architecture leverages a \textbf{GPU-Aware MPI} runtime. Because the underlying network stack safely decodes CUDA virtual memory spaces, device pointers are supplied directly to non-blocking point-to-point primitives (\texttt{MPI\_Irecv} and \texttt{MPI\_Isend}), followed by an explicit \texttt{MPI\_Waitall} barrier. The trade-offs between redundant numerical computations and communication framework penalties have been widely investigated within dense multi-GPU clusters to elevate iterative execution behaviors~\cite{gao2024optimization}.
+This architecture leverages a GPU-Aware MPI runtime. Because the underlying network stack safely decodes CUDA virtual memory spaces, device pointers are supplied directly to non-blocking point-to-point primitives (\texttt{MPI\_Irecv} and \texttt{MPI\_Isend}), followed by an explicit \texttt{MPI\_Waitall} barrier. The trade-offs between redundant numerical computations and communication framework penalties have been widely investigated within dense multi-GPU clusters to elevate iterative execution behaviors~\cite{gao2024optimization}.
 
 \begin{algorithm}[htbp]
 \footnotesize
@@ -142,7 +142,7 @@ The baseline dataset comprises six distinct real-world sparse structures from th
 \resizebox{\columnwidth}{!}{%
     \begin{tabular}{rllrrrrl}
     \toprule
-    \textbf{ID} & \textbf{Matrix Name} & \textbf{Rows ($M$)} & \textbf{Columns ($N$)} & \textbf{NNZ} & \textbf{Avg. NNZ} & \textbf{Dev. Std.} & \textbf{Structural Domain / Description} \\
+    ID & Matrix Name & Rows ($M$) & Columns ($N$) & NNZ & Avg. NNZ & Dev. Std. & Structural Domain / Description \\
     \midrule
     1420 & ASIC\_680ks & 682,712 & 682,712 & 1,693,767 & 2.48 & 4.16 & Circuit simulation. Highly sparse and asymmetric distribution. \\
     1297 & boyd2 & 466,316 & 466,316 & 1,500,397 & 3.22 & 194.91 & Convex optimization. Extreme structural imbalance (dense spikes). \\
@@ -162,8 +162,8 @@ The baseline dataset comprises six distinct real-world sparse structures from th
 \subsubsection{Weak Scaling Dataset (Synthetic Generation)}
 To properly evaluate Weak Scaling, the problem size must grow proportionally to the number of computational resources ($N$, $2N$, $4N$). We developed a custom Python generator creating two distinct synthetic topologies with a constant $D_{avg} \approx 3.0$:
 \begin{itemize}
-    \item \textbf{ASIC-like (\texttt{synth\_asic}):} Highly sparse but structurally uniform. Ensures perfect 1D cyclic load balancing while maintaining randomized non-zero column placements to simulate cache-miss irregularities.
-    \item \textbf{BOYD2-like (\texttt{synth\_boyd2}):} Designed for extreme load imbalance. Exactly 2\% of the rows absorb 75\% of the total Non-Zeros, mimicking power-law hub topologies and severely punishing 1D distribution schemes.
+    \item ASIC-like (\texttt{synth\_asic}): Highly sparse but structurally uniform. Ensures perfect 1D cyclic load balancing while maintaining randomized non-zero column placements to simulate cache-miss irregularities.
+    \item BOYD2-like (\texttt{synth\_boyd2}): Designed for extreme load imbalance. Exactly 2\% of the rows absorb 75\% of the total Non-Zeros, mimicking power-law hub topologies and severely punishing 1D distribution schemes.
 \end{itemize}
 
 \begin{table}[htbp]
@@ -173,7 +173,7 @@ To properly evaluate Weak Scaling, the problem size must grow proportionally to 
 \resizebox{\columnwidth}{!}{%
     \begin{tabular}{llrrrrl}
     \toprule
-    \textbf{Target GPUs} & \textbf{Matrix Name} & \textbf{Rows ($M$)} & \textbf{Columns ($N$)} & \textbf{Total NNZ} & \textbf{Avg. D} & \textbf{Structural Profile} \\
+    Target GPUs & Matrix Name & Rows ($M$) & Columns ($N$) & Total NNZ & Avg. D & Structural Profile \\
     \midrule
     1 GPU & synth\_asic\_1gpu & 200,000 & 200,000 & $\approx$ 600,000 & 3.0 & Balanced / Uniform \\
     1 GPU & synth\_boyd2\_1gpu & 200,000 & 200,000 & 600,000 & 3.0 & Imbalanced / Hubs \\
