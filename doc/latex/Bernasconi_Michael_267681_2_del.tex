@@ -66,7 +66,8 @@ To effectively transition single-device execution paths into an enterprise-grade
 
 \subsection{GPU-Aware Point-to-Point Communication Overlay}
 \label{sec:gpu_aware_comm}
-To maximize throughput, intermediate host-side staging is bypassed. While standard multi-GPU setups copy device results to host buffers via high-latency \texttt{cudaMemcpy} prior to MPI calls, this architecture leverages a GPU-Aware MPI runtime. Device pointers are passed directly to non-blocking primitives (\texttt{MPI\_Irecv} and \texttt{MPI\_Isend}), followed by an \texttt{MPI\_Waitall} barrier, significantly reducing communication penalties in dense multi-GPU iterations~\cite{gao2024optimization}.
+To maximize throughput, intermediate host-side staging is bypassed. While standard multi-GPU setups copy device results to host buffers via high-latency \texttt{cudaMemcpy} prior to MPI calls, this architecture leverages a GPU-Aware MPI runtime. Device pointers are passed directly to non-blocking primitives (\texttt{MPI\_Irecv} and \texttt{MPI\_Isend}), followed by an \texttt{MPI\_Waitall} barrier.The complete execution sequence is formally outlined in Algorithm~\ref{alg:spmv_pipeline}. This approach targets the minimization of data transmission overhead, which has been widely recognized as the primary performance bottleneck in multi-GPU SpMV implementations~\cite{gao2024optimization}.
+
 \begin{algorithm}[htbp]
 \footnotesize
 \DontPrintSemicolon
@@ -93,12 +94,15 @@ Stop \texttt{cudaEvent\_t} Computational Timers\;
     De-interleave \texttt{d\_interleaved\_y} into linear vector $y_{global}$\;
 }
 \caption{Distributed GPU-Aware SpMV Pipeline}
+\label{alg:spmv_pipeline} 
+
 \end{algorithm}
 
 \section{Experimental Setup \& Dataset}
 
 \subsection{Hardware Infrastructure}
-All execution cycles were evaluated on the \texttt{edu01} compute node (\texttt{edu-short} partition) of the University of Trento cluster. The exact hardware specifications are detailed in Table \ref{tab:hardware}. All configurations utilized CUDA v12.3.2 and OpenMPI v4.1.5 with native CUDA-Aware support enabled.
+All execution cycles were evaluated on the \texttt{edu01} compute node (\texttt{edu-short} partition) of the University of Trento cluster. The exact hardware specifications are detailed in (Table \ref{tab:hardware}). All configurations utilized CUDA v12.3.2 and OpenMPI v4.1.5 with native CUDA-Aware support enabled.
+
 \begin{table}[htbp]
 \caption{Target Hardware Specifications}
 \label{tab:hardware}
@@ -122,13 +126,13 @@ All execution cycles were evaluated on the \texttt{edu01} compute node (\texttt{
 }
 \end{table}
 
-
 \subsection{Dataset Optimization Strategy}
-To guarantee a robust performance profile covering both Strong and Weak Scaling benchmarks, the experimental matrix framework is divided into two categories: real-world structures for Strong Scaling, and algorithmically generated structures for Weak Scaling.
+To guarantee a robust performance profile covering both Strong and Weak Scaling benchmarks, the experimental matrix framework is divided into two categories: real-world structures for Strong Scaling (Table\ref{tab:dataset}), and algorithmically generated structures for Weak Scaling (Table\ref{tab:dataset-syth}).
 
-Compared to the single-GPU setup, the dataset has been revised to avoid memory allocation failures on the cluster while maintaining high topological variance and uneven sparsity domains.
+At the same time, the dataset has been revised to avoid memory allocation failures on the cluster while maintaining high topological variance and uneven sparsity domains.
+
 \subsubsection{Strong Scaling Dataset}
-The baseline dataset comprises six distinct real-world sparse structures from the SuiteSparse Matrix Collection, carefully selected to evaluate the algorithms against different structural domains.
+The baseline dataset comprises ten distinct real-world sparse structures from the SuiteSparse Matrix Collection, carefully selected to evaluate the algorithms against different structural domains.
 
 \begin{table}[htbp]
 \caption{Real Datasets (Strong Scaling Configurations)}
@@ -168,7 +172,7 @@ To properly evaluate Weak Scaling, the problem size must grow proportionally to 
 \resizebox{\columnwidth}{!}{%
     \begin{tabular}{llrrrrl}
     \toprule
-    Target GPUs & Matrix Name & Rows ($M$) & Columns ($N$) & Total NNZ & Avg. D & Structural Profile \\
+    Target GPUs & Matrix Name & Rows ($M$) & Columns ($N$) & Total NNZ & Avg. NNZ & Structural Profile \\
     \midrule
     1 GPU & synth\_asic\_1gpu & 200,000 & 200,000 & $\approx$ 600,000 & 3.0 & Balanced / Uniform \\
     1 GPU & synth\_boyd2\_1gpu & 200,000 & 200,000 & 600,000 & 3.0 & Imbalanced / Hubs \\
@@ -180,11 +184,13 @@ To properly evaluate Weak Scaling, the problem size must grow proportionally to 
     \end{tabular}%
 }
 \end{table}
+
 \section{Performance Evaluation}
 Execution statistics were gathered across 1, 2, and 4 GPU configurations. Custom execution frameworks (Distributed CSR, COO, CSR-Vector, and cuSPARSE wrappers) were benchmarked against the multi-GPU SpMV baseline. 
 
 \subsection{Execution Time and Computational Throughput}
 As shown in Figs. \ref{fig:time} and \ref{fig:gflops}, \texttt{cuSparse} dominates in raw speed and GFLOPS, especially on large matrices (\texttt{Rucci1}, \texttt{webbase-1M}). Among custom versions, the \texttt{CSR-Vector} kernel excels, peaking near 300 GFLOPS by effectively mitigating the warp divergence typical of standard CSR.
+
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\linewidth]{../../results/plots/strong_individual_time.pdf}
@@ -200,9 +206,7 @@ As shown in Figs. \ref{fig:time} and \ref{fig:gflops}, \texttt{cuSparse} dominat
 \end{figure}
 
 \subsection{Strong Scaling: Speedup and Efficiency}
-As visualized across the real datasets in Figures \ref{fig:speedup} and \ref{fig:efficiency}, the Strong Scaling capabilities display clear behavioral trends among the different configurations. While adding additional GPUs introduces non-trivial network overhead, the \texttt{CSR-Vector} approach scales the best among custom solutions, yielding an average speedup of $2.75\times$ on 4 GPUs with an efficiency of roughly $68.9\%$. Conversely, the \texttt{baseline} implementation completely fails to scale on our setup ($0.98\times$ on 4 GPUs with an efficiency drop down to $24\%$), largely due to the severe unoptimized \texttt{MPI\_Bcast} overheads which our Ghost-Exchange implementation actively bypasses. 
-
-The individual matrix speedup and efficiency curves are detailed in Figures \ref{fig:speedup} and \ref{fig:efficiency}.
+As visualized across the real datasets in Figures \ref{fig:speedup} and \ref{fig:efficiency}, the Strong Scaling capabilities display clear behavioral trends among the different configurations. While adding additional GPUs introduces non-trivial network overhead, the \texttt{CSR-Vector} approach scales the best among custom solutions, yielding an average speedup of $2.75\times$ on 4 GPUs with an efficiency of roughly $68.9\%$. Conversely, the \texttt{baseline} implementation completely fails to scale on our setup ($0.98\times$ on 4 GPUs with an efficiency drop down to $24\%$), largely due to the severe unoptimized \texttt{MPI\_Bcast} overheads which our Ghost-Exchange implementation actively bypasses.
 
 \begin{figure}[htbp]
     \centering
@@ -222,6 +226,7 @@ The individual matrix speedup and efficiency curves are detailed in Figures \ref
 A crucial aspect of distributed GPU programming is understanding the cost of network synchronization. Figure \ref{fig:comm_breakdown} isolates the structural impact of MPI interactions, revealing the massive relative cost of the \texttt{MPI} Ghost Exchange. Because the local SpMV CUDA kernels execute extremely fast (often in the order of tens of microseconds), the time required to pack communication buffers, marshal data over the PCIe/NVLink interconnect, and wait for peer-to-peer non-blocking completion effectively dwarfs the pure computation time. 
 
 On 4 GPUs, the implementations are completely communication-bound: the Ghost Exchange overhead is $48\times$ higher than pure compute for \texttt{COO}, and $35\times$–$39\times$ for \texttt{CSR} variants. Even \texttt{cuSparse} is penalized ($18\times$). Increasing the GPU count yields diminishing returns as runtime is limited by interconnect latencies.
+
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\linewidth]{../../results/plots/strong_comm_comp_breakdown.pdf}
@@ -249,7 +254,7 @@ To isolate the structural impact on multi-node balancing, Weak Scaling was evalu
 1D cyclic partitioning fails when processing highly skewed power-law graphs or extreme optimization structures like \texttt{boyd2} ($\sigma = 194.91$) and our \texttt{synth\_boyd2}. These datasets contain hyper-dense rows that act as hubs. Because a 1D allocation scheme assigns an entire row indivisibly to a single executor, the GPU that receives the hyper-dense row becomes a critical bottleneck. In this scenario, a 2D partitioning strategy is highly advantageous to break up highly connected hubs across multiple executors. As structurally argued in literature, advanced two-dimensional graph layouts and edge partitioning provide significant scaling improvements over 1D strategies when mapping scale-free networks onto thousands of cores~\cite{boman2013scalable}.
 
 \subsection{When the Implementation is Bound by the Interconnect}
-As shown in the cost breakdown (Fig. \ref{fig:comm_breakdown}), the implementation becomes strictly bound by the interconnect network when scaling to 4 GPUs. The time required by \texttt{MPI\_Isend} and \texttt{MPI\_Irecv} routines to exchange non-local elements over the PCIe/network interface easily exceeds the pure execution time of the CUDA sparse multiplication kernel. Under these conditions, scaling to 4 GPUs yields decreasing performance returns, as the communication overhead dominates the total Time To Solution.
+As shown in the cost breakdown (Fig. \ref{fig:comm_breakdown}), the implementation becomes strictly bound by the interconnect network when scaling to 4 GPUs. The time required by \texttt{MPI\_Isend} and \texttt{MPI\_Irecv} routines to exchange non-local elements over the PCIe/network interface easily exceeds the pure execution time of the CUDA sparse multiplication kernel. Under these conditions, scaling to 4 GPUs yields decreasing performance returns, as the communication overhead dominates the total Time To Solution. This performance barrier strongly aligns with findings in recent literature, where data transmission was shown to absorb up to 63\% of the total SpMV runtime on 4-GPU configurations~\cite{gao2024optimization}.
 
 \subsection{Largest Manageable Matrix Size}
 With the current memory layout, the maximum manageable matrix size is bounded primarily by the available memory on a single GPU node (NVIDIA A30 24GB). By replacing the global vector broadcast mechanism with a localized Ghost Entry exchange, this implementation avoids duplicating the full multi-million-element multiplier vector $x$ on every device, allowing the cluster to easily handle large datasets exceeding 50 million non-zero elements per node context.
