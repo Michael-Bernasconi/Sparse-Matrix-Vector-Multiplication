@@ -55,10 +55,8 @@ This deliverable implements a 1D cyclic row-distribution framework designed to o
 To effectively transition single-device execution paths into an enterprise-grade multi-GPU paradigm, the application architecture was evolved adhering strictly to Foster's four-stage design methodology:
 
 \begin{itemize}
-    \item Partitioning: Fine-grained domain decomposition is performed on the row primitives of matrix $A$. In accordance with the required baseline configuration, Rank 0 sequentially reads the entire Matrix Market file from disk and handles the distribution of matrix entries to all other processes. The assignment of global row indices to target cluster ranks follows a precise modular distribution scheme, formally defined as:
-    \begin{equation}
-        owner(i) = i \pmod{\text{size}}
-    \end{equation}
+\item Partitioning: Fine-grained domain decomposition is performed on the rows of matrix $A$. Rank 0 sequentially reads the Matrix Market file and distributes entries to the target cluster ranks following a modular distribution scheme:
+        owner(i) = i (mod size) \\
     where $i$ represents the global row index and $\text{size}$ corresponds to the number of active MPI ranks (GPUs).
     \item Communication: Rather than distributing the entire multiplier vector $x$ via global collectives, a specialized discovery process identifies non-local indices requested by local non-zero elements ($col\_idx$). These indices represent the matrix \textit{Ghost Entries}, which are captured in isolated communication descriptors.
     \item Agglomeration: Rows assigned to a single executor are agglomerated into an independent, compact local sparse matrix representation (local CSR or COO layouts), converting the sparse structure into relative coordinate systems to ensure zero index-translation overhead during raw kernel execution.
@@ -130,8 +128,7 @@ All execution cycles were evaluated on the \texttt{edu01} compute node (\texttt{
 \subsection{Dataset Optimization Strategy}
 To guarantee a robust performance profile covering both Strong and Weak Scaling benchmarks, the experimental matrix framework is divided into two categories: real-world structures for Strong Scaling, and algorithmically generated structures for Weak Scaling.
 
-Compared to the previous single-GPU experimental campaign, the target selection of sparse datasets has been intentionally modified and optimized. This adaptation was required since several larger matrices tested in the single-node setup presented structural scaling blockages and introduced high memory allocation problems or outright execution failures when distributed across the current multi-GPU cluster overlay. Thus, the workload selection has been revised to preserve evaluation stability while properly maintaining topological variance and uneven sparsity domains.
-
+Compared to the single-GPU setup, the dataset has been revised to avoid memory allocation failures on the cluster while maintaining high topological variance and uneven sparsity domains.
 \subsubsection{Strong Scaling Dataset}
 The baseline dataset comprises six distinct real-world sparse structures from the SuiteSparse Matrix Collection, carefully selected to evaluate the algorithms against different structural domains.
 
@@ -227,8 +224,7 @@ The individual matrix speedup and efficiency curves are detailed in Figures \ref
 \subsection{Communication vs Computation Breakdown}
 A crucial aspect of distributed GPU programming is understanding the cost of network synchronization. Figure \ref{fig:comm_breakdown} isolates the structural impact of MPI interactions, revealing the massive relative cost of the \texttt{MPI} Ghost Exchange. Because the local SpMV CUDA kernels execute extremely fast (often in the order of tens of microseconds), the time required to pack communication buffers, marshal data over the PCIe/NVLink interconnect, and wait for peer-to-peer non-blocking completion effectively dwarfs the pure computation time. 
 
-An analytical breakdown of the data shows that on 4 GPUs, the custom custom-tailored implementations are completely communication-bound: for instance, the \texttt{COO} kernel suffers from a Ghost Exchange overhead that is approximately $48\times$ higher than its pure compute time. Similarly, \texttt{CSR} and \texttt{CSR-Vector} register communication overhead indicators that are respectively $35\times$ and $39\times$ greater than the localized execution cost. Even the vendor-optimized \texttt{cuSparse} pipeline is heavily penalized, with network-related wait times scaling up to $18\times$ higher than the pure numerical computation phase. This behavior confirms that increasing the GPU count beyond a certain threshold yields diminishing parallel returns, as the runtime becomes strictly limited by interconnect synchronization latencies. To explicitly quantify load balancing and network patterns across different architectures, the minimum, average, and maximum NNZ metrics per rank, alongside the discrete communication volume per rank, were systematically profiled, showing a direct match with the structural deviation metrics ($\sigma$) reported across the dataset collection.
-
+On 4 GPUs, the implementations are completely communication-bound: the Ghost Exchange overhead is $48\times$ higher than pure compute for \texttt{COO}, and $35\times$–$39\times$ for \texttt{CSR} variants. Even \texttt{cuSparse} is penalized ($18\times$). Increasing the GPU count yields diminishing returns as runtime is limited by interconnect latencies.
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\linewidth]{../../results/plots/strong_comm_comp_breakdown.pdf}
