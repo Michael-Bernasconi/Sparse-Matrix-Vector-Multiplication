@@ -1,11 +1,11 @@
 # Fdb version 4
-["pdflatex"] 1780998431.43373 "/home/michael/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_2_del.tex" "Bernasconi_Michael_267681_2_del.pdf" "Bernasconi_Michael_267681_2_del" 1780998432.8711 0
-  "../../results/plots/strong_comm_comp_breakdown.pdf" 1780925245.84854 26125 d2afc5865dbb0116423a343ff6f01162 ""
-  "../../results/plots/strong_individual_efficiency.pdf" 1780925245.6254 32598 8976a02d16535d54eaa3813ffb79623e ""
-  "../../results/plots/strong_individual_gflops.pdf" 1780925244.5625 32918 73709ead72228170ae9e1e1f85d1acc8 ""
-  "../../results/plots/strong_individual_speedup.pdf" 1780925245.0919 32749 24e75b83425bfd984cdcf03d459848fe ""
-  "../../results/plots/strong_individual_time.pdf" 1780925243.97364 34145 4c8dae1ef2f5b386367f0830cde3428c ""
-  "../../results/plots/weak_individual_synthetic.pdf" 1780925246.84449 27230 bf6c21ae394b5a332d9bd2d270589bf8 ""
+["pdflatex"] 1780999108.40334 "/home/michael/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_2_del.tex" "Bernasconi_Michael_267681_2_del.pdf" "Bernasconi_Michael_267681_2_del" 1780999110.07087 0
+  "../../results/plots/strong_comm_comp_breakdown.pdf" 1780999099.43372 26129 b8927cd4e8e2e1dcd1dabdfb0a96ddb6 ""
+  "../../results/plots/strong_individual_efficiency.pdf" 1780999099.21812 32598 08d48ccca27f73b89045d920c6c8548e ""
+  "../../results/plots/strong_individual_gflops.pdf" 1780999098.2465 32918 3d4bc88b0371069839a1efbbb6d031b8 ""
+  "../../results/plots/strong_individual_speedup.pdf" 1780999098.73418 32749 b623db08aeb4887695cb6f4563c89129 ""
+  "../../results/plots/strong_individual_time.pdf" 1780999097.69641 34145 1959cf13ef2a80b05f079008477878b4 ""
+  "../../results/plots/weak_individual_synthetic.pdf" 1780999100.12521 27230 ac6db07c3a4372822f448006249e5f69 ""
   "/etc/texmf/web2c/texmf.cnf" 1778506864.75507 475 c0e671620eb5563b2130f56340a5fde8 ""
   "/home/michael/Sparse-Matrix-Vector-Multiplication/doc/latex/Bernasconi_Michael_267681_2_del.tex" 1780998429.23495 21101 b6aad1e346180bcc543f29faaa0fd4ef ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
@@ -132,8 +132,8 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1778506889.95569 5472669 54eaf61a88b6b7896ebd0dac973cb29c ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1778507035 8214941 2a286de860800f048c511c1fa9db929e ""
-  "Bernasconi_Michael_267681_2_del.aux" 1780998432.74594 6319 400ff2a1ed2fd673fe27a5a4a942fcdd "pdflatex"
-  "Bernasconi_Michael_267681_2_del.out" 1780998432.74694 4351 fca16d3e7769616af3a5befc0c5d9bca "pdflatex"
+  "Bernasconi_Michael_267681_2_del.aux" 1780999109.90785 6319 400ff2a1ed2fd673fe27a5a4a942fcdd "pdflatex"
+  "Bernasconi_Michael_267681_2_del.out" 1780999109.90885 4351 fca16d3e7769616af3a5befc0c5d9bca "pdflatex"
   "Bernasconi_Michael_267681_2_del.tex" 1780998429.23495 21101 b6aad1e346180bcc543f29faaa0fd4ef ""
   "IEEEtran.cls" 1780847430.88198 281957 5b2e4fa15b0f7eabb840ebf67df4c0f7 ""
   (generated)

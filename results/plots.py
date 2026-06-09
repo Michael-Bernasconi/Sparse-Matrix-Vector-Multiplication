@@ -136,7 +136,7 @@ def generate_breakdown_plot(df):
         # Compact canvas size
         fig, ax = plt.subplots(figsize=(5.8, 2.1))
         
-        ax.bar(x, grouped['Comp_Pct'], width=0.38, label='Pure CUDA Compute %', color="#67ff30", edgecolor='black', linewidth=0.3)
+        ax.bar(x, grouped['Comp_Pct'], width=0.38, label='Pure CUDA Compute %', color="#ff8c19", edgecolor='black', linewidth=0.3)
         ax.bar(x, grouped['Comm_Pct'], width=0.38, bottom=grouped['Comp_Pct'], label='MPI Ghost Comm %', color="#3041ff", edgecolor='black', linewidth=0.3)
         
         ax.set_ylabel('Percentage (%)', fontsize=7.5)
