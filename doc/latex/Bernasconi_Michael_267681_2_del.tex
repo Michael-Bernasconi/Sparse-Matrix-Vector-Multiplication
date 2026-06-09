@@ -16,8 +16,9 @@
 
 \setlength{\parindent}{0pt}
 \usepackage{caption} 
-\setlength{\textfloatsep}{10pt plus 1.0pt minus 2.0pt}
-\setlength{\floatsep}{8pt plus 1.0pt minus 2.0pt}
+\setlength{\textfloatsep}{8pt plus 1.0pt minus 1.5pt}
+\setlength{\floatsep}{8pt plus 1.0pt minus 1.5pt}
+\setlength{\intextsep}{8pt plus 1.0pt minus 1.5pt}
 
 \begin{document}
 
@@ -65,10 +66,7 @@ To effectively transition single-device execution paths into an enterprise-grade
 
 \subsection{GPU-Aware Point-to-Point Communication Overlay}
 \label{sec:gpu_aware_comm}
-To fulfill strict efficiency and high-throughput requirements, intermediate host-side staging operations are entirely bypassed. Standard multi-GPU implementations pull device results to host memory buffers via high-latency \texttt{cudaMemcpy} transactions prior to invoking MPI routines. 
-
-This architecture leverages a GPU-Aware MPI runtime. Because the underlying network stack safely decodes CUDA virtual memory spaces, device pointers are supplied directly to non-blocking point-to-point primitives (\texttt{MPI\_Irecv} and \texttt{MPI\_Isend}), followed by an explicit \texttt{MPI\_Waitall} barrier. The trade-offs between redundant numerical computations and communication framework penalties have been widely investigated within dense multi-GPU clusters to elevate iterative execution behaviors~\cite{gao2024optimization}.
-
+To maximize throughput, intermediate host-side staging is bypassed. While standard multi-GPU setups copy device results to host buffers via high-latency \texttt{cudaMemcpy} prior to MPI calls, this architecture leverages a GPU-Aware MPI runtime. Device pointers are passed directly to non-blocking primitives (\texttt{MPI\_Irecv} and \texttt{MPI\_Isend}), followed by an \texttt{MPI\_Waitall} barrier, significantly reducing communication penalties in dense multi-GPU iterations~\cite{gao2024optimization}.
 \begin{algorithm}[htbp]
 \footnotesize
 \DontPrintSemicolon
@@ -186,8 +184,7 @@ To properly evaluate Weak Scaling, the problem size must grow proportionally to 
 Execution statistics were gathered across 1, 2, and 4 GPU configurations. Custom execution frameworks (Distributed CSR, COO, CSR-Vector, and cuSPARSE wrappers) were benchmarked against the multi-GPU SpMV baseline. 
 
 \subsection{Execution Time and Computational Throughput}
-As depicted in Figure \ref{fig:time} and Figure \ref{fig:gflops}, the vendor-optimized \texttt{cuSparse} framework retains dominance in raw execution speed and GFLOPS per SpMV, particularly on large matrices such as \texttt{Rucci1} and \texttt{webbase-1M}. However, among the custom implementations, the \texttt{CSR-Vector} kernel exhibits an impressive computational throughput (reaching peaks near 300 GFLOPS locally), effectively managing the warp-divergence typically associated with standard CSR implementations. 
-
+As shown in Figs. \ref{fig:time} and \ref{fig:gflops}, \texttt{cuSparse} dominates in raw speed and GFLOPS, especially on large matrices (\texttt{Rucci1}, \texttt{webbase-1M}). Among custom versions, the \texttt{CSR-Vector} kernel excels, peaking near 300 GFLOPS by effectively mitigating the warp divergence typical of standard CSR.
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=\linewidth]{../../results/plots/strong_individual_time.pdf}
