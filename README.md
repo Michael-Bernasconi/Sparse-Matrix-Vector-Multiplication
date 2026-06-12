@@ -327,7 +327,6 @@ cd results
 You must delete these logs for the analysis such that are sub-matrix and are not important for the statistics:
 
 ```bash
-cd results
 cd multi_gpu
 cd run_1
 cd 1gpu
