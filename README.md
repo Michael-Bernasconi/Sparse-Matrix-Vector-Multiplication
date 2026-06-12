@@ -324,6 +324,48 @@ cd results
 ```
 
 ### Aggregate benchmark logs
+You must delete these logs for the analysis such that are sub-matrix and are not important for the statistics:
+
+```bash
+cd results
+cd multi_gpu
+cd run_1
+cd 1gpu
+rm -rf PERF_1GPU_boyd2_b.mtx.log
+rm -rf PERF_1GPU_patents_main_appyear.mtx.log
+rm -rf PERF_1GPU_patents_main_cat.mtx
+rm -rf PERF_1GPU_patents_main_class.mtx
+rm -rf PERF_1GPU_patents_main_date.mtx
+rm -rf PERF_1GPU_patents_main_subcat.mtx
+rm -rf PERF_1GPU_patents_main_year.mtx
+
+cd ..
+
+cd 2gpu
+rm -rf PERF_2GPU_boyd2_b.mtx.log
+rm -rf PERF_2GPU_patents_main_appyear.mtx.log
+rm -rf PERF_2GPU_patents_main_cat.mtx
+rm -rf PERF_2GPU_patents_main_class.mtx
+rm -rf PERF_2GPU_patents_main_date.mtx
+rm -rf PERF_2GPU_patents_main_subcat.mtx
+rm -rf PERF_2GPU_patents_main_year.mtx
+
+
+cd ..
+
+cd 4gpu
+rm -rf PERF_4GPU_boyd2_b.mtx.log
+rm -rf PERF_4GPU_patents_main_appyear.mtx.log
+rm -rf PERF_4GPU_patents_main_cat.mtx
+rm -rf PERF_4GPU_patents_main_class.mtx
+rm -rf PERF_4GPU_patents_main_date.mtx
+rm -rf PERF_4GPU_patents_main_subcat.mtx
+rm -rf PERF_4GPU_patents_main_year.mtx
+
+cd ..		
+cd ..		
+cd ..
+```
 
 Parse the output logs of both strong and weak scaling runs:
 
