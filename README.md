@@ -333,22 +333,22 @@ cd run_1
 cd 1gpu
 rm -rf PERF_1GPU_boyd2_b.mtx.log
 rm -rf PERF_1GPU_patents_main_appyear.mtx.log
-rm -rf PERF_1GPU_patents_main_cat.mtx
-rm -rf PERF_1GPU_patents_main_class.mtx
-rm -rf PERF_1GPU_patents_main_date.mtx
-rm -rf PERF_1GPU_patents_main_subcat.mtx
-rm -rf PERF_1GPU_patents_main_year.mtx
+rm -rf PERF_1GPU_patents_main_cat.mtx.log
+rm -rf PERF_1GPU_patents_main_class.mtx.log
+rm -rf PERF_1GPU_patents_main_date.mtx.log
+rm -rf PERF_1GPU_patents_main_subcat.mtx.log
+rm -rf PERF_1GPU_patents_main_year.mtx.log
 
 cd ..
 
 cd 2gpu
 rm -rf PERF_2GPU_boyd2_b.mtx.log
 rm -rf PERF_2GPU_patents_main_appyear.mtx.log
-rm -rf PERF_2GPU_patents_main_cat.mtx
-rm -rf PERF_2GPU_patents_main_class.mtx
-rm -rf PERF_2GPU_patents_main_date.mtx
-rm -rf PERF_2GPU_patents_main_subcat.mtx
-rm -rf PERF_2GPU_patents_main_year.mtx
+rm -rf PERF_2GPU_patents_main_cat.mtx.log
+rm -rf PERF_2GPU_patents_main_class.mtx.log
+rm -rf PERF_2GPU_patents_main_date.mtx.log
+rm -rf PERF_2GPU_patents_main_subcat.mtx.log
+rm -rf PERF_2GPU_patents_main_year.mtx.log
 
 
 cd ..
@@ -356,11 +356,11 @@ cd ..
 cd 4gpu
 rm -rf PERF_4GPU_boyd2_b.mtx.log
 rm -rf PERF_4GPU_patents_main_appyear.mtx.log
-rm -rf PERF_4GPU_patents_main_cat.mtx
-rm -rf PERF_4GPU_patents_main_class.mtx
-rm -rf PERF_4GPU_patents_main_date.mtx
-rm -rf PERF_4GPU_patents_main_subcat.mtx
-rm -rf PERF_4GPU_patents_main_year.mtx
+rm -rf PERF_4GPU_patents_main_cat.mtx.log
+rm -rf PERF_4GPU_patents_main_class.mtx.log
+rm -rf PERF_4GPU_patents_main_date.mtx.log
+rm -rf PERF_4GPU_patents_main_subcat.mtx.log
+rm -rf PERF_4GPU_patents_main_year.mtx.log
 
 cd ..		
 cd ..		
