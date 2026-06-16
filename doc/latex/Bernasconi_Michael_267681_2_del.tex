@@ -46,8 +46,7 @@ SpMV, Multi-GPU CUDA, 1D Cyclic Partitioning, Ghost Entries Exchange, GPU-Aware 
 \section{Introduction}
 Sparse Matrix-Vector multiplication ($y = A \times x$) is the underlying backbone of modern scientific applications, differential equation solvers, and graph analytics. Evolving single-node GPU kernels to distributed architectures introduces severe scalability roadblocks caused by non-contiguous memory layouts and network bottlenecks. 
 
-While the initial project implementation focused on a standard 1D continuous block-row slicing scheme, real-world matrices from the SuiteSparse collection exhibit non-uniform sparsity patterns that result in major computational idle times (load imbalance) and excessive memory overhead due to redundant vector replication. 
-
+The project implementation relies on a standard 1D contiguous row-block partitioning scheme. However, this approach proves inefficient when dealing with real-world matrices from the SuiteSparse collection: their non-uniform sparsity patterns lead to significant computational idle time (load imbalance) and heavy memory overhead due to redundant vector replication.
 This deliverable implements a 1D cyclic row-distribution framework designed to optimize parallel workload mapping across multiple hardware devices. By rewriting the communication infrastructure around localized peer-to-peer sparse exchanges, the system eliminates collective broadcast overheads. This report details the core design principles, structural transformations, and benchmarking outcomes of the distributed SpMV execution campaign across strong and weak scaling configurations.
 
 \section{Parallel Design Methodology}
