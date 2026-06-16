@@ -59,7 +59,7 @@ To effectively transition single-device execution paths into an enterprise-grade
         owner(i) = i (mod size) \\
     where $i$ represents the global row index and $\text{size}$ corresponds to the number of active MPI ranks (GPUs).
     \item Communication: Rather than distributing the entire multiplier vector $x$ via global collectives, a specialized discovery process identifies non-local indices requested by local non-zero elements ($col\_idx$). These indices represent the matrix \textit{Ghost Entries}, which are captured in isolated communication descriptors.
-    \item Agglomeration: Rows assigned to a single executor are agglomerated into an independent, compact local sparse matrix representation (local CSR or COO layouts), converting the sparse structure into relative coordinate systems to ensure zero index-translation overhead during raw kernel execution.
+    \item Agglomeration: Rows assigned to a single executor are agglomerated into an independent, compact local sparse matrix representation (CSR or COO layouts), converting the sparse structure into relative coordinate systems to ensure zero index-translation overhead during raw kernel execution.
     \item Mapping: Each MPI process is pinned to a dedicated hardware device ($NVIDIA\ A30\ GPU$), executing localized data processing routines natively within isolated CUDA streams.
 \end{itemize}
 
@@ -71,32 +71,20 @@ To maximize throughput, intermediate host-side staging is bypassed. While standa
 \footnotesize
 \DontPrintSemicolon
 \SetAlgoLined
-\KwIn{Local Sparse Matrix ($A_{loc}$), Managed Vector Segment ($x_{loc}$)}
-\KwOut{Fully Synchronized Interleaved Output Vector ($y_{global}$)}
-Scan $col\_idx$ to populate Ghost Receive and Send Descriptors\;
-Allocate Device Buffers \texttt{d\_ghost\_recv} and \texttt{d\_ghost\_send}\;
-\BlankLine
-\tcp{1. Pack local values requested by others}
-\texttt{pack\_ghost\_kernel<<<(...)>>>(...)}\;
-\BlankLine
-\tcp{2. GPU-Aware Peer-to-Peer Non-blocking Exchange}
-\texttt{MPI\_Irecv(d\_ghost\_recv, ..., src\_rank, ..., \&reqs[0])}\;
-\texttt{MPI\_Isend(d\_ghost\_send, ..., dest\_rank, ..., \&reqs[1])}\;
-\texttt{MPI\_Waitall(2, reqs, MPI\_STATUSES\_IGNORE)}\;
-\BlankLine
-Start \texttt{cudaEvent\_t} Computational Timers\;
-Launch Selected CUDA SpMV Kernel (CSR, COO, or Vector)\;
-Stop \texttt{cudaEvent\_t} Computational Timers\;
-\BlankLine
-\texttt{MPI\_Gatherv(d\_local\_y, ..., d\_interleaved\_y, ..., Root)}\;
-\If{Rank == 0}{
-    De-interleave \texttt{d\_interleaved\_y} into linear vector $y_{global}$\;
+\KwIn{$A_{loc}$ (local matrix partition), $x_{loc}$ (local vector partition), $I$ (benchmark iterations)} 
+\KwOut{$y_{global}$ (full result vector assembled on Root)}
+Identify ghost cells and allocate \texttt{d\_ghost\_*}\;
+\texttt{pack\_ghost\_kernel<<<...>>>}; \texttt{cudaDeviceSynchronize()}\;
+\texttt{MPI\_Irecv(...)}; \texttt{MPI\_Isend(...)}; \texttt{MPI\_Waitall(...)}\;
+\texttt{unpack\_ghost\_kernel<<<...>>>}; Start \texttt{cudaEvent} timers\;
+\For{$iter \leftarrow 1$ \KwTo $I$}{
+    \texttt{cudaMemset(d\_y, 0, ...)}; Launch SpMV Kernel; \texttt{cudaDeviceSynchronize()}\;
 }
+Stop timers; \texttt{MPI\_Gatherv(d\_y, ..., Root)}\;
+\If{\textnormal{Rank} $== 0$}{Reassemble \texttt{d\_interleaved\_y} $\rightarrow$ linear $y_{global}$\;}
 \caption{Distributed GPU-Aware SpMV Pipeline}
-\label{alg:spmv_pipeline} 
-
+\label{alg:spmv_pipeline}
 \end{algorithm}
-
 \section{Experimental Setup \& Dataset}
 
 \subsection{Hardware Infrastructure}
