@@ -209,7 +209,7 @@ As visualized across the real datasets in Figures \ref{fig:speedup} and \ref{fig
 \end{figure}
 
 \subsection{Communication vs Computation Breakdown}
-A crucial aspect of distributed GPU programming is understanding the cost of network synchronization. Figure \ref{fig:comm_breakdown} isolates the structural impact of MPI interactions, revealing the massive relative cost of the \texttt{MPI} Ghost Exchange. Because the local SpMV CUDA kernels execute extremely fast (often in the order of tens of microseconds), the time required to pack communication buffers, marshal data over the PCIe/NVLink interconnect, and wait for peer-to-peer non-blocking completion effectively dwarfs the pure computation time. 
+A crucial aspect of distributed GPU programming is understanding the cost of network synchronization. Figure \ref{fig:comm_breakdown} isolates the structural impact of MPI interactions, revealing the massive relative cost of the \texttt{MPI} Ghost Exchange. Since local SpMV kernels execute in microseconds, the time spent packing buffers, marshaling data over PCIe/NVLink, and waiting for non-blocking peer-to-peer completion far exceeds pure computation. 
 
 On 4 GPUs, the implementations are completely communication-bound: the Ghost Exchange overhead is $43.9\times$ higher than pure compute for \texttt{COO}, and $32.7\times$–$33.5\times$ for \texttt{CSR} variants. Even \texttt{cuSparse} is heavily penalized ($20.9\times$). Increasing the GPU count yields diminishing returns as runtime is limited by interconnect latencies.
 
@@ -221,7 +221,7 @@ On 4 GPUs, the implementations are completely communication-bound: the Ghost Exc
 \end{figure}
 
 \subsection{Weak Scaling Profiling}
-To isolate the structural impact on multi-node balancing, Weak Scaling was evaluated using synthetic datasets (Fig. \ref{fig:weak_scaling}). The custom implementations maintain stable and robust scaling efficiency on the \texttt{synth\_asic} family (where 1D cyclic distribution helps distribute rows), reaching $0.81$ efficiency on 4 GPUs. Interestingly, the \texttt{synth\_boyd2} datasets do not exhibit a severe efficiency collapse, maintaining a comparable weak efficiency of $0.79$ on 4 GPUs. This demonstrates that the 1D cyclic scheme successfully limits severe computational load imbalances across ranks under weak scaling workloads.
+To isolate the structural impact on multi-node balancing, Weak Scaling was evaluated using synthetic datasets (Fig. \ref{fig:weak_scaling}). The custom implementations maintain stable and robust scaling efficiency on the \texttt{synth\_asic} family (where 1D cyclic distribution helps distribute rows), reaching $0.81$ efficiency on 4 GPUs. The \texttt{synth\_boyd2} datasets maintain a comparable efficiency of $0.79$ on 4 GPUs, proving that the 1D cyclic scheme successfully limits computational load imbalance under weak scaling.
 
 \begin{figure}[htbp]
     \centering
