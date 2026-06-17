@@ -172,7 +172,7 @@ To properly evaluate Weak Scaling, the problem size must grow proportionally to 
 }
 \end{table}
 \section{Performance Evaluation}
-Execution statistics were gathered across 1, 2, and 4 GPU configurations. Custom execution frameworks (Distributed CSR, COO, CSR-Vector, cuSPARSE and baseline) were benchmarked against the multi-GPU SpMV baseline. 
+Execution statistics were gathered across 1, 2, and 4 GPU configurations. Custom execution frameworks (Distributed CSR, COO, CSR-Vector and cuSPARSE) were benchmarked against the multi-GPU SpMV baseline. 
 
 \subsection{Execution Time and Computational Throughput}
 As shown in Figs. \ref{fig:time} and \ref{fig:gflops}, \texttt{cuSparse} dominates in raw speed and GFLOPS, especially on large matrices (\texttt{Rucci1}, \texttt{webbase-1M}). Among custom versions, the \texttt{CSR-Vector} kernel excels, peaking near 300 GFLOPS by effectively mitigating the warp divergence typical of standard CSR.
@@ -209,8 +209,12 @@ As visualized across the real datasets in Figures \ref{fig:speedup} and \ref{fig
 \end{figure}
 
 \subsection{Communication vs Computation Breakdown}
-A crucial aspect of distributed GPU programming is understanding the cost of network synchronization. Figure \ref{fig:comm_breakdown} isolates the structural impact of MPI interactions, revealing the massive relative cost of the \texttt{MPI} Ghost Exchange. Since local SpMV kernels execute in microseconds, the time spent packing buffers, marshaling data over PCIe/NVLink, and waiting for non-blocking peer-to-peer completion far exceeds pure computation. 
-
+A crucial aspect of distributed GPU programming is understanding network 
+synchronization costs. Figure \ref{fig:comm_breakdown} isolates MPI interactions, 
+revealing that despite our Ghost Exchange efficiency over the baseline, 
+its massive relative cost dominates execution. Since local SpMV kernels 
+execute in microseconds, packing buffers, marshaling data over PCIe/NVLink, 
+and waiting for peer-to-peer completion far exceed pure computation.
 On 4 GPUs, the implementations are completely communication-bound: the Ghost Exchange overhead is $43.9\times$ higher than pure compute for \texttt{COO}, and $32.7\times$–$33.5\times$ for \texttt{CSR} variants. Even \texttt{cuSparse} is heavily penalized ($20.9\times$). Increasing the GPU count yields diminishing returns as runtime is limited by interconnect latencies.
 
 \begin{figure}[htbp]
