@@ -408,7 +408,7 @@ int main(int argc, char **argv) {
     CUDA_CHECK(cudaMemcpy(d_rows, local_rows, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_cols, local_cols, local_nnz * sizeof(int), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d_values, local_values, local_nnz * sizeof(float), cudaMemcpyHostToDevice));
-    // NOTE: d_x is already allocated and synchronized above
+    // d_x is already allocated and synchronized above
 
     int num_iterations = 100;
     double start_time = omp_get_wtime();

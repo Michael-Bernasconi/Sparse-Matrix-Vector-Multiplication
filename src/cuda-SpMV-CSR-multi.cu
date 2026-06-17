@@ -352,7 +352,7 @@ int main(int argc, char **argv) {
     // START COMMUNICATION TIMER (Encompasses device-side packing, GPU-Aware MPI p2p, and device-side unpacking)
     CUDA_CHECK(cudaEventRecord(start_comm));
 
-    // STAGE 1: Asynchronous device-side vector element collection (Packing via Device Kernels)
+    // Asynchronous device-side vector element collection (Packing via Device Kernels)
     for (int r = 0; r < size; r++) {
         if (r != rank && send_to_rank_counts[r] > 0) {
             int blocks = (send_to_rank_counts[r] + 255) / 256;
@@ -361,7 +361,7 @@ int main(int argc, char **argv) {
     }
     CUDA_CHECK(cudaDeviceSynchronize()); // Block execution until device packing stages are fully compiled
 
-    // STAGE 2: GPU-Aware Point-to-Point Communication (Inject Device Addresses Directly to MPI Contexts)
+    // GPU-Aware Point-to-Point Communication (Inject Device Addresses Directly to MPI Contexts)
     req_count = 0;
     for (int r = 0; r < size; r++) {
         if (r != rank) {
@@ -375,7 +375,7 @@ int main(int argc, char **argv) {
     }
     MPI_Waitall(req_count, reqs, MPI_STATUSES_IGNORE);
 
-    // STAGE 3: Asynchronous device-side vector structural placement (Unpacking via Device Kernels)
+    // Asynchronous device-side vector structural placement (Unpacking via Device Kernels)
     for (int r = 0; r < size; r++) {
         if (r != rank && recv_from_rank_counts[r] > 0) {
             int blocks = (recv_from_rank_counts[r] + 255) / 256;

@@ -365,7 +365,7 @@ int main(int argc, char **argv) {
     // START COMMUNICATION TIMER (Profiles device packing, GPU-Aware P2P, and device unpacking)
     CUDA_CHECK(cudaEventRecord(start_comm));
 
-    // STAGE 1: Gather elements into linear transfer buffers directly within the device memory space
+    // Gather elements into linear transfer buffers directly within the device memory space
     for (int r = 0; r < size; r++) {
         if (r != rank && send_to_rank_counts[r] > 0) {
             int blocks = (send_to_rank_counts[r] + 255) / 256;
@@ -374,7 +374,7 @@ int main(int argc, char **argv) {
     }
     CUDA_CHECK(cudaDeviceSynchronize()); // Block execution until device packing stages are fully completed
 
-    // STAGE 2: Execute non-blocking peer exchanges passing device pointers directly to the MPI engine
+    // Execute non-blocking peer exchanges passing device pointers directly to the MPI engine
     req_count = 0;
     for (int r = 0; r < size; r++) {
         if (r != rank) {
@@ -388,7 +388,7 @@ int main(int argc, char **argv) {
     }
     MPI_Waitall(req_count, reqs, MPI_STATUSES_IGNORE);
 
-    // STAGE 3: Unpack and map incoming buffers into local vector indices on the device
+    // Unpack and map incoming buffers into local vector indices on the device
     for (int r = 0; r < size; r++) {
         if (r != rank && recv_from_rank_counts[r] > 0) {
             int blocks = (recv_from_rank_counts[r] + 255) / 256;
