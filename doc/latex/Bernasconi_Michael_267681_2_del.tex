@@ -47,12 +47,12 @@ SpMV, Multi-GPU CUDA, 1D Cyclic Partitioning, Ghost Entries Exchange, GPU-Aware 
 Sparse Matrix-Vector multiplication ($y = A \times x$) is the underlying backbone of modern scientific applications, differential equation solvers, and graph analytics. Evolving single-node GPU kernels to distributed architectures introduces severe scalability roadblocks caused by non-contiguous memory layouts and network bottlenecks. 
 
 The project implementation relies on a standard 1D contiguous row-block partitioning scheme. However, this approach proves inefficient when dealing with real-world matrices from the SuiteSparse collection: their non-uniform sparsity patterns lead to significant computational idle time (load imbalance) and heavy memory overhead due to redundant vector replication.
-This deliverable implements a 1D cyclic row-distribution framework designed to optimize parallel workload mapping across multiple hardware devices. By rewriting the communication infrastructure around localized peer-to-peer sparse exchanges, the system eliminates collective broadcast overheads. This report details the core design principles, structural transformations, and benchmarking outcomes of the distributed SpMV execution campaign across strong and weak scaling configurations.
+This project implements a 1D cyclic row-distribution framework designed to optimize parallel workload mapping across multiple hardware devices. By rewriting the communication infrastructure around localized peer-to-peer sparse exchanges, the system eliminates collective broadcast overheads. This report details the core design principles, structural transformations, and benchmarking outcomes of the distributed SpMV execution campaign across strong and weak scaling configurations.
 
 \section{Parallel Design Methodology}
 
 \subsection{Evolution via Foster's Design Strategy}
-To effectively transition single-device execution paths into an enterprise-grade multi-GPU paradigm, the application architecture was evolved adhering strictly to Foster's four-stage design methodology:
+To effectively transition single-device execution paths into a multi-GPU paradigm, the application architecture was evolved adhering strictly to Foster's four-stage design methodology:
 
 \begin{itemize}
 \item Partitioning: Fine-grained domain decomposition is performed on the rows of matrix $A$. Rank 0 sequentially reads the Matrix Market file and distributes entries to the target cluster ranks following a modular distribution scheme:
