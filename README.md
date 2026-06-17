@@ -9,7 +9,7 @@
 
 This repository provides a high-performance, distributed multi-GPU framework for **Sparse Matrix-Vector Multiplication ($y = A \times x$)**, engineered specifically for heterogeneous cluster environments.
 
-Moving beyond standard single-node execution paths or high-overhead continuous block slicing, this project implements a **1D Cyclic Row-Partitioning Scheme** ($owner(i) = i \pmod P$) mapped over distributed hardware accelerators via standard MPI and CUDA paradigms.
+Evolving from the standard 1D contiguous row-block partitioning layout implemented in the initial project phase—which introduced significant load imbalances on highly irregular datasets—this deliverable transitions the architecture toward a 1D Cyclic Row-Partitioning Scheme ($owner(i) = i \pmod{\text{size}}$, where size represents the total number of MPI ranks). This structural shift ensures an even distribution of non-zero elements across distributed hardware accelerators via standard MPI and CUDA paradigms.
 
 The application architecture was evolved from scratch adhering strictly to **Foster’s Four-Stage Parallel Design Methodology**:
 
@@ -35,12 +35,6 @@ The repository incorporates several low-overhead parallel execution paths for co
 ## High-Performance GPU-Aware Interconnect Overlay
 
 To maximize data ingestion throughput, the communication backbone completely bypasses traditional host-side staging (`cudaMemcpy` to RAM). The pipeline utilizes a **GPU-Aware MPI Overlay** that passes device pointers directly into non-blocking communication primitives (`MPI_Irecv` / `MPI_Isend`).
-
-### Key Performance Insights Documented in the Report:
-
-* **Topology Bounds:** The 1D cyclic distribution achieves excellent load balancing on structurally uniform sparse datasets (e.g., `ASIC` topologies or `Rucci1`) where row density variance is low ($\sigma \le 4.16$). However, it faces structural efficiency degradation on highly skewed, power-law graphs (e.g., `boyd2` graphs, where $2\%$ of rows contain over $75\%$ of non-zero entries), as individual dense hub rows cannot be subdivided under a 1D mapping constraint.
-* **Interconnect Bottlenecks:** At higher GPU counts (4 GPUs), the system operates in a strict **interconnect-bound regime**. Because individual CUDA kernels execute in the order of microseconds, total Time-To-Solution (TTS) is dictated by the PCIe/NVLink interconnect latency during the non-blocking Ghost Entry exchange.
-* **Memory Footprint Scaling:** By substituting full vector replication with localized point-to-point tracking of Ghost Entries, the memory footprint scales efficiently with the data subset assigned to each node, enabling execution on massive structural matrices exceeding 50 million non-zero items within the native 24 GB global memory constraint of a single A30 accelerator.
 
 ---
 
@@ -404,7 +398,7 @@ Includes files like:
 * `strong_individual_gflops.pdf`
 * `strong_individual_speedup.pdf`
 * `strong_comm_comp_breakdown.pdf`
-* `strong_individual_efficinecy.pdf`
+* `strong_individual_efficiency.pdf`
 * `strong_individual_time.pdf`
 * `weak_individual_synthetic.pdf`
 
