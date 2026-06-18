@@ -9,8 +9,15 @@
 
 This repository provides a high-performance, distributed multi-GPU framework for **Sparse Matrix-Vector Multiplication ($y = A \times x$)**, engineered specifically for heterogeneous cluster environments.
 
-Evolving from the standard 1D contiguous row-block partitioning layout implemented in the initial project phase—which introduced significant load imbalances on highly irregular datasets—this deliverable transitions the architecture toward a 1D Cyclic Row-Partitioning Scheme ($owner(i) = i \pmod{\text{size}}$, where size represents the total number of MPI ranks). This structural shift ensures an even distribution of non-zero elements across distributed hardware accelerators via standard MPI and CUDA paradigms.
+The original project codebase lacked multi-GPU support and relied on a simple 1D contiguous row-block layout, which would lead to significant load imbalances when handling highly irregular datasets in parallel. 
 
+To overcome this, this module transitions the architecture into a fully distributed environment, implementing a **1D cyclic row-partitioning scheme**:
+
+$$\text{owner}(i) = i \pmod{\text{size}}$$
+
+*where $\text{size}$ represents the total number of MPI ranks.*
+
+This structural change guarantees a uniform distribution of non-zero elements across all distributed hardware accelerators using standard MPI and CUDA paradigms.
 The application architecture was evolved from scratch adhering strictly to **Foster’s Four-Stage Parallel Design Methodology**:
 
 1. **Partitioning:** Finely grained domain decomposition is performed on the rows of the sparse matrix $A$. Rank 0 streams the Matrix Market file and interleaves entries across cluster ranks following a modular distribution.
