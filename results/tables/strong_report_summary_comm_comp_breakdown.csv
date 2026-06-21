@@ -5,7 +5,7 @@ CSR,2,99.41,1932.84
 CSR,4,99.41,3271.51
 CSR-Vector,2,99.35,1817.57
 CSR-Vector,4,99.34,3353.77
-baseline,2,100.0,0.0
-baseline,4,100.0,0.0
+SpMV-baseline,2,100.0,0.0
+SpMV-baseline,4,100.0,0.0
 cuSparse,2,99.87,1230.42
 cuSparse,4,99.86,2092.63

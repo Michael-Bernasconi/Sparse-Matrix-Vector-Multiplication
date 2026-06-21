@@ -145,7 +145,7 @@ The baseline dataset comprises ten distinct real-world sparse structures from th
 \end{table}
 
 \subsubsection{Weak Scaling Dataset (Synthetic Generation)}
-To properly evaluate Weak Scaling, the problem size must grow proportionally to the number of computational resources ($N$, $2N$, $4N$). We developed a custom Python generator creating two distinct synthetic topologies with a constant $D_{avg} \approx 3.0$:
+To properly evaluate Weak Scaling, the problem size must grow proportionally to the number of computational resources ($N$, $2N$, $4N$). It has been developed a custom Python generator creating two distinct synthetic topologies with a constant $D_{avg} \approx 3.0$:
 \begin{itemize}
     \item ASIC-like (\texttt{synth\_asic}): Highly sparse but structurally uniform. Ensures perfect 1D cyclic load balancing while maintaining randomized non-zero column placements to simulate cache-miss irregularities.
     \item BOYD2-like (\texttt{synth\_boyd2}): Designed for extreme load imbalance. Exactly 2\% of the rows absorb 75\% of the total Non-Zeros, mimicking power-law hub topologies and severely punishing 1D distribution schemes.
