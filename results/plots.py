@@ -41,7 +41,7 @@ def clean_kernel_name(name):
     """Simplifies kernel names for cleaner plot labels."""
     cleaned = name.replace('cuda-SpMV-', '').replace('-multi', '')
     if cleaned == 'prof-SpMV-baseline':
-        return 'baseline'
+        return 'SpMV-baseline'
     return cleaned
 
 # Distinctive color palettes for different scaling environments

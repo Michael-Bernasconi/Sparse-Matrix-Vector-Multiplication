@@ -35,7 +35,7 @@ The repository incorporates several low-overhead parallel execution paths for co
 * **GPU SpMV CSR:** Multi-GPU native CUDA kernel mapping standard Compressed Sparse Row structures.
 * **GPU SpMV CSR-Vector:** An optimized, warp-coalesced variant assigning one 32-thread Warp per matrix row. This effectively neutralizes control-flow divergence and ensures strict memory coalescence across high-bandwidth memory interfaces.
 * **GPU cuSPARSE Baseline:** A high-throughput vendor reference implementation wrapped around NVIDIA’s proprietary `cuSPARSE` multi-GPU streaming library.
-* **Baseline Multi-GPU:** A provided unoptimized reference layout utilizing global collective vector broadcasts (`MPI_Bcast`).
+* **SpMV Baseline:** A single-threaded CPU reference implementation executed strictly within the Rank 0 context. It bypasses accelerators and parallel environments, serving as the baseline performance anchor to evaluate parallel scaling and speedup factor.
 
 ---
 
