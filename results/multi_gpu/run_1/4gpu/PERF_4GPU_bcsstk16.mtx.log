@@ -1,0 +1,86 @@
+
+[cuda-SpMV-CSR-multi - 4 GPUs]
+[Rank 0] Volume of comunication Ghost: 3609 send elements (14436 byte), 3607 receive elements (14428 byte)
+
+=== [DIAGNOSTIC - CSR SCALAR] ===
+Ghost vector components interchanged successfully using GPU-Aware MPI handles.
+===========================================
+[Rank 1] Volume of comunication Ghost: 3609 send elements (14436 byte), 3607 receive elements (14428 byte)
+[Rank 2] Volume of comunication Ghost: 3606 send elements (14424 byte), 3608 receive elements (14432 byte)
+[Rank 3] Volume of comunication Ghost: 3606 send elements (14424 byte), 3608 receive elements (14432 byte)
+
+>>> VALIDATION PASSED: All 4884 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR SCALAR ( 4 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/bcsstk16.mtx (4884 x 4884, nnz: 290378)
+Load Bal: NNZ Min: 72578 | NNZ Avg: 72594.50 | NNZ Max: 72610
+Avg Time: 3.095774e-05 s
+  ├─ Comm Time: 1.072128e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 3.073600e-05 s (Pure Kernel Computation)
+GFLOPS  : 18.7596
+BW      : 76.9318 GB/s
+TTS     : 1.2878 s
+
+[cuda-SpMV-COO-multi - 4 GPUs]
+[Rank 0] Volume of comunication Ghost: 3609 send elements (14436 byte), 3607 receive elements (14428 byte)
+
+=== [DIAGNOSTIC - COO] ===
+Ghost vector components interchanged successfully using P2P GPU-AWARE MPI.
+=================================
+
+[Rank 1] Volume of comunication Ghost: 3609 send elements (14436 byte), 3607 receive elements (14428 byte)
+[Rank 2] Volume of comunication Ghost: 3606 send elements (14424 byte), 3608 receive elements (14432 byte)
+[Rank 3] Volume of comunication Ghost: 3606 send elements (14424 byte), 3608 receive elements (14432 byte)
+>>> VALIDATION PASSED: All 4884 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU COO ( 4 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/bcsstk16.mtx (4884 x 4884, nnz: 290378)
+Load Bal: NNZ Min: 72578 | NNZ Avg: 72594.50 | NNZ Max: 72610
+Avg Time: 2.871508e-05 s
+  ├─ Comm Time: 1.086464e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 2.849696e-05 s (Pure Kernel Computation)
+GFLOPS  : 20.2248
+BW      : 122.7093 GB/s
+TTS     : 0.1450 s
+
+[cuda-SpMV-CSR-Vector-multi - 4 GPUs]
+[Rank 0] Volume of comunication Ghost: 3609 send elements (14436 byte), 3607 receive elements (14428 byte)
+[Rank 1] Volume of comunication Ghost: 3609 send elements (14436 byte), 3607 receive elements (14428 byte)
+[Rank 2] Volume of comunication Ghost: 3606 send elements (14424 byte), 3608 receive elements (14432 byte)
+[Rank 3] Volume of comunication Ghost: 3606 send elements (14424 byte), 3608 receive elements (14432 byte)
+>>> VALIDATION PASSED: All 4884 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR VECTOR ( 4 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/bcsstk16.mtx (4884 x 4884, nnz: 290378)
+Load Bal: NNZ Min: 72578 | NNZ Avg: 72594.50 | NNZ Max: 72610
+Avg Time: 1.697886e-05 s
+  ├─ Comm Time: 1.083392e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 1.676576e-05 s (Pure Kernel Computation)
+GFLOPS  : 34.2047
+BW      : 140.2707 GB/s
+TTS     : 1.1206 s
+
+[cuda-SpMV-cuSparse-multi - 4 GPUs]
+[Rank 0] Volume of comunication Ghost: 3609 send elements (14436 byte), 3607 receive elements (14428 byte)
+[Rank 1] Volume of comunication Ghost: 3609 send elements (14436 byte), 3607 receive elements (14428 byte)
+[Rank 2] Volume of comunication Ghost: 3606 send elements (14424 byte), 3608 receive elements (14432 byte)
+[Rank 3] Volume of comunication Ghost: 3606 send elements (14424 byte), 3608 receive elements (14432 byte)
+>>> VALIDATION PASSED: All 4884 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR CUSPARSE ( 4 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/bcsstk16.mtx (4884 x 4884, nnz: 290378)
+Load Bal: NNZ Min: 72578 | NNZ Avg: 72594.50 | NNZ Max: 72610
+Avg Time: 8.602968e-05 s
+  ├─ Comm Time: 1.054720e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 8.590016e-05 s (cuSPARSE SpMV)
+GFLOPS  : 6.7506
+BW      : 27.6839 GB/s
+TTS     : 1.1452 s
+
+[prof-SpMV-baseline - 4 GPUs]
+
+--- PROF MULTI-GPU BASELINE (Sequential Emulation) ---
+Matrix  : ./data/bcsstk16.mtx (4884 x 4884, nnz: 147631)
+Avg Time: 9.598780e-05 s
+GFLOPS  : 3.0760
+BW      : 18.8633 GB/s

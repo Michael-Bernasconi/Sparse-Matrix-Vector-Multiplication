@@ -1,0 +1,74 @@
+
+[cuda-SpMV-CSR-multi - 1 GPUs]
+[Rank 0] Volume of comunication Ghost: 0 send elements (0 byte), 0 receive elements (0 byte)
+
+=== [DIAGNOSTIC - CSR SCALAR] ===
+Ghost vector components interchanged successfully using GPU-Aware MPI handles.
+===========================================
+
+>>> VALIDATION PASSED: All 1000005 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR SCALAR ( 1 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/webbase-1M.mtx (1000005 x 1000005, nnz: 3105536)
+Load Bal: NNZ Min: 3105536 | NNZ Avg: 3105536.00 | NNZ Max: 3105536
+Avg Time: 5.826668e-04 s
+  ├─ Comm Time: 1.136000e-05 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 5.822384e-04 s (Pure Kernel Computation)
+GFLOPS  : 10.6597
+BW      : 63.2340 GB/s
+TTS     : 1.3428 s
+
+[cuda-SpMV-COO-multi - 1 GPUs]
+[Rank 0] Volume of comunication Ghost: 0 send elements (0 byte), 0 receive elements (0 byte)
+
+=== [DIAGNOSTIC - COO] ===
+Ghost vector components interchanged successfully using P2P GPU-AWARE MPI.
+=================================
+
+>>> VALIDATION PASSED: All 1000005 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU COO ( 1 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/webbase-1M.mtx (1000005 x 1000005, nnz: 3105536)
+Load Bal: NNZ Min: 3105536 | NNZ Avg: 3105536.00 | NNZ Max: 3105536
+Avg Time: 1.218142e-04 s
+  ├─ Comm Time: 1.196800e-05 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 1.213958e-04 s (Pure Kernel Computation)
+GFLOPS  : 50.9881
+BW      : 371.6027 GB/s
+TTS     : 0.7411 s
+
+[cuda-SpMV-CSR-Vector-multi - 1 GPUs]
+[Rank 0] Volume of comunication Ghost: 0 send elements (0 byte), 0 receive elements (0 byte)
+>>> VALIDATION PASSED: All 1000005 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR VECTOR ( 1 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/webbase-1M.mtx (1000005 x 1000005, nnz: 3105536)
+Load Bal: NNZ Min: 3105536 | NNZ Avg: 3105536.00 | NNZ Max: 3105536
+Avg Time: 7.492761e-04 s
+  ├─ Comm Time: 1.033600e-05 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 7.487943e-04 s (Pure Kernel Computation)
+GFLOPS  : 8.2894
+BW      : 49.1733 GB/s
+TTS     : 1.0518 s
+
+[cuda-SpMV-cuSparse-multi - 1 GPUs]
+[Rank 0] Volume of comunication Ghost: 0 send elements (0 byte), 0 receive elements (0 byte)
+>>> VALIDATION PASSED: All 1000005 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR CUSPARSE ( 1 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/webbase-1M.mtx (1000005 x 1000005, nnz: 3105536)
+Load Bal: NNZ Min: 3105536 | NNZ Avg: 3105536.00 | NNZ Max: 3105536
+Avg Time: 1.058942e-04 s
+  ├─ Comm Time: 9.728000e-06 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 1.057581e-04 s (cuSPARSE SpMV)
+GFLOPS  : 58.6536
+BW      : 347.9356 GB/s
+TTS     : 0.9863 s
+
+[prof-SpMV-baseline - 1 GPUs]
+
+--- PROF MULTI-GPU BASELINE (Sequential Emulation) ---
+Matrix  : ./data/webbase-1M.mtx (1000005 x 1000005, nnz: 3105536)
+Avg Time: 4.102818e-03 s
+GFLOPS  : 1.5139
+BW      : 11.0330 GB/s

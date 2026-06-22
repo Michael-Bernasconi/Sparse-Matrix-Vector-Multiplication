@@ -1,0 +1,78 @@
+
+[cuda-SpMV-CSR-multi - 2 GPUs]
+[Rank 0] Volume of comunication Ghost: 48789 send elements (195156 byte), 48789 receive elements (195156 byte)
+
+=== [DIAGNOSTIC - CSR SCALAR] ===
+Ghost vector components interchanged successfully using GPU-Aware MPI handles.
+===========================================
+
+[Rank 1] Volume of comunication Ghost: 48789 send elements (195156 byte), 48789 receive elements (195156 byte)
+>>> VALIDATION PASSED: All 97578 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR SCALAR ( 2 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/m_t1.mtx (97578 x 97578, nnz: 9753570)
+Load Bal: NNZ Min: 4876200 | NNZ Avg: 4876785.00 | NNZ Max: 4877370
+Avg Time: 1.574683e-04 s
+  ├─ Comm Time: 1.264256e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 1.571152e-04 s (Pure Kernel Computation)
+GFLOPS  : 123.8798
+BW      : 502.9551 GB/s
+TTS     : 37.0912 s
+
+[cuda-SpMV-COO-multi - 2 GPUs]
+[Rank 0] Volume of comunication Ghost: 48789 send elements (195156 byte), 48789 receive elements (195156 byte)
+
+=== [DIAGNOSTIC - COO] ===
+Ghost vector components interchanged successfully using P2P GPU-AWARE MPI.
+=================================
+
+[Rank 1] Volume of comunication Ghost: 48789 send elements (195156 byte), 48789 receive elements (195156 byte)
+>>> VALIDATION PASSED: All 97578 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU COO ( 2 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/m_t1.mtx (97578 x 97578, nnz: 9753570)
+Load Bal: NNZ Min: 4876200 | NNZ Avg: 4876785.00 | NNZ Max: 4877370
+Avg Time: 5.686393e-04 s
+  ├─ Comm Time: 1.462432e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 5.682813e-04 s (Pure Kernel Computation)
+GFLOPS  : 34.3049
+BW      : 207.2025 GB/s
+TTS     : 36.6292 s
+
+[cuda-SpMV-CSR-Vector-multi - 2 GPUs]
+[Rank 0] Volume of comunication Ghost: 48789 send elements (195156 byte), 48789 receive elements (195156 byte)
+[Rank 1] Volume of comunication Ghost: 48789 send elements (195156 byte), 48789 receive elements (195156 byte)
+>>> VALIDATION PASSED: All 97578 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR VECTOR ( 2 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/m_t1.mtx (97578 x 97578, nnz: 9753570)
+Load Bal: NNZ Min: 4876200 | NNZ Avg: 4876785.00 | NNZ Max: 4877370
+Avg Time: 1.013445e-04 s
+  ├─ Comm Time: 1.266048e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 1.009981e-04 s (Pure Kernel Computation)
+GFLOPS  : 192.4836
+BW      : 781.4883 GB/s
+TTS     : 37.0729 s
+
+[cuda-SpMV-cuSparse-multi - 2 GPUs]
+[Rank 0] Volume of comunication Ghost: 48789 send elements (195156 byte), 48789 receive elements (195156 byte)
+[Rank 1] Volume of comunication Ghost: 48789 send elements (195156 byte), 48789 receive elements (195156 byte)
+>>> VALIDATION PASSED: All 97578 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR CUSPARSE ( 2 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/m_t1.mtx (97578 x 97578, nnz: 9753570)
+Load Bal: NNZ Min: 4876200 | NNZ Avg: 4876785.00 | NNZ Max: 4877370
+Avg Time: 1.371732e-04 s
+  ├─ Comm Time: 1.237376e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 1.370653e-04 s (cuSPARSE SpMV)
+GFLOPS  : 142.2081
+BW      : 577.3684 GB/s
+TTS     : 37.0928 s
+
+[prof-SpMV-baseline - 2 GPUs]
+
+--- PROF MULTI-GPU BASELINE (Sequential Emulation) ---
+Matrix  : ./data/m_t1.mtx (97578 x 97578, nnz: 4925574)
+Avg Time: 4.109707e-03 s
+GFLOPS  : 2.3970
+BW      : 14.5722 GB/s

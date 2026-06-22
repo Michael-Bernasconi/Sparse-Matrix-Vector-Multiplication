@@ -23,7 +23,6 @@ data/*.zip
 # --- Report ---
 *.nvvp
 *.nsys-rep
-*.log
 color.md
 Notes.md
 todo.md

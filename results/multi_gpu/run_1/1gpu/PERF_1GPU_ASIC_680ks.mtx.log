@@ -1,0 +1,74 @@
+
+[cuda-SpMV-CSR-multi - 1 GPUs]
+[Rank 0] Volume of comunication Ghost: 0 send elements (0 byte), 0 receive elements (0 byte)
+
+=== [DIAGNOSTIC - CSR SCALAR] ===
+Ghost vector components interchanged successfully using GPU-Aware MPI handles.
+===========================================
+
+>>> VALIDATION PASSED: All 682712 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR SCALAR ( 1 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/ASIC_680ks.mtx (682712 x 682712, nnz: 2329176)
+Load Bal: NNZ Min: 2329176 | NNZ Avg: 2329176.00 | NNZ Max: 2329176
+Avg Time: 1.041512e-04 s
+  ├─ Comm Time: 1.088000e-05 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 1.036589e-04 s (Pure Kernel Computation)
+GFLOPS  : 44.7268
+BW      : 257.5674 GB/s
+TTS     : 1.1096 s
+
+[cuda-SpMV-COO-multi - 1 GPUs]
+[Rank 0] Volume of comunication Ghost: 0 send elements (0 byte), 0 receive elements (0 byte)
+
+=== [DIAGNOSTIC - COO] ===
+Ghost vector components interchanged successfully using P2P GPU-AWARE MPI.
+=================================
+
+>>> VALIDATION PASSED: All 682712 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU COO ( 1 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/ASIC_680ks.mtx (682712 x 682712, nnz: 2329176)
+Load Bal: NNZ Min: 2329176 | NNZ Avg: 2329176.00 | NNZ Max: 2329176
+Avg Time: 1.189373e-04 s
+  ├─ Comm Time: 1.228800e-05 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 1.184528e-04 s (Pure Kernel Computation)
+GFLOPS  : 39.1664
+BW      : 280.9194 GB/s
+TTS     : 0.7067 s
+
+[cuda-SpMV-CSR-Vector-multi - 1 GPUs]
+[Rank 0] Volume of comunication Ghost: 0 send elements (0 byte), 0 receive elements (0 byte)
+>>> VALIDATION PASSED: All 682712 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR VECTOR ( 1 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/ASIC_680ks.mtx (682712 x 682712, nnz: 2329176)
+Load Bal: NNZ Min: 2329176 | NNZ Avg: 2329176.00 | NNZ Max: 2329176
+Avg Time: 4.115598e-04 s
+  ├─ Comm Time: 9.632000e-06 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 4.111213e-04 s (Pure Kernel Computation)
+GFLOPS  : 11.3188
+BW      : 65.1812 GB/s
+TTS     : 0.9415 s
+
+[cuda-SpMV-cuSparse-multi - 1 GPUs]
+[Rank 0] Volume of comunication Ghost: 0 send elements (0 byte), 0 receive elements (0 byte)
+>>> VALIDATION PASSED: All 682712 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR CUSPARSE ( 1 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data/ASIC_680ks.mtx (682712 x 682712, nnz: 2329176)
+Load Bal: NNZ Min: 2329176 | NNZ Avg: 2329176.00 | NNZ Max: 2329176
+Avg Time: 8.742847e-05 s
+  ├─ Comm Time: 9.824000e-06 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 8.730560e-05 s (cuSPARSE SpMV)
+GFLOPS  : 53.2819
+BW      : 306.8332 GB/s
+TTS     : 0.8633 s
+
+[prof-SpMV-baseline - 1 GPUs]
+
+--- PROF MULTI-GPU BASELINE (Sequential Emulation) ---
+Matrix  : ./data/ASIC_680ks.mtx (682712 x 682712, nnz: 2329176)
+Avg Time: 2.740646e-03 s
+GFLOPS  : 1.6997
+BW      : 12.1912 GB/s

@@ -1,0 +1,78 @@
+
+[cuda-SpMV-CSR-multi - 2 GPUs]
+[Rank 0] Volume of comunication Ghost: 155554 send elements (622216 byte), 155512 receive elements (622048 byte)
+
+=== [DIAGNOSTIC - CSR SCALAR] ===
+Ghost vector components interchanged successfully using GPU-Aware MPI handles.
+===========================================
+
+[Rank 1] Volume of comunication Ghost: 155512 send elements (622048 byte), 155554 receive elements (622216 byte)
+>>> VALIDATION PASSED: All 400000 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR SCALAR ( 2 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data-synt/synth_asic_2gpu.mtx (400000 x 400000, nnz: 1200107)
+Load Bal: NNZ Min: 600038 | NNZ Avg: 600053.50 | NNZ Max: 600069
+Avg Time: 4.763410e-05 s
+  ├─ Comm Time: 1.487168e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 4.741184e-05 s (Pure Kernel Computation)
+GFLOPS  : 50.3886
+BW      : 302.3225 GB/s
+TTS     : 12.6937 s
+
+[cuda-SpMV-COO-multi - 2 GPUs]
+[Rank 0] Volume of comunication Ghost: 155554 send elements (622216 byte), 155512 receive elements (622048 byte)
+[Rank 1] Volume of comunication Ghost: 155512 send elements (622048 byte), 155554 receive elements (622216 byte)
+
+=== [DIAGNOSTIC - COO] ===
+Ghost vector components interchanged successfully using P2P GPU-AWARE MPI.
+=================================
+
+>>> VALIDATION PASSED: All 400000 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU COO ( 2 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data-synt/synth_asic_2gpu.mtx (400000 x 400000, nnz: 1200107)
+Load Bal: NNZ Min: 600038 | NNZ Avg: 600053.50 | NNZ Max: 600069
+Avg Time: 5.582940e-05 s
+  ├─ Comm Time: 2.231264e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 5.561600e-05 s (Pure Kernel Computation)
+GFLOPS  : 42.9919
+BW      : 315.2691 GB/s
+TTS     : 12.0710 s
+
+[cuda-SpMV-CSR-Vector-multi - 2 GPUs]
+[Rank 0] Volume of comunication Ghost: 155554 send elements (622216 byte), 155512 receive elements (622048 byte)
+[Rank 1] Volume of comunication Ghost: 155512 send elements (622048 byte), 155554 receive elements (622216 byte)
+>>> VALIDATION PASSED: All 400000 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR VECTOR ( 2 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data-synt/synth_asic_2gpu.mtx (400000 x 400000, nnz: 1200107)
+Load Bal: NNZ Min: 600038 | NNZ Avg: 600053.50 | NNZ Max: 600069
+Avg Time: 1.189398e-04 s
+  ├─ Comm Time: 1.499392e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 1.187133e-04 s (Pure Kernel Computation)
+GFLOPS  : 20.1801
+BW      : 121.0768 GB/s
+TTS     : 12.5284 s
+
+[cuda-SpMV-cuSparse-multi - 2 GPUs]
+[Rank 0] Volume of comunication Ghost: 155554 send elements (622216 byte), 155512 receive elements (622048 byte)
+[Rank 1] Volume of comunication Ghost: 155512 send elements (622048 byte), 155554 receive elements (622216 byte)
+>>> VALIDATION PASSED: All 400000 elements are within the tolerance (abs: 0.001, rel: 0.01).
+
+--- MULTI-GPU CSR CUSPARSE ( 2 GPUs - Modulo 1D - GPU-Aware ) ---
+Matrix  : ./data-synt/synth_asic_2gpu.mtx (400000 x 400000, nnz: 1200107)
+Load Bal: NNZ Min: 600038 | NNZ Avg: 600053.50 | NNZ Max: 600069
+Avg Time: 1.113240e-04 s
+  ├─ Comm Time: 1.473344e-03 s (Ghost Exchange Setup & Comm)
+  └─ Comp Time: 1.111837e-04 s (cuSPARSE SpMV)
+GFLOPS  : 21.5606
+BW      : 129.3599 GB/s
+TTS     : 12.5457 s
+
+[prof-SpMV-baseline - 2 GPUs]
+
+--- PROF MULTI-GPU BASELINE (Sequential Emulation) ---
+Matrix  : ./data-synt/synth_asic_2gpu.mtx (400000 x 400000, nnz: 1200107)
+Avg Time: 3.072435e-03 s
+GFLOPS  : 0.7812
+BW      : 5.7288 GB/s
