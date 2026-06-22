@@ -191,7 +191,7 @@ As shown in Figs. \ref{fig:time} and \ref{fig:gflops}, \texttt{cuSparse} dominat
 \end{figure}
 
 \subsection{Strong Scaling: Speedup and Efficiency}
-As visualized across the real datasets in Figures \ref{fig:speedup} and \ref{fig:efficiency}, the Strong Scaling capabilities display clear behavioral trends among the different configurations. While adding additional GPUs introduces non-trivial network overhead, the \texttt{CSR-Vector} approach scales the best among custom solutions, yielding an average speedup of $2.69\times$ on 4 GPUs with an efficiency of roughly $67.4\%$. Conversely, the \texttt{SpMV Baseline} implementation completely fails to scale on our setup ($0.99\times$ on 4 GPUs with an efficiency drop down to $24.8\%$), inherently because it is a sequential host-bound emulation executing strictly on a single CPU core (Rank 0), leaving the allocated multi-GPU resources completely idle.
+As visualized across the real datasets in Figures \ref{fig:speedup} and \ref{fig:efficiency}, the Strong Scaling capabilities display clear behavioral trends among the different configurations. While adding additional GPUs introduces non-trivial network overhead, the \texttt{CSR-Vector} approach scales the best among custom solutions, yielding an average speedup of $2.69\times$ on 4 GPUs with an efficiency of roughly $67.4\%$. Conversely, the \texttt{SpMV Baseline} implementation is inherently a sequential host-bound emulation executing strictly on a single CPU core (Rank 0). Since it cannot execute on distributed hardware, its metrics are explicitly zeroed out for the 2 and 4 GPU configurations in Figs.~\ref{fig:speedup} and \ref{fig:efficiency} to accurately reflect that the multi-GPU cluster infrastructure remains completely unutilized by the sequential context.
 
 \begin{figure}[htbp]
     \centering
@@ -209,10 +209,8 @@ As visualized across the real datasets in Figures \ref{fig:speedup} and \ref{fig
 
 \subsection{Communication vs Computation Breakdown}
 A crucial aspect of distributed GPU programming is understanding network 
-synchronization costs. Figure \ref{fig:comm_breakdown} isolates MPI interactions, 
-revealing that despite our Ghost Exchange efficiency over the baseline, 
-its massive relative cost dominates execution. Since local SpMV kernels 
-execute in microseconds, packing buffers, marshaling data over PCIe/NVLink, 
+synchronization costs. Figure~\ref{fig:comm_breakdown} isolates MPI interactions for the true multi-GPU parallel kernels, completely excluding the sequential \texttt{SpMV Baseline} since it features no network overhead. The profiling highlights that the massive relative cost of distributed coordination dominates the multi-device execution.
+Since local SpMV kernels execute in microseconds, packing buffers, marshaling data over PCIe/NVLink, 
 and waiting for peer-to-peer completion far exceed pure computation.
 On 4 GPUs, the implementations are completely communication-bound: the Ghost Exchange overhead is $43.9\times$ higher than pure compute for \texttt{COO}, and $32.7\times$–$33.5\times$ for \texttt{CSR} variants. Even \texttt{cuSparse} is heavily penalized ($20.9\times$). Increasing the GPU count yields diminishing returns as runtime is limited by interconnect latencies.
 

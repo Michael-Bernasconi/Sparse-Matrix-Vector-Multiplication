@@ -78,16 +78,23 @@ def generate_essential_strong_plots(df, metric_column, y_label, title, filename,
         y_2 = [0 if np.isnan(v) else v for v in y_2]
         y_4 = [0 if np.isnan(v) else v for v in y_4]
 
-        ax.bar(x - width, y_1, width, label='1 GPU', color=STRONG_COLORS[1], edgecolor='black', linewidth=0.2)
-        ax.bar(x, y_2, width, label='2 GPUs', color=STRONG_COLORS[2], edgecolor='black', linewidth=0.2)
-        ax.bar(x + width, y_4, width, label='4 GPUs', color=STRONG_COLORS[4], edgecolor='black', linewidth=0.2)
+        # FIX FOR CPU VISUALIZATION: SpMV-baseline is strictly sequential (Host CPU).
+        # We plot a single, centered, neutrally colored bar and label it as 0 GPU (CPU Baseline).
+        if kernel == 'SpMV-baseline':
+            ax.bar(x, y_1, width * 1.5, label='CPU Baseline', color='#555555', edgecolor='black', linewidth=0.2)
+            kernel_title_text = f"Kernel: {kernel} (Sequential CPU)"
+        else:
+            ax.bar(x - width, y_1, width, label='1 GPU', color=STRONG_COLORS[1], edgecolor='black', linewidth=0.2)
+            ax.bar(x, y_2, width, label='2 GPUs', color=STRONG_COLORS[2], edgecolor='black', linewidth=0.2)
+            ax.bar(x + width, y_4, width, label='4 GPUs', color=STRONG_COLORS[4], edgecolor='black', linewidth=0.2)
+            kernel_title_text = f"Kernel: {kernel}"
 
         # Plot ideal parallel efficiency line if provided
         if reference_line is not None:
             ax.axhline(reference_line, color='red', linestyle='--', linewidth=0.6, alpha=0.7)
 
         # Inline title to save space
-        ax.text(0.015, 0.78, f"Kernel: {kernel}", transform=ax.transAxes, 
+        ax.text(0.015, 0.78, kernel_title_text, transform=ax.transAxes, 
                 fontweight='bold', fontsize=7.5, bbox=dict(facecolor='white', alpha=0.8, edgecolor='none', pad=1))
         ax.set_ylabel(y_label, fontsize=7.0)
         
@@ -104,8 +111,23 @@ def generate_essential_strong_plots(df, metric_column, y_label, title, filename,
     axs[-1].set_xticklabels(matrices, rotation=25, ha='right', fontsize=6.5)
 
     fig.suptitle(title, y=0.98, fontweight='bold', fontsize=9.5)
-    handles, labels = axs[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 0.94), ncol=3, frameon=True, handletextpad=0.3, columnspacing=1.0)
+    
+    # Collect all unique handles across all subplots to dynamically build a comprehensive legend
+    all_handles, all_labels = [], []
+    for ax in axs:
+        h, l = ax.get_legend_handles_labels()
+        for hi, li in zip(h, l):
+            if li not in all_labels:
+                all_handles.append(hi)
+                all_labels.append(li)
+                
+    # Sort handles logically: CPU first, followed by incremental GPU steps
+    legend_order = ['0 GPU (CPU Baseline)', '1 GPU', '2 GPUs', '4 GPUs']
+    final_handles = [all_handles[all_labels.index(lbl)] for lbl in legend_order if lbl in all_labels]
+    final_labels = [lbl for lbl in legend_order if lbl in all_labels]
+
+    fig.legend(final_handles, final_labels, loc='upper center', bbox_to_anchor=(0.5, 0.94), 
+               ncol=len(final_labels), frameon=True, handletextpad=0.3, columnspacing=1.0)
     
     plt.subplots_adjust(hspace=0.12) 
     fig.savefig(os.path.join(PLOTS_DIR, filename), bbox_inches='tight', pad_inches=0.02)
@@ -121,6 +143,11 @@ def generate_breakdown_plot(df):
     
     df = df.copy()
     df['Kernel_Clean'] = df['Kernel'].apply(clean_kernel_name)
+    
+    # FIX FOR CPU CONTRADICTION: Remove SpMV-baseline completely since it does not perform 
+    # CUDA GPU computation nor MPI distributed network ghost exchanges.
+    df = df[df['Kernel_Clean'] != 'SpMV-baseline']
+    
     # Filter for distributed runs
     df = df[df['GPUs'].isin([2, 4])]
     
@@ -161,7 +188,10 @@ def generate_weak_plots(df):
     """Generates dual-column plots for weak scaling metrics."""
     df = df.copy()
     df['Kernel_Clean'] = df['Kernel'].apply(clean_kernel_name)
-    kernels = sorted(df['Kernel_Clean'].unique())
+    
+    # FIX FOR CPU CONTRADICTION: Filter out SpMV-baseline from weak scaling panels 
+    # since a single-threaded CPU anchor does not scale across distributed cluster devices.
+    kernels = sorted([k for k in df['Kernel_Clean'].unique() if k != 'SpMV-baseline'])
     families = sorted(df['Matrix Family'].unique())
     
     fig, axs = plt.subplots(len(kernels), 2, figsize=(6.0, 4.5), sharex=True)
