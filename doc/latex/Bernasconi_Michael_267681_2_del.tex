@@ -55,7 +55,7 @@ To effectively transition single-device execution paths into a multi-GPU paradig
 
 \begin{itemize}
 \item Partitioning: Fine-grained domain decomposition is performed on the rows of matrix $A$. Rank 0 sequentially reads the Matrix Market file and distributes entries to the target cluster ranks following a modular distribution scheme:
-        owner(i) = i (mod size) \\
+        \textit{owner(i) = i (mod size)} \\
     where $i$ represents the global row index and $\text{size}$ corresponds to the number of active MPI ranks (GPUs).
     \item Communication: Rather than distributing the entire multiplier vector $x$ via global collectives, a specialized discovery process identifies non-local indices requested by local non-zero elements ($col\_idx$). These indices represent the matrix \textit{Ghost Entries}, which are captured in isolated communication descriptors.
     \item Agglomeration: Rows assigned to a single executor are agglomerated into an independent, compact local sparse matrix representation (CSR or COO layouts), converting the sparse structure into relative coordinate systems to ensure zero index-translation overhead during raw kernel execution.
@@ -174,7 +174,7 @@ To properly evaluate Weak Scaling, the problem size must grow proportionally to 
 Execution statistics were gathered across 1, 2, and 4 GPU configurations. Custom execution frameworks (Distributed CSR, COO, CSR-Vector and cuSPARSE) were benchmarked against the \texttt{SpMV Baseline}. 
 
 \subsection{Execution Time and Computational Throughput}
-As shown in Figs. \ref{fig:time} and \ref{fig:gflops}, \texttt{cuSparse} dominates in raw speed and GFLOPS, especially on large matrices (\texttt{Rucci1}, \texttt{webbase-1M}). Among custom versions, the \texttt{CSR-Vector} kernel excels, peaking near 300 GFLOPS by effectively mitigating the warp divergence typical of standard CSR.
+As shown in Figs. \ref{fig:time} and \ref{fig:gflops}, \texttt{cuSparse} dominates in raw speed. However, the \texttt{CSR-Vector} and \texttt{CSR} kernel excels, peaking near 300 GFLOPS.
 
 \begin{figure}[htbp]
     \centering
