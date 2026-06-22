@@ -55,7 +55,12 @@ def generate_essential_strong_plots(df, metric_column, y_label, title, filename,
     """Generates strong scaling bar charts (Time, GFLOPS, Speedup, Efficiency)."""
     df = df.copy()
     df['Kernel_Clean'] = df['Kernel'].apply(clean_kernel_name)
-    kernels = sorted(df['Kernel_Clean'].unique())
+    
+    # Custom kernel sorting: ensure SpMV-baseline comes first, then the rest alphabetically
+    raw_kernels = list(df['Kernel_Clean'].unique())
+    gpu_kernels = sorted([k for k in raw_kernels if k != 'SpMV-baseline'])
+    kernels = ['SpMV-baseline'] + gpu_kernels if 'SpMV-baseline' in raw_kernels else gpu_kernels
+    
     matrices = sorted(df['Matrix'].unique())
     
     # Shared X-axis layout to save vertical space
@@ -79,7 +84,7 @@ def generate_essential_strong_plots(df, metric_column, y_label, title, filename,
         y_4 = [0 if np.isnan(v) else v for v in y_4]
 
         # FIX FOR CPU VISUALIZATION: SpMV-baseline is strictly sequential (Host CPU).
-        # We plot a single, centered, neutrally colored bar and label it as 0 GPU (CPU Baseline).
+        # We plot a single, centered, neutrally colored bar and label it as CPU Baseline.
         if kernel == 'SpMV-baseline':
             ax.bar(x, y_1, width * 1.5, label='CPU Baseline', color='#555555', edgecolor='black', linewidth=0.2)
             kernel_title_text = f"Kernel: {kernel} (Sequential CPU)"
@@ -122,7 +127,7 @@ def generate_essential_strong_plots(df, metric_column, y_label, title, filename,
                 all_labels.append(li)
                 
     # Sort handles logically: CPU first, followed by incremental GPU steps
-    legend_order = ['0 GPU (CPU Baseline)', '1 GPU', '2 GPUs', '4 GPUs']
+    legend_order = ['CPU Baseline', '1 GPU', '2 GPUs', '4 GPUs']
     final_handles = [all_handles[all_labels.index(lbl)] for lbl in legend_order if lbl in all_labels]
     final_labels = [lbl for lbl in legend_order if lbl in all_labels]
 
