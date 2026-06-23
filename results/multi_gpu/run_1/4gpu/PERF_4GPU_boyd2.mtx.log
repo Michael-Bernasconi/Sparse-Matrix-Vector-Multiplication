@@ -79,7 +79,7 @@ TTS     : 16.8811 s
 
 [prof-SpMV-baseline - 4 GPUs]
 
---- PROF MULTI-GPU BASELINE (Sequential Emulation) ---
+--- PROF BASELINE (Sequential Emulation) ---
 Matrix  : ./data/boyd2.mtx (466316 x 466316, nnz: 890091)
 Avg Time: 8.471425e-04 s
 GFLOPS  : 2.1014

@@ -71,7 +71,7 @@ TTS     : 37.0928 s
 
 [prof-SpMV-baseline - 2 GPUs]
 
---- PROF MULTI-GPU BASELINE (Sequential Emulation) ---
+--- PROF BASELINE (Sequential Emulation) ---
 Matrix  : ./data/m_t1.mtx (97578 x 97578, nnz: 4925574)
 Avg Time: 4.109707e-03 s
 GFLOPS  : 2.3970

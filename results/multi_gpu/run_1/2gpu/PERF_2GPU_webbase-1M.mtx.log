@@ -71,7 +71,7 @@ TTS     : 8.2201 s
 
 [prof-SpMV-baseline - 2 GPUs]
 
---- PROF MULTI-GPU BASELINE (Sequential Emulation) ---
+--- PROF BASELINE (Sequential Emulation) ---
 Matrix  : ./data/webbase-1M.mtx (1000005 x 1000005, nnz: 3105536)
 Avg Time: 4.114634e-03 s
 GFLOPS  : 1.5095

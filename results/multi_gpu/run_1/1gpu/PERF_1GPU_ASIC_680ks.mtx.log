@@ -67,7 +67,7 @@ TTS     : 0.8633 s
 
 [prof-SpMV-baseline - 1 GPUs]
 
---- PROF MULTI-GPU BASELINE (Sequential Emulation) ---
+--- PROF BASELINE (Sequential Emulation) ---
 Matrix  : ./data/ASIC_680ks.mtx (682712 x 682712, nnz: 2329176)
 Avg Time: 2.740646e-03 s
 GFLOPS  : 1.6997

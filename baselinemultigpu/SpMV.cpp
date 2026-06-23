@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
         double bw = bytes_accessed / (avg_time * 1e9);
 
         // Output matching your standard logger layout perfectly
-        printf("\n--- PROF MULTI-GPU BASELINE (Sequential Emulation) ---\n");
+        printf("\n--- PROF BASELINE (Sequential Emulation) ---\n");
         printf("Matrix  : %s (%d x %d, nnz: %d)\n", argv[1], M, N, nz);
         printf("Avg Time: %e s\n", avg_time);
         printf("GFLOPS  : %.4f\n", gflops);

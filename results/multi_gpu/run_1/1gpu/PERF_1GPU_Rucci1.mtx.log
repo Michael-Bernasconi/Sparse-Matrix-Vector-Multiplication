@@ -67,7 +67,7 @@ TTS     : 2.5829 s
 
 [prof-SpMV-baseline - 1 GPUs]
 
---- PROF MULTI-GPU BASELINE (Sequential Emulation) ---
+--- PROF BASELINE (Sequential Emulation) ---
 Matrix  : ./data/Rucci1.mtx (1977885 x 109900, nnz: 7791168)
 Avg Time: 6.660608e-03 s
 GFLOPS  : 2.3395

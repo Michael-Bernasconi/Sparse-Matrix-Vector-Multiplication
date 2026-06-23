@@ -31,11 +31,11 @@ The application architecture was evolved from scratch adhering strictly to **Fos
 
 The repository incorporates several low-overhead parallel execution paths for comparison:
 
-* **GPU SpMV COO:** Multi-GPU CUDA kernel utilizing coordinate list tracking, well-suited for extremely irregular matrices.
-* **GPU SpMV CSR:** Multi-GPU native CUDA kernel mapping standard Compressed Sparse Row structures.
-* **GPU SpMV CSR-Vector:** An optimized, warp-coalesced variant assigning one 32-thread Warp per matrix row. This effectively neutralizes control-flow divergence and ensures strict memory coalescence across high-bandwidth memory interfaces.
-* **GPU cuSPARSE Baseline:** A high-throughput vendor reference implementation wrapped around NVIDIA’s proprietary `cuSPARSE` multi-GPU streaming library.
-* **SpMV Baseline:** A single-threaded CPU reference implementation executed strictly within the Rank 0 context. It bypasses accelerators and parallel environments, serving as the baseline performance anchor to evaluate parallel scaling and speedup factor.
+* **cuda-SpMV-COO-multi:** Multi-GPU CUDA kernel utilizing coordinate list tracking, well-suited for extremely irregular matrices.
+* **cuda-SpMV-CSR-multi:** Multi-GPU native CUDA kernel mapping standard Compressed Sparse Row structures.
+* **cuda-SpMV-CSR-Vector-multi:** An optimized, warp-coalesced variant assigning one 32-thread Warp per matrix row. This effectively neutralizes control-flow divergence and ensures strict memory coalescence across high-bandwidth memory interfaces.
+* **cuda-SpMV-cuSparse-multi:** A high-throughput vendor reference implementation wrapped around NVIDIA’s proprietary `cuSPARSE` multi-GPU streaming library.
+* **SpMV (baseline):** A single-threaded CPU reference implementation executed strictly within the Rank 0 context. It bypasses accelerators and parallel environments, serving as the baseline performance anchor to evaluate parallel scaling and speedup factor.
 
 ---
 
