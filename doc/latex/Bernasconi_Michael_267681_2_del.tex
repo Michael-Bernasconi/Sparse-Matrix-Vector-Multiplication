@@ -171,7 +171,7 @@ To properly evaluate Weak Scaling, the problem size must grow proportionally to 
 }
 \end{table}
 \section{Performance Evaluation}
-Execution statistics were gathered across 1, 2, and 4 GPU configurations. Custom execution frameworks (Distributed CSR, COO, CSR-Vector and cuSPARSE) were benchmarked against the \texttt{SpMV Baseline}. 
+Execution statistics were gathered across 1, 2, and 4 GPU configurations. Custom execution frameworks (Distributed \texttt{CSR}, \texttt{COO}, \texttt{CSR-Vector} and \texttt{cuSPARSE}) were benchmarked against the \texttt{SpMV Baseline}. 
 
 \subsection{Execution Time and Computational Throughput}
 As shown in Figs. \ref{fig:time} and \ref{fig:gflops}, \texttt{cuSparse} dominates in raw speed. However, the \texttt{CSR-Vector} and \texttt{CSR} kernel excels, peaking near 300 GFLOPS.
