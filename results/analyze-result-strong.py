@@ -48,6 +48,7 @@ def analyze():
             
             # Clean the matrix name perfectly from the log file name
             matrix_name = filename.replace(f"PERF_{gpus_num}GPU_", "").replace(".mtx.log", "").replace(".log", "")
+            matrix_name = matrix_name.replace("prof-SpMV-baseline", "SpMV-baseline")
 
             file_path = os.path.join(gpu_path, filename)
             
@@ -61,6 +62,7 @@ def analyze():
                     header_match = kernel_header_re.match(line)
                     if header_match:
                         current_kernel = header_match.group(1).strip()
+                        current_kernel = current_kernel.replace("prof-SpMV-baseline", "SpMV-baseline")
                         continue
                     
                     # If inside a valid kernel block, extract metrics line by line

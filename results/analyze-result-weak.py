@@ -49,6 +49,7 @@ def analyze():
             # Clean the raw matrix name from the log file name
             # e.g., "PERF_2GPU_synth_asic_2gpu.mtx.log" -> "synth_asic_2gpu"
             raw_matrix_name = filename.replace(f"PERF_{gpus_num}GPU_", "").replace(".mtx.log", "").replace(".log", "")
+            raw_matrix_name = raw_matrix_name.replace("prof-SpMV-baseline", "SpMV-baseline")
             
             # Extract the Matrix Family name for weak scaling grouping
             # e.g., "synth_asic_2gpu" -> "synth_asic", "synth_boyd2_4gpu" -> "synth_boyd2"
@@ -65,6 +66,7 @@ def analyze():
                     header_match = kernel_header_re.match(line)
                     if header_match:
                         current_kernel = header_match.group(1).strip()
+                        current_kernel = current_kernel.replace("prof-SpMV-baseline", "SpMV-baseline")
                         continue
                     
                     # If inside a valid kernel block, extract metrics line by line

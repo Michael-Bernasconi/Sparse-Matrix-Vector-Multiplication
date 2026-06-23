@@ -1,4 +1,7 @@
 Matrix Family,Kernel,GPUs,Total Time (s),Comm Time (s),Comp Time (s),GFLOPS,BW (GB/s),Weak Speedup,Weak Efficiency
+synth_asic,SpMV-baseline,1,1.334644e-03,0.000000e+00,1.334644e-03,0.8991,6.5934,1.0,1.0
+synth_asic,SpMV-baseline,2,3.072435e-03,0.000000e+00,3.072435e-03,0.7812,5.7288,0.43,0.43
+synth_asic,SpMV-baseline,4,7.470994e-03,0.000000e+00,7.470994e-03,0.6427,4.7126,0.18,0.18
 synth_asic,cuda-SpMV-COO-multi,1,4.562510e-05,0.000000e+00,4.521600e-05,26.3008,192.8731,1.0,1.0
 synth_asic,cuda-SpMV-COO-multi,2,5.582940e-05,2.231264e-03,5.561600e-05,42.9919,315.2691,0.82,0.82
 synth_asic,cuda-SpMV-COO-multi,4,5.651707e-05,5.331200e-03,5.630656e-05,84.954,622.964,0.81,0.81
@@ -11,9 +14,9 @@ synth_asic,cuda-SpMV-CSR-multi,4,4.779843e-05,3.847840e-03,4.757728e-05,100.4499
 synth_asic,cuda-SpMV-cuSparse-multi,1,7.730633e-05,0.000000e+00,7.720224e-05,15.5224,93.1348,1.0,1.0
 synth_asic,cuda-SpMV-cuSparse-multi,2,1.113240e-04,1.473344e-03,1.111837e-04,21.5606,129.3599,0.69,0.69
 synth_asic,cuda-SpMV-cuSparse-multi,4,1.113048e-04,3.647392e-03,1.111920e-04,43.1369,258.7974,0.69,0.69
-synth_asic,prof-SpMV-baseline,1,1.334644e-03,0.000000e+00,1.334644e-03,0.8991,6.5934,1.0,1.0
-synth_asic,prof-SpMV-baseline,2,3.072435e-03,0.000000e+00,3.072435e-03,0.7812,5.7288,0.43,0.43
-synth_asic,prof-SpMV-baseline,4,7.470994e-03,0.000000e+00,7.470994e-03,0.6427,4.7126,0.18,0.18
+synth_boyd2,SpMV-baseline,1,7.679465e-04,0.000000e+00,7.679465e-04,1.6772,12.1467,1.0,1.0
+synth_boyd2,SpMV-baseline,2,2.410705e-03,0.000000e+00,2.410705e-03,1.0686,7.7388,0.32,0.32
+synth_boyd2,SpMV-baseline,4,6.453281e-03,0.000000e+00,6.453281e-03,0.7984,5.7819,0.12,0.12
 synth_boyd2,cuda-SpMV-COO-multi,1,6.269676e-05,0.000000e+00,6.232320e-05,20.5433,148.7796,1.0,1.0
 synth_boyd2,cuda-SpMV-COO-multi,2,7.838435e-05,2.258720e-03,7.808896e-05,32.8637,238.0067,0.8,0.8
 synth_boyd2,cuda-SpMV-COO-multi,4,7.913735e-05,5.168032e-03,7.883232e-05,65.102,471.4841,0.79,0.79
@@ -26,6 +29,3 @@ synth_boyd2,cuda-SpMV-CSR-multi,4,6.108393e-05,2.714816e-03,6.077536e-05,84.343,
 synth_boyd2,cuda-SpMV-cuSparse-multi,1,9.264079e-05,0.000000e+00,9.252768e-05,13.9032,81.5192,1.0,1.0
 synth_boyd2,cuda-SpMV-cuSparse-multi,2,1.142053e-04,1.484384e-03,1.140813e-04,22.5559,132.2531,0.81,0.81
 synth_boyd2,cuda-SpMV-cuSparse-multi,4,1.063246e-04,7.203904e-03,1.062006e-04,48.4554,284.1112,0.87,0.87
-synth_boyd2,prof-SpMV-baseline,1,7.679465e-04,0.000000e+00,7.679465e-04,1.6772,12.1467,1.0,1.0
-synth_boyd2,prof-SpMV-baseline,2,2.410705e-03,0.000000e+00,2.410705e-03,1.0686,7.7388,0.32,0.32
-synth_boyd2,prof-SpMV-baseline,4,6.453281e-03,0.000000e+00,6.453281e-03,0.7984,5.7819,0.12,0.12
