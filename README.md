@@ -31,11 +31,11 @@ The application architecture was evolved from scratch adhering strictly to **Fos
 
 The repository incorporates several low-overhead parallel execution paths for comparison:
 
-* **cuda-SpMV-COO-multi:** Multi-GPU CUDA kernel utilizing coordinate list tracking, well-suited for extremely irregular matrices.
+* **cuda-SpMV-COO-multi:** Multi-GPU CUDA kernel utilizing the COO (Coordinate) format.
 * **cuda-SpMV-CSR-multi:** Multi-GPU native CUDA kernel mapping standard Compressed Sparse Row structures.
 * **cuda-SpMV-CSR-Vector-multi:** An optimized, warp-coalesced variant assigning one 32-thread Warp per matrix row. This effectively neutralizes control-flow divergence and ensures strict memory coalescence across high-bandwidth memory interfaces.
 * **cuda-SpMV-cuSparse-multi:** A high-throughput vendor reference implementation wrapped around NVIDIA’s proprietary `cuSPARSE` multi-GPU streaming library.
-* **SpMV (baseline):** A single-threaded CPU reference implementation executed strictly within the Rank 0 context. It bypasses accelerators and parallel environments, serving as the baseline performance anchor to evaluate parallel scaling and speedup factor.
+* **SpMV (baseline):** A single-threaded CPU reference implementation executed strictly within the Rank 0 context. 
 
 ---
 
@@ -100,29 +100,46 @@ OpenMpi/4.1.5-CUDA-12.3.2
 ## Repository Structure
 
 ```text
-├── baselinemultigpu/             # Reference Multi-GPU baseline implementations
-├── bin/                          # Generated executables (COO, CSR, CSR-Vector, cuSparse)
-├── data/                         # Real SuiteSparse datasets (.mtx) [To be downloaded]
-├── data-synt/                    # Synthetic datasets for Weak Scaling [To be generated]
-├── deviceQuery/                  # CPU/GPU environment logs
-├── doc/                          # Technical report and LaTeX material
-├── generate_matrices.py          # Synthetic matrix generator script
-├── include/                      # Project headers (CUDA timers, formats, etc.)
-├── makefile                      # Build configuration
-├── obj/                          # Compiled object files
-├── README.md                     # Project documentation
-├── results/                      # Analysis output and plot generation
+.
+├── baselinemultigpu/             # Sequential CPU reference code (Single-Thread)
+├── bin/                          # Final binary executables [Generated - Excluded from git]
+├── data/                         # Real datasets from SuiteSparse (.mtx) [Excluded from git]
+├── deviceQuery/                  # Informational hardware reports from the UniTN cluster
+│   ├── cpu-info-edu01.txt        # Host processor technical details
+│   ├── device-edu01.csv          # Hardware specifications table
+│   ├── gpu-info-edu01.txt        # NVIDIA A30 GPU technical specifications
+│   └── nvcc-info-edu01.txt       # NVIDIA CUDA Compiler configuration
+├── doc/                          # Project documentation and reports
+│   └── latex/                    # LaTeX sources (.tex) and compiled PDF of the final report
+├── generate_matrices.py          # Python script to generate synthetic datasets
+├── include/                      # Global headers of the Multi-GPU framework
+│   ├── cuda_timer.h              # Macros for CUDA Stream timing
+│   ├── my_time_lib.h             # Header for Host/MPI timing functions
+│   └── spmv_formats.h            # Data structures (CSR, COO, Ghost Descriptors)
+├── makefile                      # Global build script for the Multi-GPU project
+├── obj/                          # Intermediate object files [Excluded from git]
+├── README.md                     # Main software documentation
+├── results/                      # Analysis pipeline, experimental logs, and plots
+│   ├── multi_gpu/run_1/          # Structure for Strong Scaling logs (1, 2, 4 GPUs) 
+│   ├── weak_scaling/run_1/       # Structure for Weak Scaling logs (1, 2, 4 GPUs)
+│   ├── plots/                    # Performance charts exported as PDFs
+│   ├── tables/                   # Summary benchmark tables (.csv)
 │   ├── analyze-result-strong.py  # Log parser for Strong Scaling
 │   ├── analyze-result-weak.py    # Log parser for Weak Scaling
-│   ├── plots.py                  # Script to generate final PDF charts
-│   ├── multi_gpu_analysis_*.csv  # Aggregated CSV reports
-│   ├── plots/                    # Generated PDF plots (Speedup, GFLOPS, Breakdown, etc.)
-│   └── tables/                   # Generated CSV summary tables
-├── src/                          # Source code (.c, .cu)
-├── run_performance_multi.sh      # Main execution script wrapper
-├── submit_all_multi.sh           # Strong Scaling batch launcher
-└── submit_weak_scaling.sh        # Weak Scaling batch launcher
-
+│   ├── plots.py                  # Python script for generating plots
+│   ├── multi_gpu_analysis_strong_report.csv # Summary Strong Scaling report
+│   └── multi_gpu_analysis_weak_report.csv   # Summary Weak Scaling report
+├── run_performance_multi.sh      # Local orchestrator for benchmark execution
+├── src/                          # Source code of the Multi-GPU framework
+│   ├── cuda-SpMV-COO-multi.cu    # Kernel multi GPU COO
+│   ├── cuda-SpMV-CSR-multi.cu    # Kernel multi GPU CSR
+│   ├── cuda-SpMV-CSR-Vector-multi.cu # Kernel multi GPU CSR-Vector
+│   ├── cuda-SpMV-cuSparse-multi.cu # Kernel multi GPU CuSparse
+│   ├── deviceQuery.cpp           # Hardware environment check utility
+│   ├── matrix_utils.c            # Helper functions for sparse matrices
+│   └── my_time_lib.c             # Host-side timing management
+├── submit_all_multi.sh           # SLURM batch script for Strong Scaling
+├── submit_weak_scaling.sh        # SLURM batch script for Weak Scaling
 ```
 
 ---
