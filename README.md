@@ -114,8 +114,8 @@ OpenMpi/4.1.5-CUDA-12.3.2
 ├── generate_matrices.py          # Python script to generate synthetic datasets
 ├── include/                      # Global headers of the Multi-GPU framework
 │   ├── cuda_timer.h              # Macros for CUDA Stream timing
-│   ├── my_time_lib.h             # Header for Host/MPI timing functions
-│   └── spmv_formats.h            # Data structures (CSR, COO, Ghost Descriptors)
+│   ├── my_time_lib.h             # Header for timing functions
+│   └── spmv_formats.h            # Data structures
 ├── makefile                      # Global build script for the Multi-GPU project
 ├── obj/                          # Intermediate object files [Excluded from git]
 ├── README.md                     # Main software documentation
